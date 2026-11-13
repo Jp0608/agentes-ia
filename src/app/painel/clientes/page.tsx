@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ActionForm, PageHead } from "@/components/ui";
 import { q } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
+import { tenantId } from "@/lib/tenant";
 import { dayKey } from "@/lib/time";
 import { newClient } from "../actions";
 
@@ -17,7 +18,9 @@ export default async function Page() {
        count(a.id) filter (where a.status = 'faltou') as noshows,
        max(a.starts_at) filter (where a.status = 'concluido') as last,
        min(a.starts_at) filter (where a.status in ('marcado','confirmado') and a.starts_at > now()) as next
-     from clients c left join appointments a on a.client_id = c.id group by c.id order by c.name limit 500`,
+     from clients c left join appointments a on a.client_id = c.id and a.tenant_id = c.tenant_id
+     where c.tenant_id = $1 group by c.id order by c.name limit 500`,
+    [await tenantId()],
   );
   const fmt = (d: Date | null) => (d ? dayKey(new Date(d), s.timezone).split("-").reverse().join("/") : "—");
   return (
