@@ -15,7 +15,9 @@
         {
           "name": "Atendente do WhatsApp",
           "when": "Chega mensagem de paciente no WhatsApp da clínica.",
-          "uses": ["WhatsApp"],
+          "uses": [
+            "WhatsApp"
+          ],
           "flow": [
             "Cumprimentar pelo nome se o número já é paciente",
             "Perguntar o que a pessoa precisa e se é urgente",
@@ -23,12 +25,19 @@
             "Se for para marcar, passar para o Agente da agenda com o procedimento e o período que a pessoa quer"
           ],
           "human": "Dor forte, sangramento, inchaço ou reclamação: chamar a recepção na hora.",
-          "example": { "from": "Camila Rocha", "in": "Consigo uma limpeza terça de manhã?", "out": "Consegue sim, Camila! Vou ver os horários da terça." }
+          "example": {
+            "from": "Camila Rocha",
+            "in": "Consigo uma limpeza terça de manhã?",
+            "out": "Consegue sim, Camila! Vou ver os horários da terça."
+          }
         },
         {
           "name": "Agente da agenda",
           "when": "O atendente pede um horário para um procedimento.",
-          "uses": ["Agenda", "WhatsApp"],
+          "uses": [
+            "Agenda",
+            "WhatsApp"
+          ],
           "flow": [
             "Conferir a agenda da cadeira e do dentista certo para o procedimento",
             "Reservar o tempo do procedimento (limpeza 40 min, canal 90 min)",
@@ -36,12 +45,19 @@
             "Marcar o escolhido e mandar a confirmação com data, hora e endereço"
           ],
           "human": "Procedimento que precisa de avaliação antes: marcar avaliação, não o procedimento.",
-          "example": { "from": "Camila Rocha", "in": "Pode ser de manhã.", "out": "Tenho terça às 9h30 ou 10h30. Qual fica melhor?" }
+          "example": {
+            "from": "Camila Rocha",
+            "in": "Pode ser de manhã.",
+            "out": "Tenho terça às 9h30 ou 10h30. Qual fica melhor?"
+          }
         },
         {
           "name": "Cadastro do paciente novo",
           "when": "Um número que não está no cadastro marca pela primeira vez.",
-          "uses": ["WhatsApp", "Cadastro de pacientes"],
+          "uses": [
+            "WhatsApp",
+            "Cadastro de pacientes"
+          ],
           "flow": [
             "Pedir nome completo, data de nascimento e CPF",
             "Perguntar se tem convênio e qual",
@@ -49,12 +65,19 @@
             "Salvar tudo na ficha e avisar a recepção que é paciente novo"
           ],
           "human": "Paciente menor de idade: pedir os dados do responsável.",
-          "example": { "from": "Thiago Alves", "in": "Primeira vez aí.", "out": "Seja bem-vindo, Thiago! Me passa seu nome completo e data de nascimento?" }
+          "example": {
+            "from": "Thiago Alves",
+            "in": "Primeira vez aí.",
+            "out": "Seja bem-vindo, Thiago! Me passa seu nome completo e data de nascimento?"
+          }
         },
         {
           "name": "Fora do horário",
           "when": "Chega mensagem depois das 18h, em fim de semana ou feriado.",
-          "uses": ["WhatsApp", "Agenda"],
+          "uses": [
+            "WhatsApp",
+            "Agenda"
+          ],
           "flow": [
             "Responder na hora, sem esperar a clínica abrir",
             "Marcar consulta normal direto na agenda, até as 21h",
@@ -62,7 +85,11 @@
             "Deixar o resumo da conversa para a recepção ler de manhã"
           ],
           "human": "Urgência de madrugada: mandar o contato do plantão e avisar o dentista de plantão.",
-          "example": { "from": "Rafael Duarte", "in": "Vocês atendem sábado?", "out": "Atendemos sábado das 8h às 12h. Quer que eu já reserve?" }
+          "example": {
+            "from": "Rafael Duarte",
+            "in": "Vocês atendem sábado?",
+            "out": "Atendemos sábado das 8h às 12h. Quer que eu já reserve?"
+          }
         }
       ]
     },
@@ -74,7 +101,10 @@
         {
           "name": "Lista de retornos",
           "when": "Todo dia às 8h.",
-          "uses": ["Cadastro de pacientes", "Agenda"],
+          "uses": [
+            "Cadastro de pacientes",
+            "Agenda"
+          ],
           "flow": [
             "Buscar quem fez limpeza há seis meses e não tem nada marcado",
             "Buscar quem tem tratamento aberto sem a próxima sessão marcada",
@@ -82,12 +112,18 @@
             "Montar a lista do dia, no máximo 20 pessoas"
           ],
           "human": "Paciente com tratamento parado há mais de 60 dias: avisar o dentista.",
-          "example": { "from": "Sistema", "in": "Lista de hoje", "out": "14 pacientes na hora da limpeza, 3 com canal parado." }
+          "example": {
+            "from": "Sistema",
+            "in": "Lista de hoje",
+            "out": "14 pacientes na hora da limpeza, 3 com canal parado."
+          }
         },
         {
           "name": "Mensagem de retorno",
           "when": "A lista do dia fica pronta.",
-          "uses": ["WhatsApp"],
+          "uses": [
+            "WhatsApp"
+          ],
           "flow": [
             "Escrever a mensagem pelo nome, citando a última visita",
             "Oferecer um horário concreto, não só perguntar se quer marcar",
@@ -95,12 +131,19 @@
             "Se não responder em 3 dias, mandar um lembrete só mais uma vez"
           ],
           "human": "Resposta irritada: parar a sequência e avisar a recepção.",
-          "example": { "from": "Camila Rocha", "in": "", "out": "Oi, Camila. Faz seis meses da sua limpeza. Posso marcar quarta, 16h?" }
+          "example": {
+            "from": "Camila Rocha",
+            "in": "",
+            "out": "Oi, Camila. Faz seis meses da sua limpeza. Posso marcar quarta, 16h?"
+          }
         },
         {
           "name": "Marcação pela resposta",
           "when": "O paciente responde a mensagem de retorno.",
-          "uses": ["WhatsApp", "Agenda"],
+          "uses": [
+            "WhatsApp",
+            "Agenda"
+          ],
           "flow": [
             "Entender sim, não ou outro horário",
             "Se sim, marcar e confirmar",
@@ -108,7 +151,11 @@
             "Se não, perguntar se pode lembrar daqui a um mês"
           ],
           "human": "Paciente diz que mudou de clínica: avisar a dona.",
-          "example": { "from": "Camila Rocha", "in": "Pode sim.", "out": "Marcado: quarta, 16h. Te lembro na véspera." }
+          "example": {
+            "from": "Camila Rocha",
+            "in": "Pode sim.",
+            "out": "Marcado: quarta, 16h. Te lembro na véspera."
+          }
         }
       ]
     },
@@ -120,7 +167,10 @@
         {
           "name": "Aviso de falta",
           "when": "O paciente não chega 15 minutos depois do horário.",
-          "uses": ["Agenda", "WhatsApp"],
+          "uses": [
+            "Agenda",
+            "WhatsApp"
+          ],
           "flow": [
             "Mandar mensagem perguntando se está a caminho",
             "Se não responder em 10 minutos, marcar como falta",
@@ -128,12 +178,19 @@
             "Registrar a falta na ficha do paciente"
           ],
           "human": "Terceira falta do mesmo paciente: avisar a recepção para pedir sinal na próxima.",
-          "example": { "from": "Marcos Vieira", "in": "", "out": "Oi, Marcos. Seu clareamento era às 10h. Está a caminho?" }
+          "example": {
+            "from": "Marcos Vieira",
+            "in": "",
+            "out": "Oi, Marcos. Seu clareamento era às 10h. Está a caminho?"
+          }
         },
         {
           "name": "Lista de espera",
           "when": "Abre uma vaga por falta ou cancelamento.",
-          "uses": ["Agenda", "WhatsApp"],
+          "uses": [
+            "Agenda",
+            "WhatsApp"
+          ],
           "flow": [
             "Buscar quem pediu horário mais cedo para o mesmo tipo de procedimento",
             "Mandar a vaga para o primeiro da lista",
@@ -141,12 +198,19 @@
             "Parar quando alguém aceitar"
           ],
           "human": "Vaga com menos de 1 hora de antecedência: só oferecer a quem mora perto.",
-          "example": { "from": "Bianca Lima", "in": "", "out": "Oi, Bianca. Vagou um horário hoje, às 10h. Quer?" }
+          "example": {
+            "from": "Bianca Lima",
+            "in": "",
+            "out": "Oi, Bianca. Vagou um horário hoje, às 10h. Quer?"
+          }
         },
         {
           "name": "Encaixe da vaga",
           "when": "Alguém da lista aceita a vaga.",
-          "uses": ["Agenda", "WhatsApp"],
+          "uses": [
+            "Agenda",
+            "WhatsApp"
+          ],
           "flow": [
             "Marcar o paciente no horário",
             "Tirar o paciente da lista de espera",
@@ -154,7 +218,11 @@
             "Avisar a recepção do encaixe"
           ],
           "human": "Dois aceitaram ao mesmo tempo: o primeiro fica, o segundo recebe outro horário.",
-          "example": { "from": "Bianca Lima", "in": "Quero!", "out": "Feito, Bianca. Hoje às 10h, te esperamos." }
+          "example": {
+            "from": "Bianca Lima",
+            "in": "Quero!",
+            "out": "Feito, Bianca. Hoje às 10h, te esperamos."
+          }
         }
       ]
     },
@@ -166,7 +234,10 @@
         {
           "name": "Montador do orçamento",
           "when": "O dentista fecha o plano de tratamento.",
-          "uses": ["Tabela de preços", "WhatsApp"],
+          "uses": [
+            "Tabela de preços",
+            "WhatsApp"
+          ],
           "flow": [
             "Pegar os procedimentos que o dentista anotou",
             "Aplicar a tabela da clínica e o desconto do convênio",
@@ -174,12 +245,18 @@
             "Mandar para o dentista aprovar antes de enviar"
           ],
           "human": "Orçamento acima de R$ 5 mil: a dona aprova antes.",
-          "example": { "from": "Rafael Duarte", "in": "", "out": "Canal, dente 36: R$ 980. Coroa, dente 36: R$ 1.540. Total R$ 2.520." }
+          "example": {
+            "from": "Rafael Duarte",
+            "in": "",
+            "out": "Canal, dente 36: R$ 980. Coroa, dente 36: R$ 1.540. Total R$ 2.520."
+          }
         },
         {
           "name": "Explicador em palavras simples",
           "when": "O orçamento é aprovado pelo dentista.",
-          "uses": ["WhatsApp"],
+          "uses": [
+            "WhatsApp"
+          ],
           "flow": [
             "Trocar os termos técnicos por palavras do dia a dia",
             "Explicar o que acontece se não tratar",
@@ -187,12 +264,19 @@
             "Mandar junto com o orçamento"
           ],
           "human": "Paciente pergunta sobre risco do procedimento: o dentista responde.",
-          "example": { "from": "Rafael Duarte", "in": "", "out": "O nervo do dente de trás está infeccionado. Vamos limpar, selar e cobrir com uma coroa para ele durar anos." }
+          "example": {
+            "from": "Rafael Duarte",
+            "in": "",
+            "out": "O nervo do dente de trás está infeccionado. Vamos limpar, selar e cobrir com uma coroa para ele durar anos."
+          }
         },
         {
           "name": "Retorno do terceiro dia",
           "when": "Três dias depois de mandar o orçamento, sem resposta.",
-          "uses": ["WhatsApp", "Agenda"],
+          "uses": [
+            "WhatsApp",
+            "Agenda"
+          ],
           "flow": [
             "Perguntar se ficou alguma dúvida",
             "Oferecer reservar a primeira sessão",
@@ -200,53 +284,11 @@
             "Se não responder, tentar de novo em 10 dias e parar"
           ],
           "human": "Paciente pede desconto maior: passa para a dona.",
-          "example": { "from": "Rafael Duarte", "in": "", "out": "Oi, Rafael. Ficou alguma dúvida sobre o plano? Posso reservar a primeira consulta." }
-        }
-      ]
-    },
-    {
-      "name": "Convênio",
-      "icon": "assignment",
-      "line": "Prepara a papelada antes de o paciente sair da cadeira.",
-      "agents": [
-        {
-          "name": "Montador da guia",
-          "when": "O dentista registra um procedimento de paciente com convênio.",
-          "uses": ["Sistema do convênio", "Ficha do paciente"],
-          "flow": [
-            "Preencher a guia com paciente, carteirinha e procedimento",
-            "Colocar o código certo do procedimento",
-            "Anexar a radiografia e as fotos",
-            "Deixar a guia pronta para o dentista assinar"
-          ],
-          "human": "Procedimento fora da cobertura: avisar a recepção para falar do particular.",
-          "example": { "from": "Marcos Vieira", "in": "", "out": "Guia nº 4417: coroa, dente 36, R$ 412. Falta assinar o termo." }
-        },
-        {
-          "name": "Conferidor de documentos",
-          "when": "A guia fica pronta.",
-          "uses": ["Sistema do convênio"],
-          "flow": [
-            "Conferir se a carteirinha está ativa",
-            "Conferir radiografia, código e termo assinado",
-            "Apontar o que falta antes de enviar",
-            "Mandar a guia quando estiver tudo certo"
-          ],
-          "human": "Guia negada: o responsável pelo faturamento recorre.",
-          "example": { "from": "Sistema", "in": "", "out": "Guia 4417: 2 de 4 itens ok. Falta termo assinado e elegibilidade." }
-        },
-        {
-          "name": "Prazo do convênio",
-          "when": "Todo dia às 17h.",
-          "uses": ["Sistema do convênio"],
-          "flow": [
-            "Listar guias esperando autorização",
-            "Avisar o paciente quando a guia for autorizada e marcar",
-            "Avisar o faturamento das guias perto de vencer",
-            "Montar o resumo do dia"
-          ],
-          "human": "Guia parada há mais de 10 dias: o faturamento liga para o convênio.",
-          "example": { "from": "Sistema", "in": "", "out": "3 guias autorizadas, 2 esperando, 1 vence amanhã." }
+          "example": {
+            "from": "Rafael Duarte",
+            "in": "",
+            "out": "Oi, Rafael. Ficou alguma dúvida sobre o plano? Posso reservar a primeira consulta."
+          }
         }
       ]
     },
@@ -258,7 +300,9 @@
         {
           "name": "Pedido de avaliação",
           "when": "No dia seguinte ao atendimento, às 10h.",
-          "uses": ["WhatsApp"],
+          "uses": [
+            "WhatsApp"
+          ],
           "flow": [
             "Agradecer pela visita pelo nome",
             "Perguntar como foi o atendimento, com nota de 1 a 5",
@@ -266,12 +310,19 @@
             "Passar a resposta para o Leitor da resposta"
           ],
           "human": "Paciente fez procedimento grande (cirurgia, canal): o dentista manda a mensagem.",
-          "example": { "from": "Camila Rocha", "in": "", "out": "Obrigada pela visita ontem, Camila. Como foi o atendimento?" }
+          "example": {
+            "from": "Camila Rocha",
+            "in": "",
+            "out": "Obrigada pela visita ontem, Camila. Como foi o atendimento?"
+          }
         },
         {
           "name": "Leitor da resposta",
           "when": "O paciente responde o pedido de avaliação.",
-          "uses": ["WhatsApp", "Google"],
+          "uses": [
+            "WhatsApp",
+            "Google"
+          ],
           "flow": [
             "Ler se a resposta é boa, neutra ou ruim",
             "Se for boa (4 ou 5), mandar o link de avaliação no Google",
@@ -279,12 +330,18 @@
             "Se for ruim, passar para o Alerta ao dono e não mandar link"
           ],
           "human": "Resposta com palavrão ou ameaça: alerta direto para a dona.",
-          "example": { "from": "Camila Rocha", "in": "Ótimo, adorei! ★★★★★", "out": "Que bom! Pode deixar uma avaliação no Google?" }
+          "example": {
+            "from": "Camila Rocha",
+            "in": "Ótimo, adorei! ★★★★★",
+            "out": "Que bom! Pode deixar uma avaliação no Google?"
+          }
         },
         {
           "name": "Alerta ao dono",
           "when": "Chega uma resposta ruim.",
-          "uses": ["WhatsApp"],
+          "uses": [
+            "WhatsApp"
+          ],
           "flow": [
             "Mandar para a dona o nome, a nota e o que o paciente escreveu",
             "Juntar o histórico do paciente e quem atendeu",
@@ -292,53 +349,11 @@
             "Cobrar a dona se ninguém respondeu em 2 horas"
           ],
           "human": "Sempre: quem resolve é a dona.",
-          "example": { "from": "Bruno Matos", "in": "Esperei 40 minutos para ser atendido.", "out": "Aviso enviado à Dra. Paula." }
-        }
-      ]
-    },
-    {
-      "name": "Operação",
-      "icon": "inventory_2",
-      "line": "Cuida do estoque, da esterilização e da escala.",
-      "agents": [
-        {
-          "name": "Controle de estoque",
-          "when": "Toda sexta às 16h e quando alguém dá baixa de material.",
-          "uses": ["Planilha de estoque", "WhatsApp"],
-          "flow": [
-            "Somar o que foi usado na semana pela agenda",
-            "Comparar com o estoque mínimo de cada item",
-            "Montar o pedido do que está abaixo do mínimo",
-            "Mandar o pedido para a dona aprovar"
-          ],
-          "human": "Item abaixo de 10%: avisar no mesmo dia.",
-          "example": { "from": "Sistema", "in": "", "out": "Resina em 18%. Luvas 82%, anestésico 41%, máscaras 64%." }
-        },
-        {
-          "name": "Registro de esterilização",
-          "when": "Cada ciclo da autoclave termina.",
-          "uses": ["Planilha de esterilização"],
-          "flow": [
-            "Registrar data, hora, ciclo e quem operou",
-            "Registrar o resultado do indicador",
-            "Avisar se o teste biológico da semana não foi feito",
-            "Guardar o registro para a vigilância sanitária"
-          ],
-          "human": "Indicador reprovado: parar o uso dos materiais do ciclo e avisar a dona.",
-          "example": { "from": "Sistema", "in": "", "out": "Autoclave: ciclo 2 aprovado, 7h40, operado por Ana." }
-        },
-        {
-          "name": "Escala da equipe",
-          "when": "Toda quinta, para a semana seguinte.",
-          "uses": ["Agenda", "WhatsApp"],
-          "flow": [
-            "Ver quantos pacientes estão marcados por dia",
-            "Montar quem fica em cada cadeira e na recepção",
-            "Cobrir férias e folgas",
-            "Mandar a escala para cada pessoa no WhatsApp"
-          ],
-          "human": "Dia sem dentista para cobrir: a dona decide.",
-          "example": { "from": "Sistema", "in": "", "out": "Semana: Dra. Paula 40h, Dr. Caio 36h, Ana (higienista) 24h." }
+          "example": {
+            "from": "Bruno Matos",
+            "in": "Esperei 40 minutos para ser atendido.",
+            "out": "Aviso enviado à Dra. Paula."
+          }
         }
       ]
     }
@@ -352,9 +367,21 @@
       "Mandar tudo numa página só"
     ],
     "stats": [
-      { "value": "31", "label": "Marcados hoje", "sub": "3 cadeiras, o primeiro às 8h" },
-      { "value": "6", "label": "Atrasados", "sub": "retorno vencido, 4 já avisados" },
-      { "value": "R$ 1.540", "label": "Perdido", "sub": "1 coroa que ninguém confirmou" }
+      {
+        "value": "31",
+        "label": "Marcados hoje",
+        "sub": "3 cadeiras, o primeiro às 8h"
+      },
+      {
+        "value": "6",
+        "label": "Atrasados",
+        "sub": "retorno vencido, 4 já avisados"
+      },
+      {
+        "value": "R$ 1.540",
+        "label": "Perdido",
+        "sub": "1 coroa que ninguém confirmou"
+      }
     ]
   }
 }
