@@ -178,7 +178,7 @@ async function reviews({ s, now, force }: Ctx) {
     const n2 = findNiche(s.niche);
     await send(
       a.client_phone,
-      `${hi(a.client_name)} Obrigado pela visita ${dayKey(a.starts_at, tz) === addDays(dayKey(now, tz), -1) ? "ontem" : ""}. Como foi o seu ${n2.visit === "atendimento" ? "atendimento" : n2.visit}? Me dá uma nota de 1 a 5.`.replace("  ", " "),
+      `${hi(a.client_name)} Obrigado pela visita ${dayKey(a.starts_at, tz) === addDays(dayKey(now, tz), -1) ? "ontem" : ""}. Como foi ${/(a|ão)$/.test(n2.visit) ? "a sua" : "o seu"} ${n2.visit}? Me dá uma nota de 1 a 5.`.replace("  ", " "),
       "avaliacoes",
       { simulated: a.client_simulated },
     );
