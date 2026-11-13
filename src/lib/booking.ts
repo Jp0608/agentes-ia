@@ -1,6 +1,7 @@
 import "server-only";
 import { q, tx, type Q } from "./db";
 import type { Service, Settings } from "./settings";
+import { tenantId } from "./tenant";
 import { addDays, dayKey, minutesOf, parts, weekdayOf, zoned } from "./time";
 
 export type Client = {
@@ -56,21 +57,21 @@ export function normalizePhone(raw: string) {
 }
 
 export async function findClientByPhone(phone: string, db: Q = q) {
-  const rows = await db<Client>("select * from clients where phone = $1", [phone]);
+  const rows = await db<Client>("select * from clients where tenant_id = $1 and phone = $2", [await tenantId(), phone]);
   return rows[0] ? { ...rows[0], id: Number(rows[0].id) } : null;
 }
 
 export async function getClient(id: number) {
-  const rows = await q<Client>("select * from clients where id = $1", [id]);
+  const rows = await q<Client>("select * from clients where tenant_id = $1 and id = $2", [await tenantId(), id]);
   return rows[0] ? { ...rows[0], id: Number(rows[0].id) } : null;
 }
 
 export async function upsertClient(phone: string, name?: string, simulated = false, db: Q = q): Promise<Client> {
   const rows = await db<Client>(
-    `insert into clients (phone, name, simulated) values ($1, $2, $3)
-     on conflict (phone) do update set name = case when coalesce($2, '') <> '' then $2 else clients.name end
+    `insert into clients (tenant_id, phone, name, simulated) values ($1, $2, $3, $4)
+     on conflict (tenant_id, phone) do update set name = case when coalesce($3, '') <> '' then $3 else clients.name end
      returning *`,
-    [phone, name?.trim() ?? "", simulated],
+    [await tenantId(), phone, name?.trim() ?? "", simulated],
   );
   return { ...rows[0], id: Number(rows[0].id) };
 }
@@ -81,9 +82,10 @@ export const findService = (s: Settings, name: string): Service | undefined => {
 };
 
 async function busyBetween(from: Date, to: Date, db: Q = q, exceptId?: number) {
+  const t = await tenantId();
   const rows = await db<Appointment>(
-    `select * from appointments where status = any($1) and starts_at < $3 and ends_at > $2 ${exceptId ? "and id <> $4" : ""}`,
-    exceptId ? [BUSY, from, to, exceptId] : [BUSY, from, to],
+    `select * from appointments where tenant_id = $1 and status = any($2) and starts_at < $4 and ends_at > $3 ${exceptId ? "and id <> $5" : ""}`,
+    exceptId ? [t, BUSY, from, to, exceptId] : [t, BUSY, from, to],
   );
   return rows.map(fixAppt);
 }
@@ -148,8 +150,10 @@ export async function book(
   if (!hours || startMin < minutesOf(hours.open) || startMin + service.minutes > minutesOf(hours.close)) {
     throw new BookingError("Esse horário está fora do expediente.");
   }
+  const tenant = await tenantId();
   return tx(async (t) => {
-    await t("select pg_advisory_xact_lock(4242)");
+    // Trava a agenda deste negócio (os outros seguem marcando ao mesmo tempo).
+    await t("select pg_advisory_xact_lock(4242, $1::int)", [tenant]);
     const busy = await busyBetween(start, end, t, input.exceptId);
     const resources = input.resource ? [input.resource] : s.resources;
     const free = resources.find((r) => !busy.some((b) => b.resource === r));
@@ -157,16 +161,20 @@ export async function book(
     if (input.exceptId) {
       const rows = await t<Appointment>(
         `update appointments set service = $2, price = $3, resource = $4, starts_at = $5, ends_at = $6, status = 'marcado',
-           reminder_sent_at = null, confirmed_at = null where id = $1 returning *`,
-        [input.exceptId, service.name, service.price, free, start, end],
+           reminder_sent_at = null, confirmed_at = null where id = $1 and tenant_id = $7 returning *`,
+        [input.exceptId, service.name, service.price, free, start, end, tenant],
       );
+      if (!rows[0]) throw new BookingError("Esse horário não existe mais.");
       return fixAppt(rows[0]);
     }
+    // O cliente tem que ser deste negócio (o select devolve nada e o insert não grava se não for).
     const rows = await t<Appointment>(
-      `insert into appointments (client_id, service, price, resource, starts_at, ends_at, source)
-       values ($1, $2, $3, $4, $5, $6, $7) returning *`,
-      [input.clientId, service.name, service.price, free, start, end, input.source],
+      `insert into appointments (tenant_id, client_id, service, price, resource, starts_at, ends_at, source)
+       select $8::bigint, c.id, $2::text, $3::numeric, $4::text, $5::timestamptz, $6::timestamptz, $7::text
+       from clients c where c.id = $1::bigint and c.tenant_id = $8::bigint returning *`,
+      [input.clientId, service.name, service.price, free, start, end, input.source, tenant],
     );
+    if (!rows[0]) throw new BookingError("Cliente não encontrado.");
     return fixAppt(rows[0]);
   });
 }
@@ -174,8 +182,8 @@ export async function book(
 export async function getAppointment(id: number) {
   const rows = await q<AppointmentWithClient>(
     `select a.*, c.name as client_name, c.phone as client_phone, c.simulated as client_simulated
-     from appointments a join clients c on c.id = a.client_id where a.id = $1`,
-    [id],
+     from appointments a join clients c on c.id = a.client_id where a.id = $1 and a.tenant_id = $2`,
+    [id, await tenantId()],
   );
   return rows[0] ? fixAppt(rows[0]) : null;
 }
@@ -183,8 +191,8 @@ export async function getAppointment(id: number) {
 export async function setStatus(id: number, status: Appointment["status"]) {
   const rows = await q<Appointment>(
     `update appointments set status = $2, confirmed_at = case when $2 = 'confirmado' then now() else confirmed_at end
-     where id = $1 returning *`,
-    [id, status],
+     where id = $1 and tenant_id = $3 returning *`,
+    [id, status, await tenantId()],
   );
   return rows[0] ? fixAppt(rows[0]) : null;
 }
@@ -193,8 +201,8 @@ export async function appointmentsBetween(from: Date, to: Date) {
   const rows = await q<AppointmentWithClient>(
     `select a.*, c.name as client_name, c.phone as client_phone, c.simulated as client_simulated
      from appointments a join clients c on c.id = a.client_id
-     where a.starts_at >= $1 and a.starts_at < $2 order by a.starts_at`,
-    [from, to],
+     where a.tenant_id = $3 and a.starts_at >= $1 and a.starts_at < $2 order by a.starts_at`,
+    [from, to, await tenantId()],
   );
   return rows.map(fixAppt);
 }
@@ -202,14 +210,18 @@ export async function appointmentsBetween(from: Date, to: Date) {
 /** Próximos horários do cliente (para remarcar e cancelar pelo WhatsApp). */
 export async function upcomingOf(clientId: number, now = new Date()) {
   const rows = await q<Appointment>(
-    "select * from appointments where client_id = $1 and starts_at > $2 and status in ('marcado','confirmado') order by starts_at",
-    [clientId, now],
+    "select * from appointments where tenant_id = $3 and client_id = $1 and starts_at > $2 and status in ('marcado','confirmado') order by starts_at",
+    [clientId, now, await tenantId()],
   );
   return rows.map(fixAppt);
 }
 
 export async function historyOf(clientId: number, limit = 5) {
-  const rows = await q<Appointment>("select * from appointments where client_id = $1 order by starts_at desc limit $2", [clientId, limit]);
+  const rows = await q<Appointment>("select * from appointments where tenant_id = $3 and client_id = $1 order by starts_at desc limit $2", [
+    clientId,
+    limit,
+    await tenantId(),
+  ]);
   return rows.map(fixAppt);
 }
 

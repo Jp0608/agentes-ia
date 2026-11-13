@@ -129,7 +129,7 @@ export const AGENTS: AgentDef[] = [
     name: "Página da manhã",
     sector: "Gestão",
     icon: "wb_sunny",
-    color: "#4ade80",
+    color: "#aee627",
     when: "Todo dia às 7h, no WhatsApp do dono.",
     flow: [
       "Contar quantos estão marcados hoje e o primeiro horário",
