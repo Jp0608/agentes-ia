@@ -27,10 +27,10 @@ export function RunAgents({ demo }: { demo?: boolean }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
       <button className="btn-soft" disabled={pending} onClick={() => run(false)} title="Roda só o que está na hora">
-        <Icon name="play_arrow" size={18} /> Rodar agentes
+        <Icon name="play_arrow" size={18} /> Rodar automações
       </button>
       <button className="btn-main" disabled={pending} onClick={() => run(true)} title="Ignora a janela de horário de cada agente">
-        <Icon name="bolt" size={18} /> {pending ? "Rodando…" : "Rodar tudo agora"}
+        <Icon name="bolt" size={18} /> {pending ? "Rodando…" : "Disparar lembretes e retornos agora"}
       </button>
       {demo && (
         <>
