@@ -1,4 +1,5 @@
 import { after } from "next/server";
+import { audioOf, voiceNoteText } from "@/lib/audio";
 import { handleInbound } from "@/lib/inbound";
 import { maybeRunAgents } from "@/lib/jobs";
 import { getSettings } from "@/lib/settings";
@@ -55,7 +56,9 @@ export async function POST(req: Request) {
         msg?.listResponseMessage?.title ??
         msg?.imageMessage?.caption ??
         "";
-      if (!text && msg?.audioMessage) text = "[a pessoa mandou um áudio; peça para escrever]";
+      // ---- Áudio: transcreve e segue como mensagem de texto (ver lib/audio.ts) ----
+      if (!text && audioOf(msg)) text = await voiceNoteText(m);
+      // ---- fim do áudio ----
       if (!text.trim()) continue;
       if (k.id) await markRead(k.remoteJid, k.id).catch(() => {});
       try {
