@@ -1,7 +1,7 @@
 import { after } from "next/server";
 import { Brand } from "@/components/Brand";
 import { Icon } from "@/components/Icon";
-import { Nav } from "@/components/Nav";
+import { Nav, TabBar } from "@/components/Nav";
 import { requireSession } from "@/lib/auth";
 import { aiReady } from "@/lib/brain";
 import { maybeRunAgents } from "@/lib/jobs";
@@ -21,25 +21,39 @@ export default async function PanelLayout({ children }: { children: React.ReactN
   const n = findNiche(s.niche);
   return (
     <div className="mx-auto flex min-h-dvh max-w-7xl flex-col lg:flex-row">
-      <aside className="sticky top-0 z-10 border-b border-line bg-bg/95 px-3 py-3 backdrop-blur lg:h-dvh lg:w-64 lg:shrink-0 lg:border-b-0 lg:border-r lg:px-4 lg:py-6">
-        <div className="mb-3 hidden px-1 lg:mb-5 lg:block"><Brand size={19} /></div>
-        <div className="mb-3 flex items-center justify-between gap-2 px-1 lg:mb-6 lg:block">
+      {/* Celular: barra de cima compacta com o nome do negócio. */}
+      <header className="safe-top sticky top-0 z-30 border-b border-line bg-bg/95 backdrop-blur lg:hidden">
+        <div className="flex items-center justify-between gap-3 px-4 py-2.5">
           <div className="flex min-w-0 items-center gap-2.5">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-signal/40 bg-panel text-signal"><Icon name={n.icon} size={20} /></span>
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-signal/40 bg-panel text-signal"><Icon name={n.icon} size={22} /></span>
             <span className="min-w-0">
-              <span className="block truncate text-[14.5px] font-semibold">{s.businessName || "Seu negócio"}</span>
-              <span className="block truncate text-[12px] text-faint">{n.label}</span>
+              <span className="block truncate text-[17px] font-semibold leading-tight">{s.businessName || "Seu negócio"}</span>
+              <span className="block truncate text-[13px] text-faint">{n.label}</span>
             </span>
           </div>
-          <form action={logout} className="lg:hidden"><button className="btn-quiet min-h-8 px-2 text-[13px]">Sair</button></form>
+          <Brand size={14} className="shrink-0 text-faint" />
+        </div>
+      </header>
+
+      {/* Computador: menu lateral. */}
+      <aside className="sticky top-0 z-10 hidden h-dvh w-64 shrink-0 border-r border-line bg-bg/95 px-4 py-6 backdrop-blur lg:block">
+        <div className="mb-5 px-1"><Brand size={19} /></div>
+        <div className="mb-6 flex min-w-0 items-center gap-2.5 px-1">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-signal/40 bg-panel text-signal"><Icon name={n.icon} size={20} /></span>
+          <span className="min-w-0">
+            <span className="block truncate text-[15px] font-semibold">{s.businessName || "Seu negócio"}</span>
+            <span className="block truncate text-[13px] text-faint">{n.label}</span>
+          </span>
         </div>
         <Nav />
-        <div className="mt-6 hidden space-y-2 px-1 text-[12px] lg:block">
+        <div className="mt-6 space-y-2 px-1 text-[13px]">
           <Status ok={aiReady() && Boolean(evoServer())} label="Atendimento" off="precisa de ajuste" />
-          <form action={logout}><button className="btn-quiet mt-2 -ml-3 min-h-8 text-[13px]"><Icon name="logout" size={17} /> Sair</button></form>
+          <form action={logout}><button className="btn-quiet mt-2 -ml-3 min-h-10 text-[15px]"><Icon name="logout" size={18} /> Sair</button></form>
         </div>
       </aside>
-      <main className="min-w-0 flex-1 px-4 py-6 lg:px-8 lg:py-8" style={{ zoom: 1.12 }}>{children}</main>
+
+      <main className="pb-tabbar min-w-0 flex-1 px-4 pt-5 text-[16px] sm:px-6 lg:px-8 lg:pb-10 lg:pt-8">{children}</main>
+      <TabBar />
     </div>
   );
 }
