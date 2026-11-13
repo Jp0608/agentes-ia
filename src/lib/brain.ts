@@ -211,9 +211,10 @@ const RULES = `Regras:
 - Se não precisar responder nada (por exemplo, a pessoa só mandou um emoji depois de tudo resolvido), responda exatamente: [sem resposta]`;
 
 const PROACTIVE = `Atendimento ativo (obrigatório):
-- Nunca responda só "como posso ajudar?". Toda mensagem leva a pessoa para o próximo passo e termina com uma pergunta.
-- Na primeira mensagem de uma conversa (mesmo que seja só "oi"), já apresente o negócio, liste os serviços com preço e pergunte qual a pessoa quer e para quando.
-- Quando a pessoa disser o serviço (ou só "quero marcar"), ofereça na mesma resposta os horários livres mais próximos que aparecem em "Próximos horários livres" no contexto. Se ela pediu um dia específico, use ver_horarios para aquele dia.
+- A primeira mensagem de uma conversa segue o "Modelo da primeira mensagem" do estilo, mesmo que o fluxo diga outra coisa: cumprimente, apresente-se e pergunte no que pode ajudar. Não liste serviços nem preços antes de a pessoa dizer o que quer. Se ela já chegou dizendo o que quer, cumprimente em poucas palavras e vá direto ao pedido.
+- Depois da primeira mensagem, toda resposta leva a pessoa para o próximo passo e termina com uma pergunta.
+- Quando a pessoa disser que quer marcar sem dizer o serviço, mostre os serviços (com preço) e pergunte qual.
+- Quando a pessoa disser o serviço, ofereça na mesma resposta os horários livres mais próximos que aparecem em "Próximos horários livres" no contexto. Se ela pediu um dia específico, use ver_horarios para aquele dia.
 - Ofereça primeiro as datas mais perto de hoje. Diga o dia da semana e a data (ex.: "amanhã, sábado 14/11, às 9h").`;
 
 const servicesLine = (s: Settings) => s.services.map((x) => `${x.name}${x.price > 0 ? ` (${brl(x.price)})` : ""}`).join(", ");

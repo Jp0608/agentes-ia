@@ -25,7 +25,7 @@ export const AGENTS: AgentDef[] = [
     color: "#fb923c",
     when: "Chega mensagem no WhatsApp, a qualquer hora.",
     flow: [
-      "Na primeira mensagem, mesmo que seja só um oi: cumprimentar, apresentar o negócio, mostrar os serviços e perguntar qual a pessoa quer e para quando",
+      "Na primeira mensagem: cumprimentar de um jeito casual, dizer quem é e perguntar no que pode ajudar",
       "Se for a primeira vez, perguntar o nome junto; se já conhece, cumprimentar pelo nome",
       "Entender o que a pessoa quer: marcar, remarcar, cancelar, saber preço ou tirar dúvida",
       "Assim que souber o serviço, já oferecer os horários livres mais próximos (no máximo três), começando pelas datas mais perto",

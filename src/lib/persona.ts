@@ -63,20 +63,21 @@ const fill = (text: string, v: Vars) =>
 
 /** Primeira mensagem sugerida para o tom escolhido (usada quando o dono não escreve uma). */
 export function defaultGreeting(p: Persona): string {
-  const quem = p.assistantName ? "aqui é {assistente}, da {negocio}" : "aqui é da {negocio}";
   const vc = p.treatment === "senhor";
   const e = p.emojis === "nenhum" ? "" : p.tone === "descontraido" ? " 😄" : " 😊";
+  const quem = p.assistantName ? "aqui é a {assistente}, assistente da {negocio}" : "aqui é da {negocio}";
+  const Quem = quem[0].toUpperCase() + quem.slice(1);
   switch (p.tone) {
     case "profissional":
-      return `Olá {nome}, ${quem}. ${vc ? "Em que posso ajudar o(a) senhor(a)" : "Posso ajudar você a agendar"}? Atendemos: {servicos}. Qual serviço ${vc ? "deseja" : "você quer"} e para qual dia?`;
+      return `Olá {nome}, ${quem}. Em que posso ajudar${vc ? " o(a) senhor(a)" : ""}?`;
     case "formal":
-      return `Olá, {nome}. ${quem[0].toUpperCase()}${quem.slice(1)}. Será um prazer atendê-lo(a). Oferecemos: {servicos}. Qual serviço ${vc ? "o(a) senhor(a) deseja" : "deseja"} agendar e em qual data?`;
+      return `Olá, {nome}. ${Quem}. Em que posso ser útil${vc ? " ao(à) senhor(a)" : ""}?`;
     case "acolhedor":
-      return `Oi {nome}, tudo bem?${e} ${quem[0].toUpperCase()}${quem.slice(1)}, vou cuidar do seu atendimento. Temos: {servicos}. Me conta o que ${vc ? "o(a) senhor(a) precisa" : "você precisa"} e qual dia fica melhor?`;
+      return `Oi {nome}, tudo bem?${e} ${Quem}. Me conta, no que posso te ajudar?`;
     case "descontraido":
-      return `E aí {nome}!${e} ${quem[0].toUpperCase()}${quem.slice(1)}. Bora marcar? Tem: {servicos}. Qual vai ser e pra quando?`;
+      return `E aí {nome}!${e} ${Quem}. No que posso te ajudar?`;
     default:
-      return `Oi {nome}!${e} ${quem[0].toUpperCase()}${quem.slice(1)}. Quer marcar um horário? Temos: {servicos}. Qual ${vc ? "o(a) senhor(a) prefere" : "você quer"} e pra qual dia?`;
+      return `Oi {nome}!${e} ${Quem}. No que posso te ajudar hoje?`;
   }
 }
 
