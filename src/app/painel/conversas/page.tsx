@@ -3,6 +3,7 @@ import { PageHead } from "@/components/ui";
 import { AGENTS } from "@/lib/agents";
 import { q } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
+import { tenantId } from "@/lib/tenant";
 import { dayKey, hourLabel } from "@/lib/time";
 
 export const metadata = { title: "Conversas" };
@@ -14,13 +15,19 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ t
   const { tel } = await searchParams;
   const s = await getSettings();
   const tz = s.timezone;
+  const t = await tenantId();
   const threads = await q<Thread>(
     `select m.phone, c.name, c.simulated, max(m.created_at) as last, count(*) as n,
-       (select body from messages x where x.phone = m.phone order by created_at desc, id desc limit 1) as body
-     from messages m left join clients c on c.phone = m.phone group by m.phone, c.name, c.simulated order by last desc limit 80`,
+       (select body from messages x where x.tenant_id = m.tenant_id and x.phone = m.phone order by created_at desc, id desc limit 1) as body
+     from messages m left join clients c on c.tenant_id = m.tenant_id and c.phone = m.phone
+     where m.tenant_id = $1
+     group by m.tenant_id, m.phone, c.name, c.simulated order by last desc limit 80`,
+    [t],
   );
   const open = tel ?? threads[0]?.phone;
-  const msgs = open ? await q<Msg>("select id, direction, body, agent, created_at from messages where phone = $1 order by created_at, id limit 400", [open]) : [];
+  const msgs = open
+    ? await q<Msg>("select id, direction, body, agent, created_at from messages where tenant_id = $2 and phone = $1 order by created_at, id limit 400", [open, t])
+    : [];
   const cur = threads.find((t) => t.phone === open);
   return (
     <>
