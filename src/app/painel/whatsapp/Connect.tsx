@@ -28,7 +28,7 @@ export function Connect({ connected, phone, profile }: { connected: boolean; pho
       <div className="space-y-4">
         <p className="flex items-center gap-2 text-[15px] font-semibold text-signal"><Icon name="check_circle" size={20} fill /> WhatsApp conectado</p>
         <p className="text-[14px] text-soft">{profile && <b className="text-ink">{profile} </b>}{phone && <span className="font-mono">+{phone}</span>}</p>
-        <p className="text-[13px] text-faint">Os agentes já respondem e mandam mensagens por esse número.</p>
+        <p className="text-[13px] text-faint">A assistente já responde e manda mensagens por esse número.</p>
         <ActButton onRun={whatsappDisconnect} className="btn-danger" confirmText="Desconectar o WhatsApp?">Desconectar</ActButton>
       </div>
     );
