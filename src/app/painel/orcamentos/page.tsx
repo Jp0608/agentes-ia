@@ -47,7 +47,7 @@ export default async function Page() {
               <label className="label" htmlFor="q-items">Itens (um por linha: nome | valor)</label>
               <textarea id="q-items" name="items" className="field min-h-28 font-mono text-[13px]" required placeholder={`${s.services[0]?.name ?? "Serviço"} | ${s.services[0]?.price ?? 100}\nOutro item | 250`} />
             </div>
-            <label className="flex items-center gap-2 text-[13.5px]"><input type="checkbox" name="sendNow" defaultChecked className="h-4 w-4 accent-[#4ade80]" /> Mandar agora pelo WhatsApp, com a explicação em palavras simples</label>
+            <label className="flex items-center gap-2 text-[13.5px]"><input type="checkbox" name="sendNow" defaultChecked className="h-4 w-4 accent-[#aee627]" /> Mandar agora pelo WhatsApp, com a explicação em palavras simples</label>
           </ActionForm>
         </aside>
       </div>
