@@ -11,7 +11,7 @@ import { clearDemo, seedDemo } from "@/lib/demo";
 import { markNoShow, offerFreedSlot, runAgents } from "@/lib/jobs";
 import { findNiche } from "@/lib/niches";
 import { createQuote, sendQuote } from "@/lib/quotes";
-import { defaultSettings, getSettings, saveSettings, type DayHours, type Service } from "@/lib/settings";
+import { defaultSettings, getSettings, saveSettings, TONES, type DayHours, type Persona, type Service, type Tone } from "@/lib/settings";
 import { zoned } from "@/lib/time";
 import { connectWhatsApp, disconnectWhatsApp, logActivity, webhookKey } from "@/lib/whatsapp";
 
@@ -46,6 +46,24 @@ function parseServices(text: string): Service[] {
     }));
 }
 
+function readPersona(f: FormData, cur: Persona): Persona {
+  if (!f.has("p_tone")) return cur;
+  const pick = <T extends string>(v: string, allowed: readonly T[], fallback: T): T => ((allowed as readonly string[]).includes(v) ? (v as T) : fallback);
+  return {
+    assistantName: str(f, "p_assistantName").slice(0, 40),
+    tone: pick(str(f, "p_tone"), Object.keys(TONES) as Tone[], cur.tone),
+    treatment: pick(str(f, "p_treatment"), ["voce", "senhor"] as const, cur.treatment),
+    emojis: pick(str(f, "p_emojis"), ["nenhum", "poucos", "varios"] as const, cur.emojis),
+    length: pick(str(f, "p_length"), ["curta", "media"] as const, cur.length),
+    proactive: f.get("p_proactive") === "on",
+    greeting: str(f, "p_greeting").slice(0, 800),
+    closing: str(f, "p_closing").slice(0, 400),
+    afterHours: str(f, "p_afterHours").slice(0, 400),
+    avoid: str(f, "p_avoid").slice(0, 400),
+    extra: str(f, "p_extra").slice(0, 2000),
+  };
+}
+
 export async function saveConfig(_: ActionState, f: FormData): Promise<ActionState> {
   await requireLogin();
   const cur = await getSettings();
@@ -77,6 +95,7 @@ export async function saveConfig(_: ActionState, f: FormData): Promise<ActionSta
     returnDays: base ? base.returnDays : Math.max(1, Number(str(f, "returnDays")) || cur.returnDays),
     slotMinutes: [15, 20, 30, 60].includes(Number(str(f, "slotMinutes"))) ? Number(str(f, "slotMinutes")) : cur.slotMinutes,
     cancelHours: Math.max(0, Number(str(f, "cancelHours")) || 0),
+    persona: readPersona(f, cur.persona),
   });
   revalidatePath("/painel", "layout");
   if (!cur.configured) redirect("/painel");
