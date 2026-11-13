@@ -9,9 +9,10 @@ import { appointmentsBetween } from "@/lib/booking";
 import { q } from "@/lib/db";
 import { morningStats } from "@/lib/jobs";
 import { getSettings } from "@/lib/settings";
-import { addDays, brl, dayKey, hourLabel, parts, shortName, WEEKDAYS, zoned } from "@/lib/time";
+import { tenantId } from "@/lib/tenant";
+import { addDays, brl, dayKey, dayLabel, hourLabel, parts, shortName, WEEKDAYS, whenLabel, zoned } from "@/lib/time";
 
-export const metadata = { title: "Hoje" };
+export const metadata = { title: "Painel" };
 
 type Act = { id: number; agent: string; summary: string; phone: string | null; created_at: Date };
 
@@ -21,22 +22,35 @@ export default async function Page() {
   const now = new Date();
   const tz = s.timezone;
   const today = dayKey(now, tz);
-  const [m, appts, acts] = await Promise.all([
+  const [m, appts, week, acts] = await Promise.all([
     morningStats(s, now),
     appointmentsBetween(zoned(today, "00:00", tz), zoned(addDays(today, 1), "00:00", tz)),
-    q<Act>("select * from activity order by created_at desc limit 25"),
+    appointmentsBetween(zoned(addDays(today, 1), "00:00", tz), zoned(addDays(today, 8), "00:00", tz)),
+    q<Act>("select * from activity where tenant_id = $1 order by created_at desc limit 25", [await tenantId()]),
   ]);
   const p = parts(now, tz);
+  const greeting = p.h < 12 ? "Bom dia" : p.h < 18 ? "Boa tarde" : "Boa noite";
+  const live = (a: { status: string }) => a.status !== "cancelado" && a.status !== "faltou";
+  const todayLive = appts.filter(live);
+  const upcoming = week.filter(live);
+  const expected = todayLive.reduce((sum, a) => sum + (Number(a.price) || 0), 0);
+  const weekValue = upcoming.reduce((sum, a) => sum + (Number(a.price) || 0), 0);
+  const next = todayLive.find((a) => a.starts_at >= now) ?? upcoming[0];
+  const byDay = new Map<string, typeof upcoming>();
+  for (const a of upcoming) {
+    const k = dayKey(a.starts_at, tz);
+    byDay.set(k, [...(byDay.get(k) ?? []), a]);
+  }
   const stats = [
-    { value: String(m.booked), label: "Marcados hoje", sub: m.firstAt ? `o primeiro às ${hourLabel(m.firstAt, tz)}` : "agenda livre", color: "var(--color-signal)" },
+    { value: String(todayLive.length), label: "Agendamentos hoje", sub: todayLive.length ? `${brl(expected)} previsto` : "agenda livre", color: "var(--color-signal)" },
+    { value: String(upcoming.length), label: "Próximos 7 dias", sub: upcoming.length ? `${brl(weekValue)} previsto` : "nada marcado ainda", color: "var(--color-info)" },
     { value: String(m.overdue), label: "Atrasados", sub: m.overdue ? `passaram da hora de voltar, ${m.called} já chamados` : "ninguém atrasado", color: "var(--color-warn)" },
     { value: brl(m.lostValue), label: "Perdido ontem", sub: `${m.noShows} falta${m.noShows === 1 ? "" : "s"}, ${m.cancels} cancelamento${m.cancels === 1 ? "" : "s"} sem reposição`, color: "var(--color-alert)" },
-    { value: String(m.openQuotes), label: "Orçamentos esperando", sub: m.openQuotes ? brl(m.openQuotesValue) : "nenhum", color: "var(--color-info)" },
   ];
   const agentOf = (k: string) => AGENTS.find((a) => a.key === k);
   return (
     <>
-      <PageHead eyebrow="Página da manhã" title={`Bom dia${s.ownerName ? `, ${shortName(s.ownerName)}` : ""}`}>
+      <PageHead eyebrow="Painel" title={`${greeting}${s.ownerName ? `, ${shortName(s.ownerName)}` : ""}`}>
         <span className="self-center text-[13px] text-faint">{WEEKDAYS[p.wd]}, {today.split("-").reverse().join("/")}</span>
       </PageHead>
 
@@ -48,6 +62,47 @@ export default async function Page() {
             <p className="text-[12.5px] text-faint">{st.sub}</p>
           </div>
         ))}
+      </section>
+
+      {next && (
+        <section className="mt-3 card flex flex-wrap items-center gap-3 p-4">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-signal/15 text-signal"><Icon name="schedule" size={22} /></span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[12px] font-semibold uppercase tracking-wider text-faint">Próximo atendimento</span>
+            <span className="block truncate text-[15px] font-semibold">{next.client_name || next.client_phone} · {next.service}</span>
+          </span>
+          <span className="num text-[15px] font-semibold text-signal">{whenLabel(next.starts_at, tz, now)}</span>
+        </section>
+      )}
+
+      <section className="mt-6 card p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-[16px] font-semibold">Próximos agendamentos</h2>
+          <Link href="/painel/agenda" className="btn-quiet min-h-8 text-[13px]">Abrir agenda <Icon name="arrow_forward" size={16} /></Link>
+        </div>
+        {upcoming.length === 0 ? (
+          <p className="py-6 text-center text-[14px] text-faint">Nenhum agendamento nos próximos 7 dias. Quando um cliente marcar pelo WhatsApp, aparece aqui.</p>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {[...byDay.entries()].map(([k, list]) => (
+              <div key={k} className="box p-3">
+                <p className="mb-2 flex items-center justify-between text-[13px] font-semibold capitalize">
+                  {dayLabel(list[0].starts_at, tz, now)}
+                  <span className="tag border-line text-soft">{list.length}</span>
+                </p>
+                <ul className="space-y-1.5">
+                  {list.map((a) => (
+                    <li key={a.id} className="flex items-center gap-2.5 text-[13.5px]">
+                      <span className="num w-12 font-mono font-semibold text-signal">{hourLabel(a.starts_at, tz)}</span>
+                      <span className="min-w-0 flex-1 truncate">{a.client_name || a.client_phone} <span className="text-faint">· {a.service}</span></span>
+                      <StatusTag status={a.status} />
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="mt-6 card p-4">

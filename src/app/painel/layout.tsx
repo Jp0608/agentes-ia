@@ -1,24 +1,28 @@
 import { after } from "next/server";
+import { Brand } from "@/components/Brand";
 import { Icon } from "@/components/Icon";
 import { Nav } from "@/components/Nav";
-import { requireLogin } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
 import { aiReady } from "@/lib/brain";
 import { maybeRunAgents } from "@/lib/jobs";
 import { findNiche } from "@/lib/niches";
 import { getSettings } from "@/lib/settings";
+import { withTenant } from "@/lib/tenant";
 import { evoServer } from "@/lib/whatsapp";
 import { logout } from "./actions";
 
 export const dynamic = "force-dynamic";
 
 export default async function PanelLayout({ children }: { children: React.ReactNode }) {
-  await requireLogin();
+  const { tenantId } = await requireSession();
   const s = await getSettings();
-  after(() => maybeRunAgents(s).catch(() => null));
+  // Depois da resposta não há cookie para ler: o tenant vai junto.
+  after(() => withTenant(tenantId, () => maybeRunAgents(s)).catch(() => null));
   const n = findNiche(s.niche);
   return (
     <div className="mx-auto flex min-h-dvh max-w-7xl flex-col lg:flex-row">
       <aside className="sticky top-0 z-10 border-b border-line bg-bg/95 px-3 py-3 backdrop-blur lg:h-dvh lg:w-60 lg:shrink-0 lg:border-b-0 lg:border-r lg:px-4 lg:py-6">
+        <div className="mb-3 hidden px-1 lg:mb-5 lg:block"><Brand size={19} /></div>
         <div className="mb-3 flex items-center justify-between gap-2 px-1 lg:mb-6 lg:block">
           <div className="flex min-w-0 items-center gap-2.5">
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-signal/40 bg-panel text-signal"><Icon name={n.icon} size={20} /></span>
