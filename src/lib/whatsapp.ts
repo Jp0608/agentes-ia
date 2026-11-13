@@ -95,7 +95,11 @@ async function evo<T = Record<string, unknown>>(method: "GET" | "POST" | "DELETE
 
 const EVENTS = ["MESSAGES_UPSERT", "CONNECTION_UPDATE"];
 
-export async function connectWhatsApp(webhookUrl: string) {
+/**
+ * Conecta o WhatsApp. Sem `number`, devolve o QR code. Com `number` (só dígitos, com DDI 55), devolve
+ * também o código de 8 letras para digitar no celular (WhatsApp → Aparelhos conectados → Conectar com número).
+ */
+export async function connectWhatsApp(webhookUrl: string, number?: string) {
   const name = await instanceName();
   const state = await connectionState();
   if (state.ok && state.data === null) {
@@ -116,16 +120,18 @@ export async function connectWhatsApp(webhookUrl: string) {
       40_000,
     );
     if (!created.ok) return created;
-    if (created.data.qrcode?.base64) return { ok: true as const, data: { qr: created.data.qrcode.base64, state: "connecting" } };
+    if (!number && created.data.qrcode?.base64) return { ok: true as const, data: { qr: created.data.qrcode.base64, code: null, state: "connecting" } };
   } else if (!state.ok) {
     return state;
   } else {
     await evo("POST", `webhook/set/${encodeURIComponent(name)}`, { webhook: { enabled: true, url: webhookUrl, byEvents: false, base64: false, events: EVENTS } });
-    if (state.data === "open") return { ok: true as const, data: { qr: null, state: "open" } };
+    if (state.data === "open") return { ok: true as const, data: { qr: null, code: null, state: "open" } };
   }
-  const r = await evo<{ base64?: string }>("GET", `instance/connect/${encodeURIComponent(name)}`, undefined, 30_000);
+  const query = number ? `?number=${encodeURIComponent(number)}` : "";
+  const r = await evo<{ base64?: string; pairingCode?: string | null }>("GET", `instance/connect/${encodeURIComponent(name)}${query}`, undefined, 30_000);
   if (!r.ok) return r;
-  return { ok: true as const, data: { qr: r.data.base64 ?? null, state: "connecting" } };
+  const code = r.data.pairingCode ? String(r.data.pairingCode).replace(/[^A-Za-z0-9]/g, "").toUpperCase() : null;
+  return { ok: true as const, data: { qr: r.data.base64 ?? null, code, state: "connecting" } };
 }
 
 /** "open", "connecting", "close" ou null quando a instância ainda não existe. */
