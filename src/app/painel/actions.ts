@@ -282,12 +282,15 @@ async function origin() {
   return `${h.get("x-forwarded-proto") ?? "https"}://${host}`;
 }
 
-export async function whatsappConnect() {
+export async function whatsappConnect(phone?: string) {
   await requireLogin();
+  const number = phone ? normalizePhone(phone) : "";
+  if (phone && (number.length < 12 || number.length > 13)) return { error: "Confira o número: DDD + número, por exemplo (11) 99999-0000." };
   const url = `${await origin()}/api/whatsapp/webhook?${webhookQuery(await tenantId())}`;
-  const r = await connectWhatsApp(url);
+  const r = await connectWhatsApp(url, number || undefined);
   if (!r.ok) return { error: r.error };
-  return { qr: r.data.qr, state: r.data.state };
+  if (number && !r.data.code && r.data.state !== "open") return { error: "Não consegui gerar o código agora. Tente de novo em alguns segundos." };
+  return { qr: r.data.qr, code: r.data.code, state: r.data.state };
 }
 
 export async function whatsappDisconnect() {
