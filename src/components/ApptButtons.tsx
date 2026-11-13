@@ -6,11 +6,11 @@ import { ActButton } from "./ui";
 export function ApptButtons({ id, status, past }: { id: number; status: string; past: boolean }) {
   if (status === "cancelado" || status === "faltou" || status === "concluido") return null;
   return (
-    <span className="flex flex-wrap gap-1">
-      {!past && status === "marcado" && <ActButton onRun={() => setAppointment(id, "confirmado")} className="btn-quiet min-h-8 px-2 text-[12.5px]">Confirmar</ActButton>}
-      {past && <ActButton onRun={() => setAppointment(id, "concluido")} className="btn-quiet min-h-8 px-2 text-[12.5px]">Atendido</ActButton>}
-      <ActButton onRun={() => setAppointment(id, "faltou")} className="btn-quiet min-h-8 px-2 text-[12.5px] text-alert">Faltou</ActButton>
-      {!past && <ActButton onRun={() => setAppointment(id, "cancelado")} className="btn-quiet min-h-8 px-2 text-[12.5px]" confirmText="Cancelar?">Cancelar</ActButton>}
+    <span className="flex w-full flex-wrap gap-2 sm:w-auto">
+      {!past && status === "marcado" && <ActButton onRun={() => setAppointment(id, "confirmado")} className="btn-soft min-h-11 px-4 text-[15px]">Confirmar</ActButton>}
+      {past && <ActButton onRun={() => setAppointment(id, "concluido")} className="btn-soft min-h-11 px-4 text-[15px]">Atendido</ActButton>}
+      <ActButton onRun={() => setAppointment(id, "faltou")} className="btn-soft min-h-11 px-4 text-[15px] text-alert">Faltou</ActButton>
+      {!past && <ActButton onRun={() => setAppointment(id, "cancelado")} className="btn-soft min-h-11 px-4 text-[15px]" confirmText="Cancelar?">Cancelar</ActButton>}
     </span>
   );
 }

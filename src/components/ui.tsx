@@ -24,13 +24,13 @@ export function ActionForm({
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <Submit>{submit}</Submit>
         {state?.ok && (
-          <span className="flex items-center gap-1 text-[13px] text-signal">
-            <Icon name="check_circle" size={16} /> {state.ok}
+          <span className="flex items-center gap-1.5 text-[15px] font-medium text-signal">
+            <Icon name="check_circle" size={20} /> {state.ok}
           </span>
         )}
         {state?.error && (
-          <span role="alert" className="flex items-center gap-1 text-[13px] text-alert">
-            <Icon name="error" size={16} /> {state.error}
+          <span role="alert" className="flex items-center gap-1.5 text-[15px] font-medium text-alert">
+            <Icon name="error" size={20} /> {state.error}
           </span>
         )}
       </div>
@@ -41,7 +41,7 @@ export function ActionForm({
 function Submit({ children }: { children: ReactNode }) {
   const { pending } = useFormStatus();
   return (
-    <button type="submit" disabled={pending} className="btn-main">
+    <button type="submit" disabled={pending} className="btn-main w-full sm:w-auto sm:px-6">
       {pending ? "Salvando…" : children}
     </button>
   );
@@ -53,12 +53,12 @@ export function ActButton({ onRun, children, className = "btn-soft", confirmText
   const [ask, setAsk] = useState(false);
   if (confirmText && ask) {
     return (
-      <span className="inline-flex items-center gap-2 text-[13px]">
+      <span className="inline-flex flex-wrap items-center gap-2 text-[15px]">
         <span className="text-soft">{confirmText}</span>
-        <button type="button" className="btn-danger min-h-8 px-3" disabled={pending} onClick={() => start(async () => { await onRun(); setAsk(false); })}>
+        <button type="button" className="btn-danger min-h-11 px-4" disabled={pending} onClick={() => start(async () => { await onRun(); setAsk(false); })}>
           Sim
         </button>
-        <button type="button" className="btn-quiet min-h-8" onClick={() => setAsk(false)}>Não</button>
+        <button type="button" className="btn-soft min-h-11 px-4" onClick={() => setAsk(false)}>Não</button>
       </span>
     );
   }
@@ -71,10 +71,10 @@ export function ActButton({ onRun, children, className = "btn-soft", confirmText
 
 export function PageHead({ eyebrow, title, children }: { eyebrow?: string; title: string; children?: ReactNode }) {
   return (
-    <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
-      <div>
+    <header className="mb-5 flex flex-wrap items-end justify-between gap-3 sm:mb-6">
+      <div className="min-w-0">
         {eyebrow && <p className="eyebrow mb-1">{eyebrow}</p>}
-        <h1 className="text-[28px] font-bold leading-tight tracking-tight">{title}</h1>
+        <h1 className="text-[28px] font-bold leading-tight tracking-tight sm:text-[32px]">{title}</h1>
       </div>
       {children && <div className="flex flex-wrap gap-2">{children}</div>}
     </header>
