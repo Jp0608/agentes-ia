@@ -12,9 +12,9 @@ export default async function Page() {
   return (
     <>
       <PageHead eyebrow="Demonstração" title="Simulador de WhatsApp" />
-      <p className="-mt-3 mb-5 max-w-2xl text-[14px] text-soft">
-        Converse como se fosse um cliente. As respostas vêm dos agentes de verdade, com a agenda de verdade, mas nada é enviado para nenhum
-        WhatsApp. Do lado direito aparece o que o dono recebe.
+      <p className="-mt-3 mb-5 max-w-2xl text-[15px] text-soft">
+        Converse como se fosse um cliente. A assistente responde de verdade e marca na agenda de verdade, mas nada é enviado para nenhum
+        WhatsApp. Ao lado aparece o que o dono recebe.
       </p>
       {!aiReady() && (
         <p className="mb-5 rounded-xl border border-warn/40 bg-warn/10 px-4 py-3 text-[13.5px] text-warn">

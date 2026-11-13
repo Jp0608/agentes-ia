@@ -51,7 +51,7 @@ export function Simulator({ me, business, owner }: { me: string; business: strin
 
   return (
     <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)]">
-      <section className="card flex h-[640px] min-w-0 flex-col overflow-hidden">
+      <section className="card flex h-[72dvh] min-h-[420px] min-w-0 flex-col overflow-hidden lg:h-[640px]">
         <header className="flex flex-wrap items-center gap-3 border-b border-line px-4 py-3">
           <span className="grid h-9 w-9 place-items-center rounded-full bg-signal/15 text-signal"><Icon name="storefront" size={19} /></span>
           <span className="min-w-0 flex-1">
@@ -77,7 +77,7 @@ export function Simulator({ me, business, owner }: { me: string; business: strin
             const ag = agentName(m.agent);
             return (
               <div key={m.id} className={`flex ${out ? "justify-start" : "justify-end"}`}>
-                <div className={`max-w-[82%] rounded-2xl px-3 py-2 text-[14px] leading-snug ${out ? "rounded-tl-sm bg-raise-2" : "rounded-tr-sm bg-signal/20"}`}>
+                <div className={`max-w-[82%] rounded-2xl px-3 py-2 text-[15px] leading-snug ${out ? "rounded-tl-sm bg-raise-2" : "rounded-tr-sm bg-signal/20"}`}>
                   {out && ag && <span className="mb-0.5 block text-[11px] font-semibold" style={{ color: ag.color }}>{ag.name}</span>}
                   <span className="whitespace-pre-wrap break-words">{m.body}</span>
                   <span className="mt-0.5 block text-right text-[10.5px] text-faint">{time(m.created_at)}</span>
@@ -96,7 +96,7 @@ export function Simulator({ me, business, owner }: { me: string; business: strin
         {error && <p role="alert" className="px-4 pb-3 text-[13px] text-alert">{error}</p>}
       </section>
 
-      <section className="card flex h-[640px] min-w-0 flex-col overflow-hidden">
+      <section className="card flex h-[72dvh] min-h-[420px] min-w-0 flex-col overflow-hidden lg:h-[640px]">
         <header className="flex items-center gap-3 border-b border-line px-4 py-3">
           <span className="grid h-9 w-9 place-items-center rounded-full bg-warn/15 text-warn"><Icon name="person" size={19} /></span>
           <span>
@@ -105,7 +105,7 @@ export function Simulator({ me, business, owner }: { me: string; business: strin
           </span>
         </header>
         <div className="flex-1 space-y-2 overflow-y-auto bg-[#0b100e] px-4 py-4">
-          {data.owner.length === 0 && <p className="mx-auto mt-10 max-w-xs text-center text-[13.5px] text-faint">Nada ainda. Rode os agentes ou peça para falar com o dono no chat.</p>}
+          {data.owner.length === 0 && <p className="mx-auto mt-10 max-w-xs text-center text-[13.5px] text-faint">Nada ainda. Toque em "Disparar lembretes e retornos agora" ou peça no chat para falar com o dono.</p>}
           {data.owner.map((m) => {
             const ag = agentName(m.agent);
             return (
