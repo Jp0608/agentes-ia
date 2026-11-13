@@ -21,11 +21,68 @@ import { logActivity, send, sendOwner } from "./whatsapp";
 /**
  * Recepção: o Claude conversa com o cliente e usa a agenda por ferramentas. O fluxo escrito da
  * recepção (editável no painel) entra como instrução; as regras de segurança ficam fixas aqui.
+ *
+ * Dois caminhos para o Claude:
+ * - Vercel AI Gateway (padrão quando roda na Vercel): usa os créditos grátis mensais do gateway,
+ *   autenticado pelo token OIDC do próprio projeto, sem chave para cadastrar.
+ * - API direta da Anthropic: quando AI_PROVIDER=anthropic (ou fora da Vercel) com ANTHROPIC_API_KEY.
  */
-const MODEL = () => process.env.ANTHROPIC_MODEL?.trim() || "claude-opus-5-5";
+const GATEWAY_URL = "https://ai-gateway.vercel.sh";
+const useGateway = () => {
+  const p = process.env.AI_PROVIDER?.trim().toLowerCase();
+  if (p === "anthropic") return false;
+  if (p === "gateway") return true;
+  return Boolean(process.env.VERCEL || process.env.AI_GATEWAY_API_KEY?.trim());
+};
+const MODEL = () =>
+  process.env.ANTHROPIC_MODEL?.trim() || (useGateway() ? "anthropic/claude-haiku-4.5" : "claude-opus-5-5");
+
+/** Token do gateway: chave própria, ou o OIDC que a Vercel manda em cada requisição (renova sozinho). */
+function gatewayToken(): string | undefined {
+  const key = process.env.AI_GATEWAY_API_KEY?.trim();
+  if (key) return key;
+  try {
+    const ctx = (globalThis as Record<symbol, { get?: () => { headers?: Record<string, string> } } | undefined>)[
+      Symbol.for("@vercel/request-context")
+    ]?.get?.();
+    const fromHeader = ctx?.headers?.["x-vercel-oidc-token"];
+    if (fromHeader) return fromHeader;
+  } catch {
+    // sem contexto de requisição
+  }
+  return process.env.VERCEL_OIDC_TOKEN?.trim() || undefined;
+}
 
 let client: Anthropic | null = null;
-const anthropic = () => (client ??= new Anthropic());
+const anthropic = () => {
+  if (useGateway()) return new Anthropic({ apiKey: gatewayToken() ?? "sem-token", baseURL: GATEWAY_URL });
+  return (client ??= new Anthropic());
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyParams = Record<string, any>;
+
+/** Chama o modelo. No gateway vão só os campos padrão da API (sem betas da Anthropic). */
+async function createMessage(params: AnyParams): Promise<Anthropic.Beta.BetaMessage> {
+  if (useGateway()) {
+    const { fallbacks: _f, output_config: _o, tools, ...rest } = params;
+    void _f;
+    void _o;
+    const body: AnyParams = { ...rest, model: MODEL() };
+    if (Array.isArray(tools)) {
+      body.tools = tools.map((t: AnyParams) => {
+        const { strict: _s, ...tool } = t;
+        void _s;
+        return tool;
+      });
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (await anthropic().messages.create(body as any)) as unknown as Anthropic.Beta.BetaMessage;
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const body: any = { ...params, model: MODEL(), betas: ["server-side-fallback-2026-07-01"] };
+  return (await anthropic().beta.messages.create(body)) as unknown as Anthropic.Beta.BetaMessage;
+}
 
 const obj = (properties: Record<string, unknown>, required: string[]) => ({
   type: "object" as const,
@@ -314,7 +371,7 @@ function toMessages(history: Msg[]): Anthropic.Beta.BetaMessageParam[] {
   return out;
 }
 
-export const aiReady = () => Boolean(process.env.ANTHROPIC_API_KEY?.trim());
+export const aiReady = () => (useGateway() ? true : Boolean(process.env.ANTHROPIC_API_KEY?.trim()));
 
 /** Responde a conversa do cliente. Devolve o texto enviado (ou null quando não precisa responder). */
 export async function reply(s: Settings, c: Client, opts: { now?: Date } = {}): Promise<string | null> {
@@ -342,10 +399,8 @@ export async function reply(s: Settings, c: Client, opts: { now?: Date } = {}): 
   ];
 
   for (let i = 0; i < 8; i++) {
-    const res = await anthropic().beta.messages.create({
-      model: MODEL(),
+    const res = await createMessage({
       max_tokens: 4000,
-      betas: ["server-side-fallback-2026-07-01"],
       fallbacks: "default",
       output_config: { effort: "low" },
       system,
@@ -387,10 +442,8 @@ export async function reply(s: Settings, c: Client, opts: { now?: Date } = {}): 
 export async function explainQuote(s: Settings, title: string, items: { name: string; price: number }[]) {
   if (!aiReady()) return "";
   const n = findNiche(s.niche);
-  const res = await anthropic().beta.messages.create({
-    model: MODEL(),
+  const res = await createMessage({
     max_tokens: 2000,
-    betas: ["server-side-fallback-2026-07-01"],
     fallbacks: "default",
     output_config: { effort: "low" },
     system: `Você escreve para ${s.businessName || n.label} (${n.label.toLowerCase()}). Explique um orçamento em palavras simples para o ${n.client}, em 2 ou 3 frases curtas, em português do Brasil, sem termos técnicos, sem repetir os valores e sem prometer resultado. Responda só com o texto.`,
