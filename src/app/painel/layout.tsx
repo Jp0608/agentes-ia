@@ -21,7 +21,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
   const n = findNiche(s.niche);
   return (
     <div className="mx-auto flex min-h-dvh max-w-7xl flex-col lg:flex-row">
-      <aside className="sticky top-0 z-10 border-b border-line bg-bg/95 px-3 py-3 backdrop-blur lg:h-dvh lg:w-60 lg:shrink-0 lg:border-b-0 lg:border-r lg:px-4 lg:py-6">
+      <aside className="sticky top-0 z-10 border-b border-line bg-bg/95 px-3 py-3 backdrop-blur lg:h-dvh lg:w-64 lg:shrink-0 lg:border-b-0 lg:border-r lg:px-4 lg:py-6">
         <div className="mb-3 hidden px-1 lg:mb-5 lg:block"><Brand size={19} /></div>
         <div className="mb-3 flex items-center justify-between gap-2 px-1 lg:mb-6 lg:block">
           <div className="flex min-w-0 items-center gap-2.5">
@@ -35,12 +35,11 @@ export default async function PanelLayout({ children }: { children: React.ReactN
         </div>
         <Nav />
         <div className="mt-6 hidden space-y-2 px-1 text-[12px] lg:block">
-          <Status ok={aiReady()} label="IA" off="sem chave" />
-          <Status ok={Boolean(evoServer())} label="WhatsApp" off="não configurado" />
+          <Status ok={aiReady() && Boolean(evoServer())} label="Atendimento" off="precisa de ajuste" />
           <form action={logout}><button className="btn-quiet mt-2 -ml-3 min-h-8 text-[13px]"><Icon name="logout" size={17} /> Sair</button></form>
         </div>
       </aside>
-      <main className="min-w-0 flex-1 px-4 py-6 lg:px-8 lg:py-8">{children}</main>
+      <main className="min-w-0 flex-1 px-4 py-6 lg:px-8 lg:py-8" style={{ zoom: 1.12 }}>{children}</main>
     </div>
   );
 }

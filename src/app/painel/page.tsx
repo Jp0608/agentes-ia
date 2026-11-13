@@ -43,22 +43,20 @@ export default async function Page() {
   const stats = [
     { value: String(todayLive.length), label: "Agendamentos hoje", sub: todayLive.length ? `${brl(expected)} previsto` : "agenda livre", color: "var(--color-signal)" },
     { value: String(upcoming.length), label: "Próximos 7 dias", sub: upcoming.length ? `${brl(weekValue)} previsto` : "nada marcado ainda", color: "var(--color-info)" },
-    { value: String(m.overdue), label: "Atrasados", sub: m.overdue ? `passaram da hora de voltar, ${m.called} já chamados` : "ninguém atrasado", color: "var(--color-warn)" },
-    { value: brl(m.lostValue), label: "Perdido ontem", sub: `${m.noShows} falta${m.noShows === 1 ? "" : "s"}, ${m.cancels} cancelamento${m.cancels === 1 ? "" : "s"} sem reposição`, color: "var(--color-alert)" },
   ];
   const agentOf = (k: string) => AGENTS.find((a) => a.key === k);
   return (
     <>
-      <PageHead eyebrow="Painel" title={`${greeting}${s.ownerName ? `, ${shortName(s.ownerName)}` : ""}`}>
+      <PageHead title={`${greeting}${s.ownerName ? `, ${shortName(s.ownerName)}` : ""}`}>
         <span className="self-center text-[13px] text-faint">{WEEKDAYS[p.wd]}, {today.split("-").reverse().join("/")}</span>
       </PageHead>
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-3 sm:grid-cols-2">
         {stats.map((st) => (
           <div key={st.label} className="card p-4" style={{ borderColor: `color-mix(in oklab, ${st.color} 35%, transparent)` }}>
-            <p className="num text-[30px] font-bold leading-none" style={{ color: st.color }}>{st.value}</p>
-            <p className="mt-2 text-[14px] font-semibold">{st.label}</p>
-            <p className="text-[12.5px] text-faint">{st.sub}</p>
+            <p className="num text-[40px] font-bold leading-none" style={{ color: st.color }}>{st.value}</p>
+            <p className="mt-2 text-[16px] font-semibold">{st.label}</p>
+            <p className="text-[14px] text-soft">{st.sub}</p>
           </div>
         ))}
       </section>
@@ -107,8 +105,8 @@ export default async function Page() {
       <section className="mt-6 card flex flex-wrap items-center gap-3 p-4">
         <span className="relative grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-signal/15 text-signal"><Icon name="smart_toy" size={22} /></span>
         <span className="min-w-0 flex-1">
-          <span className="block text-[15px] font-semibold">Agentes ativos 24 horas</span>
-          <span className="block text-[12.5px] text-faint">Respondem o WhatsApp na hora e rodam sozinhos a cada 10 minutos. Não precisa ligar nem reativar nada.</span>
+          <span className="block text-[15px] font-semibold">Atendimento ligado 24 horas</span>
+          <span className="block text-[12.5px] text-faint">A assistente responde o WhatsApp, marca os horários e manda os lembretes sozinha. Você não precisa fazer nada.</span>
         </span>
         <span className="tag border-signal/40 text-signal"><span className="h-1.5 w-1.5 rounded-full bg-signal" /> Ligado</span>
       </section>
@@ -139,9 +137,9 @@ export default async function Page() {
         </section>
 
         <section className="card p-4">
-          <h2 className="mb-3 text-[16px] font-semibold">O que os agentes fizeram</h2>
+          <h2 className="mb-3 text-[16px] font-semibold">Últimas atividades</h2>
           {acts.length === 0 ? (
-            <p className="py-6 text-center text-[14px] text-faint">Ainda nada. Abra o simulador ou rode os agentes.</p>
+            <p className="py-6 text-center text-[14px] text-faint">Ainda nada por aqui. Quando um cliente chamar no WhatsApp, aparece nesta lista.</p>
           ) : (
             <ul className="space-y-2.5">
               {acts.map((a) => {
