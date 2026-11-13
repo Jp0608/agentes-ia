@@ -3,6 +3,9 @@ import { q } from "./db";
 import { AGENTS, type AgentKey } from "./agents";
 import { findNiche } from "./niches";
 import { DEFAULT_TZ } from "./time";
+import { defaultPersona, TONES, type Persona } from "./persona";
+
+export { defaultPersona, TONES, type Persona, type Tone } from "./persona";
 
 export type Service = { name: string; minutes: number; price: number };
 /** Expediente de um dia da semana (0 = domingo). Vazio = fechado. */
@@ -30,6 +33,7 @@ export type Settings = {
   googleReviewUrl: string;
   /** Até quantas horas antes o cliente cancela pelo WhatsApp. */
   cancelHours: number;
+  persona: Persona;
   agents: Record<AgentKey, AgentConfig>;
 };
 
@@ -62,6 +66,7 @@ export function defaultSettings(nicheId = "barbearia"): Settings {
     returnDays: n.returnDays,
     googleReviewUrl: "",
     cancelHours: 2,
+    persona: defaultPersona(),
     agents: Object.fromEntries(AGENTS.map((a) => [a.key, { enabled: true, flow: a.flow.join("\n") }])) as Settings["agents"],
   };
 }
@@ -74,19 +79,34 @@ function merge(saved: Partial<Settings>): Settings {
     const s = saved.agents?.[a.key];
     if (s) agents[a.key] = { enabled: s.enabled !== false, flow: typeof s.flow === "string" && s.flow.trim() ? s.flow : base.agents[a.key].flow };
   }
-  return { ...base, ...saved, agents };
+  const persona = { ...base.persona, ...(saved.persona ?? {}) };
+  if (!(persona.tone in TONES)) persona.tone = base.persona.tone;
+  return { ...base, ...saved, persona, agents };
+}
+
+/** O driver às vezes devolve o jsonb como texto (ou texto dentro de texto): desembrulha. */
+function unwrap(data: unknown): Partial<Settings> {
+  let d = data;
+  for (let i = 0; i < 3 && typeof d === "string"; i++) {
+    try {
+      d = JSON.parse(d);
+    } catch {
+      return {};
+    }
+  }
+  return d && typeof d === "object" ? (d as Partial<Settings>) : {};
 }
 
 export async function getSettings(): Promise<Settings> {
-  const rows = await q<{ data: Partial<Settings> }>("select data from settings where id = 1");
-  return merge(rows[0]?.data ?? {});
+  const rows = await q<{ data: unknown }>("select data::text as data from settings where id = 1");
+  return merge(unwrap(rows[0]?.data));
 }
 
 export async function saveSettings(patch: Partial<Settings>) {
   const cur = await getSettings();
   const next = merge({ ...cur, ...patch });
   await q(
-    "insert into settings (id, data, updated_at) values (1, $1, now()) on conflict (id) do update set data = excluded.data, updated_at = now()",
+    "insert into settings (id, data, updated_at) values (1, ($1::text)::jsonb, now()) on conflict (id) do update set data = excluded.data, updated_at = now()",
     [JSON.stringify(next)],
   );
   return next;

@@ -13,6 +13,7 @@ import {
   type Client,
 } from "./booking";
 import { findNiche } from "./niches";
+import { personaInstructions } from "./persona";
 import { offerFreedSlot } from "./jobs";
 import type { Settings } from "./settings";
 import { addDays, brl, dayKey, hourLabel, parts, shortDate, shortName, WEEKDAYS, whenLabel, zoned } from "./time";
@@ -179,7 +180,7 @@ function businessBlock(s: Settings) {
 }
 
 const RULES = `Regras:
-- Escreva como uma pessoa da recepção no WhatsApp: mensagens curtas, simples, em português do Brasil, no máximo um emoji.
+- Escreva como uma pessoa da recepção no WhatsApp, em português do Brasil, seguindo o estilo definido acima.
 - Nunca invente horário, preço, endereço ou informação. Horário só existe se a ferramenta ver_horarios mostrou.
 - Ofereça no máximo três horários por vez e só marque depois que a pessoa escolher.
 - Depois de marcar, confirme o dia, a hora e o serviço numa frase.
@@ -188,8 +189,38 @@ const RULES = `Regras:
 - Se a mensagem for só um agradecimento ou um "ok", responda curto e não puxe outro assunto.
 - Se não precisar responder nada (por exemplo, a pessoa só mandou um emoji depois de tudo resolvido), responda exatamente: [sem resposta]`;
 
+const PROACTIVE = `Atendimento ativo (obrigatório):
+- Nunca responda só "como posso ajudar?". Toda mensagem leva a pessoa para o próximo passo e termina com uma pergunta.
+- Na primeira mensagem de uma conversa (mesmo que seja só "oi"), já apresente o negócio, liste os serviços com preço e pergunte qual a pessoa quer e para quando.
+- Quando a pessoa disser o serviço (ou só "quero marcar"), ofereça na mesma resposta os horários livres mais próximos que aparecem em "Próximos horários livres" no contexto. Se ela pediu um dia específico, use ver_horarios para aquele dia.
+- Ofereça primeiro as datas mais perto de hoje. Diga o dia da semana e a data (ex.: "amanhã, sábado 14/11, às 9h").`;
+
+const servicesLine = (s: Settings) => s.services.map((x) => `${x.name}${x.price > 0 ? ` (${brl(x.price)})` : ""}`).join(", ");
+
 function systemPrompt(s: Settings) {
-  return `${businessBlock(s)}\n\nFluxo escrito da recepção (siga nesta ordem):\n${s.agents.recepcao.flow}\n\n${RULES}`;
+  const n = findNiche(s.niche);
+  const style = personaInstructions(s.persona, { negocio: s.businessName || n.label, servicos: servicesLine(s) });
+  return [
+    businessBlock(s),
+    `Estilo de atendimento:\n${style}`,
+    s.persona.proactive ? PROACTIVE : "",
+    `Fluxo escrito da recepção (siga nesta ordem):\n${s.agents.recepcao.flow}`,
+    RULES,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+}
+
+/** Horários livres mais próximos dos serviços principais, já no contexto (resposta em uma chamada só). */
+async function nearestBlock(s: Settings, now: Date) {
+  const tz = s.timezone;
+  const lines: string[] = [];
+  for (const svc of s.services.slice(0, 4)) {
+    const slots = await nextFreeSlots(s, svc.name, { now, limit: 3 }).catch(() => []);
+    if (slots.length) lines.push(`- ${svc.name}: ${slots.map((x) => `${whenLabel(x.start, tz, now)} [${dayKey(x.start, tz)}T${String(parts(x.start, tz).h).padStart(2, "0")}:${String(parts(x.start, tz).min).padStart(2, "0")}]`).join("; ")}`);
+    else lines.push(`- ${svc.name}: sem horário livre nos próximos 14 dias`);
+  }
+  return lines.length ? `Próximos horários livres (o que está entre colchetes é o formato para marcar):\n${lines.join("\n")}` : "";
 }
 
 async function contextBlock(s: Settings, c: Client, now: Date) {
@@ -210,7 +241,14 @@ async function contextBlock(s: Settings, c: Client, now: Date) {
     past.length ? `Últimos atendimentos: ${past.map((a) => `${a.service} em ${dayKey(a.starts_at, tz)} (${a.status})`).join("; ")}.` : "",
     quotes.length ? `Orçamentos esperando resposta: ${quotes.map((x) => `#${x.id} ${x.title} (${brl(Number(x.total))})`).join("; ")}.` : "",
   ];
-  return lines.filter(Boolean).join("\n");
+  const nearest = s.persona.proactive ? await nearestBlock(s, now) : "";
+  const p0 = parts(now, tz);
+  const today = s.hours[p0.wd];
+  const nowHM = `${String(p0.h).padStart(2, "0")}:${String(p0.min).padStart(2, "0")}`;
+  const open = Boolean(today && nowHM >= today.open && nowHM < today.close);
+  return [...lines.filter(Boolean), open ? "O negócio está aberto agora." : "O negócio está fechado agora (fora do horário de funcionamento).", nearest]
+    .filter(Boolean)
+    .join("\n");
 }
 
 /** Converte "2026-11-20T09:30" (local) em instante. */
