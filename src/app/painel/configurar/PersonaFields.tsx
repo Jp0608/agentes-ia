@@ -24,7 +24,7 @@ export function PersonaFields({ initial, businessName, services }: { initial: Pe
               {(Object.keys(TONES) as Tone[]).map((t) => (
                 <label
                   key={t}
-                  className={`cursor-pointer rounded-xl border px-3 py-2 text-[13px] transition ${p.tone === t ? "border-[#4ade80] bg-[#4ade80]/10" : "border-white/10 hover:border-white/25"}`}
+                  className={`cursor-pointer rounded-xl border px-3 py-2 text-[13px] transition ${p.tone === t ? "border-[#aee627] bg-[#aee627]/10" : "border-white/10 hover:border-white/25"}`}
                 >
                   <input type="radio" name="p_tone" value={t} checked={p.tone === t} onChange={() => set("tone", t)} className="sr-only" />
                   <span className="block font-semibold">{TONES[t].label}</span>
@@ -60,7 +60,7 @@ export function PersonaFields({ initial, businessName, services }: { initial: Pe
           </div>
 
           <label className="flex items-start gap-2 text-[13.5px]">
-            <input type="checkbox" name="p_proactive" checked={p.proactive} onChange={(e) => set("proactive", e.target.checked)} className="mt-0.5 h-4 w-4 accent-[#4ade80]" />
+            <input type="checkbox" name="p_proactive" checked={p.proactive} onChange={(e) => set("proactive", e.target.checked)} className="mt-0.5 h-4 w-4 accent-[#aee627]" />
             <span>
               <b>Atendimento ativo</b>: já na primeira mensagem mostra os serviços e, assim que souber o serviço, oferece os horários livres mais próximos.
             </span>
