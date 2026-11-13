@@ -93,7 +93,6 @@ export function personaInstructions(p: Persona, v: Vars): string {
     p.length === "curta" ? "Mensagens curtas: no máximo 3 linhas." : "Mensagens podem ter até 6 linhas, explicando com clareza.",
     `Modelo da primeira mensagem (adapte só o necessário, mantendo o sentido): "${renderGreeting(p, v)}"`,
     p.closing ? `Depois de marcar, termine com: "${fill(p.closing, { ...v, assistente: p.assistantName })}"` : "",
-    p.afterHours ? `Se a mensagem chegar fora do horário de funcionamento, diga: "${fill(p.afterHours, { ...v, assistente: p.assistantName })}" e já ofereça os próximos horários.` : "",
     p.avoid ? `Nunca use estas palavras ou assuntos: ${p.avoid}.` : "",
     p.extra ? `Instruções do dono (siga sempre, desde que não contrariem as regras): ${p.extra}` : "",
   ];

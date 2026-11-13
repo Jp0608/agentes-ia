@@ -264,11 +264,8 @@ async function contextBlock(s: Settings, c: Client, now: Date) {
     quotes.length ? `Orçamentos esperando resposta: ${quotes.map((x) => `#${x.id} ${x.title} (${brl(Number(x.total))})`).join("; ")}.` : "",
   ];
   const nearest = s.persona.proactive ? await nearestBlock(s, now) : "";
-  const p0 = parts(now, tz);
-  const today = s.hours[p0.wd];
-  const nowHM = `${String(p0.h).padStart(2, "0")}:${String(p0.min).padStart(2, "0")}`;
-  const open = Boolean(today && nowHM >= today.open && nowHM < today.close);
-  return [...lines.filter(Boolean), open ? "O negócio está aberto agora." : "O negócio está fechado agora (fora do horário de funcionamento).", nearest]
+  // A recepção atende 24 horas: não existe "fora do horário" na conversa, só horários livres para marcar.
+  return [...lines.filter(Boolean), nearest]
     .filter(Boolean)
     .join("\n");
 }
