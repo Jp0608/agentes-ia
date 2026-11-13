@@ -226,7 +226,7 @@ async function returns({ s, now, force }: Ctx) {
     const slot = (await nextFreeSlots(s, c.service, { now, limit: 1, fromDay: addDays(dayKey(now, tz), 1) }))[0];
     const offer = slot ? ` Tenho ${whenLabel(slot.start, tz, now)}, posso marcar?` : " Quer que eu veja um horário?";
     const since = days >= 150 ? `${Math.round(days / 30)} meses` : `${days} dias`;
-    await send(c.phone, `${hi(c.name)} Já faz ${since} do seu ${c.service.toLowerCase()}.${offer}`, "retornos", { simulated: c.simulated });
+    await send(c.phone, `${hi(c.name)} Já faz ${since} ${/(a|ão)$/i.test(c.service.trim()) ? "da sua" : "do seu"} ${c.service.toLowerCase()}.${offer}`, "retornos", { simulated: c.simulated });
     await q("update clients set last_return_at = now() where id = $1 and tenant_id = $2", [c.id, await tenantId()]);
     await logActivity("retornos", `Chamou ${c.name || c.phone} de volta (${c.service}, ${since})`, c.phone);
     n++;
