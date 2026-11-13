@@ -83,7 +83,26 @@ async function createMessage(params: AnyParams): Promise<Anthropic.Beta.BetaMess
   }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const body: any = { ...params, model: MODEL(), betas: ["server-side-fallback-2026-07-01"] };
-  return (await anthropic().beta.messages.create(body)) as unknown as Anthropic.Beta.BetaMessage;
+  try {
+    return (await anthropic().beta.messages.create(body)) as unknown as Anthropic.Beta.BetaMessage;
+  } catch (e) {
+    // Modelos menores (Haiku) recusam os campos extras: repete só com o básico da API.
+    const status = (e as { status?: number }).status;
+    if (status !== 400 || !/effort|fallback|output_config|beta|strict/i.test((e as Error).message ?? "")) throw e;
+    const { fallbacks: _f, output_config: _o, tools, ...rest } = params;
+    void _f;
+    void _o;
+    const plain: AnyParams = { ...rest, model: MODEL() };
+    if (Array.isArray(tools)) {
+      plain.tools = tools.map((t: AnyParams) => {
+        const { strict: _s, ...tool } = t;
+        void _s;
+        return tool;
+      });
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (await anthropic().messages.create(plain as any)) as unknown as Anthropic.Beta.BetaMessage;
+  }
 }
 
 const obj = (properties: Record<string, unknown>, required: string[]) => ({
