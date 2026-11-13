@@ -1,0 +1,367 @@
+{
+  "id": "veterinaria",
+  "label": "Clínica veterinária",
+  "group": "saude",
+  "icon": "vaccines",
+  "title": "da clínica veterinária",
+  "owner": "Dra. Fernanda",
+  "intro": "Todo agente de IA que uma clínica veterinária precisa, numa página. Cada cartão é um agente com o fluxo escrito.",
+  "sectors": [
+    {
+      "name": "Recepção",
+      "icon": "forum",
+      "line": "Atende o WhatsApp até as 9 da noite, separa o que é urgente, confere a agenda e marca a consulta.",
+      "agents": [
+        {
+          "name": "Atendente do WhatsApp",
+          "when": "Chega mensagem de tutor no WhatsApp da clínica.",
+          "uses": ["WhatsApp", "Cadastro de pacientes"],
+          "flow": [
+            "Cumprimentar pelo nome do tutor e do animal se o número já é cliente",
+            "Perguntar se é consulta, vacina, retorno ou urgência",
+            "Responder valor da consulta, das vacinas e endereço com a tabela da clínica",
+            "Se for para marcar, passar para o Agente da agenda"
+          ],
+          "human": "Animal que não respira bem, convulsiona, foi atropelado, comeu veneno ou está sangrando: mandar vir agora e avisar o veterinário de plantão na hora.",
+          "example": { "from": "Mariana Torres", "in": "A Luna está vomitando desde ontem.", "out": "Mariana, a Dra. Fernanda tem horário hoje às 15h. Posso marcar a consulta da Luna?" }
+        },
+        {
+          "name": "Agente da agenda",
+          "when": "O atendente pede um horário.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Ver na ficha a espécie, o porte e o veterinário que costuma atender",
+            "Reservar o tempo certo (consulta 30 min, vacina 15 min, retorno 20 min)",
+            "Propor dois horários livres no período pedido",
+            "Marcar e mandar a confirmação com o que trazer: carteira de vacinas, exames antigos e o animal na guia ou na caixa"
+          ],
+          "human": "Gato e cachorro bravo no mesmo horário de espera: a recepção ajusta para não se encontrarem.",
+          "example": { "from": "Mariana Torres", "in": "Pode ser às 15h.", "out": "Marcado: hoje, 15h, Dra. Fernanda. Traga a Luna na caixa de transporte, tá?" }
+        },
+        {
+          "name": "Cadastro do animal",
+          "when": "Um animal novo marca pela primeira vez.",
+          "uses": ["WhatsApp", "Cadastro de pacientes"],
+          "flow": [
+            "Pedir nome, espécie, raça, idade e peso aproximado",
+            "Pedir nome e CPF do tutor",
+            "Pedir foto da carteira de vacinas, se tiver",
+            "Salvar tudo na ficha e avisar a recepção que é paciente novo"
+          ],
+          "human": "Animal resgatado sem histórico: avisar o veterinário para fazer a consulta completa.",
+          "example": { "from": "Leandro Pires", "in": "Adotei um gatinho.", "out": "Que alegria, Leandro! Qual o nome dele e quantos meses ele tem?" }
+        },
+        {
+          "name": "Fora do horário",
+          "when": "Chega mensagem depois das 20h, em fim de semana ou feriado.",
+          "uses": ["WhatsApp", "Agenda"],
+          "flow": [
+            "Responder na hora, sem esperar a clínica abrir",
+            "Marcar consulta e vacina direto na agenda, até as 21h",
+            "Se for urgência, mandar o endereço do hospital veterinário 24 horas parceiro",
+            "Deixar o resumo da conversa para a recepção ler às 8h"
+          ],
+          "human": "Animal internado ou operado que piorou à noite: avisar o veterinário de plantão da clínica.",
+          "example": { "from": "Renan Gomes", "in": "Vocês vacinam sábado?", "out": "Vacinamos sábado das 8h às 13h. Quer que eu já reserve?" }
+        }
+      ]
+    },
+    {
+      "name": "Carteira de vacinas",
+      "icon": "vaccines",
+      "line": "Segue o calendário de cada animal e chama o tutor antes de a dose vencer.",
+      "agents": [
+        {
+          "name": "Calendário do animal",
+          "when": "O veterinário registra uma vacina ou vermífugo na ficha.",
+          "uses": ["Cadastro de pacientes", "Agenda"],
+          "flow": [
+            "Anotar a data da próxima dose que o veterinário marcou",
+            "Para filhote, deixar marcadas as próximas doses da série",
+            "Mandar ao tutor a foto da carteira atualizada",
+            "Colocar o lembrete na fila para 7 dias antes"
+          ],
+          "human": "Dose atrasada há mais de 30 dias: o veterinário decide se recomeça a série.",
+          "example": { "from": "Leandro Pires", "in": "", "out": "Leandro, o Biscoito tomou a 1ª dose hoje. A próxima fica para 4/12, às 10h." }
+        },
+        {
+          "name": "Lembrete da dose",
+          "when": "7 dias antes da data da próxima dose.",
+          "uses": ["WhatsApp", "Agenda"],
+          "flow": [
+            "Escrever pelo nome do animal, dizendo qual vacina vence",
+            "Oferecer dois horários antes da data",
+            "Se não responder em 3 dias, lembrar uma vez",
+            "No dia em que vencer, mandar o último aviso"
+          ],
+          "human": "Tutor pergunta se o animal idoso ou doente pode tomar a vacina: o veterinário responde.",
+          "example": { "from": "Mariana Torres", "in": "", "out": "Oi, Mariana! A antirrábica da Luna vence dia 20. Posso marcar sábado, 9h?" }
+        },
+        {
+          "name": "Lista de atrasados",
+          "when": "Toda segunda às 9h.",
+          "uses": ["Cadastro de pacientes", "WhatsApp"],
+          "flow": [
+            "Buscar animais com vacina vencida há mais de 7 dias",
+            "Tirar da lista quem avisou que mudou de cidade ou perdeu o animal",
+            "Mandar uma última mensagem para cada tutor",
+            "Montar a lista para a recepção ligar"
+          ],
+          "human": "Tutor avisa que o animal morreu: parar tudo, tirar da lista e avisar a Dra. Fernanda.",
+          "example": { "from": "Sistema", "in": "", "out": "12 animais com vacina atrasada. 4 com a série de filhote parada." }
+        }
+      ]
+    },
+    {
+      "name": "Faltas",
+      "icon": "event_busy",
+      "line": "Cobra na hora e oferece a vaga para a lista de espera.",
+      "agents": [
+        {
+          "name": "Aviso de falta",
+          "when": "O tutor não chega 15 minutos depois do horário.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Mandar mensagem perguntando se está a caminho",
+            "Se não responder em 10 minutos, marcar como falta",
+            "Oferecer remarcar com dois horários",
+            "Registrar a falta na ficha"
+          ],
+          "human": "Falta em retorno de animal operado: avisar o veterinário que operou.",
+          "example": { "from": "Renan Gomes", "in": "", "out": "Oi, Renan. A consulta do Max era às 11h. Está a caminho?" }
+        },
+        {
+          "name": "Lista de espera",
+          "when": "Abre uma vaga por falta ou cancelamento.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Buscar quem pediu para adiantar consulta ou vacina",
+            "Oferecer a vaga ao primeiro da lista",
+            "Se não responder em 15 minutos, passar para o próximo",
+            "Quando alguém aceitar, marcar, tirar da lista e avisar a recepção"
+          ],
+          "human": "Dois aceitaram ao mesmo tempo: o primeiro fica, o segundo recebe outro horário.",
+          "example": { "from": "Tatiane Rocha", "in": "", "out": "Oi, Tatiane! Vagou um horário hoje às 11h para a vacina da Nina. Quer?" }
+        }
+      ]
+    },
+    {
+      "name": "Orçamentos",
+      "icon": "request_quote",
+      "line": "Manda o valor da cirurgia ou do exame, explica em palavras simples e volta três dias depois.",
+      "agents": [
+        {
+          "name": "Montador do orçamento",
+          "when": "O veterinário indica cirurgia, exame de imagem ou tratamento.",
+          "uses": ["Tabela de preços", "WhatsApp"],
+          "flow": [
+            "Pegar os procedimentos que o veterinário anotou",
+            "Somar exames pré-operatórios, anestesia, cirurgia e diárias",
+            "Montar as formas de pagamento (à vista, parcelado)",
+            "Mandar para o veterinário aprovar antes de enviar"
+          ],
+          "human": "Orçamento acima de R$ 4 mil: a Dra. Fernanda aprova antes.",
+          "example": { "from": "Mariana Torres", "in": "", "out": "Castração da Luna: exames R$ 280, cirurgia e anestesia R$ 950. Total R$ 1.230." }
+        },
+        {
+          "name": "Explicador em palavras simples",
+          "when": "O orçamento é aprovado pelo veterinário.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Trocar os termos técnicos pelas palavras que o veterinário usou na consulta",
+            "Dizer o que acontece no dia: jejum, horário de chegada, horário de buscar",
+            "Dizer quantos dias de cuidado em casa depois",
+            "Mandar junto com o orçamento"
+          ],
+          "human": "Tutor pergunta sobre risco da cirurgia ou da anestesia: o veterinário responde.",
+          "example": { "from": "Mariana Torres", "in": "", "out": "A Luna chega às 7h em jejum, opera de manhã e volta para casa no fim da tarde. São 10 dias de cuidado com o ponto." }
+        },
+        {
+          "name": "Retorno do terceiro dia",
+          "when": "Três dias depois de mandar o orçamento, sem resposta.",
+          "uses": ["WhatsApp", "Agenda"],
+          "flow": [
+            "Perguntar se ficou alguma dúvida",
+            "Oferecer reservar a data da cirurgia",
+            "Se disser que está caro, oferecer o parcelamento",
+            "Se não responder, tentar de novo em 10 dias e parar"
+          ],
+          "human": "Tutor pede desconto ou diz que não pode pagar um tratamento urgente: passa para a Dra. Fernanda.",
+          "example": { "from": "Mariana Torres", "in": "", "out": "Oi, Mariana. Ficou alguma dúvida sobre a castração da Luna? Tenho vaga na terça." }
+        }
+      ]
+    },
+    {
+      "name": "Internação",
+      "icon": "bed",
+      "line": "Manda o boletim do internado duas vezes por dia, organiza a visita e prepara a alta.",
+      "agents": [
+        {
+          "name": "Boletim do internado",
+          "when": "Todo dia às 11h e às 18h, para cada animal internado.",
+          "uses": ["Ficha de internação", "WhatsApp"],
+          "flow": [
+            "Pegar o boletim que o veterinário escreveu na ficha",
+            "Mandar ao tutor do jeito que está escrito, com uma foto do animal",
+            "Se o boletim não foi escrito até o horário, cobrar o veterinário",
+            "Registrar que o tutor recebeu"
+          ],
+          "human": "Tutor pergunta se o animal vai ficar bem: o veterinário liga para o tutor.",
+          "example": { "from": "Renan Gomes", "in": "", "out": "Boletim do Max, 11h: comeu um pouco, está no soro e tranquilo. Próximo boletim às 18h." }
+        },
+        {
+          "name": "Visita",
+          "when": "O tutor pede para visitar o animal internado.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Oferecer os horários de visita (14h às 15h e 19h às 20h)",
+            "Marcar no máximo 2 pessoas por visita, por 20 minutos",
+            "Avisar a equipe da internação",
+            "Mandar as regras: não dar comida e lavar as mãos"
+          ],
+          "human": "Animal em isolamento ou muito grave: o veterinário decide se pode visitar.",
+          "example": { "from": "Renan Gomes", "in": "Posso ver o Max hoje?", "out": "Pode sim, Renan. Às 19h fica bom? A visita é de 20 minutos." }
+        },
+        {
+          "name": "Alta",
+          "when": "O veterinário dá alta ao animal internado.",
+          "uses": ["Ficha de internação", "WhatsApp", "Agenda"],
+          "flow": [
+            "Avisar o tutor o horário de buscar",
+            "Mandar a receita e os cuidados que o veterinário escreveu, sem mudar nada",
+            "Fechar a conta da internação e mandar o valor",
+            "Marcar o retorno na data que o veterinário pediu"
+          ],
+          "human": "Tutor tem dúvida sobre o remédio ou a dose: o veterinário explica na hora da alta.",
+          "example": { "from": "Renan Gomes", "in": "", "out": "Renan, o Max teve alta! Pode buscar às 17h. A receita e o retorno de sexta já estão abaixo." }
+        }
+      ]
+    },
+    {
+      "name": "Pós-cirurgia",
+      "icon": "healing",
+      "line": "Pergunta como o animal passou a noite, lembra do ponto e marca o retorno.",
+      "agents": [
+        {
+          "name": "Pergunta do dia seguinte",
+          "when": "24 horas depois da cirurgia.",
+          "uses": ["WhatsApp", "Ficha do paciente"],
+          "flow": [
+            "Perguntar se comeu, bebeu água e fez xixi",
+            "Pedir uma foto do corte",
+            "Lembrar de manter o colar ou a roupinha",
+            "Anotar as respostas na ficha para o veterinário ver"
+          ],
+          "human": "Sangramento, inchaço, vômito, não come ou muito parado: avisar o veterinário que operou na hora.",
+          "example": { "from": "Mariana Torres", "in": "Ela comeu um pouco e está dormindo.", "out": "Que bom, Mariana! Anotei para a Dra. Fernanda. Pode mandar uma foto do corte?" }
+        },
+        {
+          "name": "Lembrete do remédio",
+          "when": "Nos horários da receita que o veterinário passou.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Montar os horários a partir da receita da alta",
+            "Mandar o lembrete com o nome do remédio e a dose escrita na receita",
+            "Pedir para o tutor responder OK quando der",
+            "Avisar no último dia que o tratamento acabou"
+          ],
+          "human": "Tutor diz que o animal não aceita o remédio ou vomitou: o veterinário orienta.",
+          "example": { "from": "Mariana Torres", "in": "", "out": "Mariana, 20h: hora do remédio da Luna, como está na receita. Me responde OK quando der." }
+        },
+        {
+          "name": "Retirada dos pontos",
+          "when": "2 dias antes da data de tirar os pontos que o veterinário marcou.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Lembrar que os pontos saem no dia que o veterinário marcou",
+            "Oferecer dois horários",
+            "Marcar e lembrar de trazer o colar",
+            "Se não marcar em 2 dias, lembrar de novo"
+          ],
+          "human": "Tutor conta que o animal tirou os pontos sozinho: avisar o veterinário.",
+          "example": { "from": "Mariana Torres", "in": "", "out": "Oi, Mariana! Os pontos da Luna saem dia 22. Fica bom às 10h ou às 16h?" }
+        }
+      ]
+    },
+    {
+      "name": "Avaliações",
+      "icon": "star",
+      "line": "Pede avaliação no dia seguinte e, se a resposta for ruim, avisa a dona primeiro.",
+      "agents": [
+        {
+          "name": "Pedido de avaliação",
+          "when": "No dia seguinte à consulta ou à alta, às 10h.",
+          "uses": ["WhatsApp", "Google"],
+          "flow": [
+            "Agradecer pelo nome do tutor e do animal",
+            "Perguntar como foi o atendimento, com nota de 1 a 5",
+            "Se for 4 ou 5, mandar o link de avaliação no Google",
+            "Se for 3 ou menos, passar para o Alerta à dona e não mandar link"
+          ],
+          "human": "Animal que morreu ou foi sacrificado: nunca mandar pedido de avaliação.",
+          "example": { "from": "Leandro Pires", "in": "Nota 5, cuidaram muito bem do Biscoito.", "out": "Obrigada, Leandro! Pode deixar sua avaliação no Google?" }
+        },
+        {
+          "name": "Alerta à dona",
+          "when": "Chega uma resposta ruim.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Mandar para a Dra. Fernanda o nome, a nota e o que o tutor escreveu",
+            "Juntar quem atendeu e o histórico do animal",
+            "Responder ao tutor que a Dra. Fernanda vai entrar em contato",
+            "Cobrar se ninguém respondeu em 2 horas"
+          ],
+          "human": "Sempre: quem resolve é a Dra. Fernanda.",
+          "example": { "from": "Tatiane Rocha", "in": "Ninguém me deu notícia da Nina na internação.", "out": "Aviso enviado à Dra. Fernanda." }
+        }
+      ]
+    },
+    {
+      "name": "Operação",
+      "icon": "inventory_2",
+      "line": "Cuida das vacinas na geladeira, do estoque e da escala do plantão.",
+      "agents": [
+        {
+          "name": "Estoque e validade",
+          "when": "Toda sexta às 16h e quando alguém dá baixa de vacina ou remédio.",
+          "uses": ["Planilha de estoque", "WhatsApp"],
+          "flow": [
+            "Somar as doses usadas na semana pela agenda",
+            "Apontar o que vence nos próximos 60 dias",
+            "Conferir o registro da temperatura da geladeira (2 a 8 °C), duas vezes por dia",
+            "Montar o pedido e mandar para a Dra. Fernanda aprovar"
+          ],
+          "human": "Geladeira fora de 2 a 8 °C: separar as vacinas e avisar a Dra. Fernanda na hora.",
+          "example": { "from": "Sistema", "in": "", "out": "V10 com 6 doses (mínimo 10). Antirrábica 22. 3 frascos de soro vencem em dezembro." }
+        },
+        {
+          "name": "Escala e plantão",
+          "when": "Toda quinta, para a semana seguinte.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Ver consultas, cirurgias e internados previstos por dia",
+            "Montar quem fica no consultório, no centro cirúrgico e na internação",
+            "Garantir um veterinário responsável pela internação à noite",
+            "Mandar a escala para cada pessoa no WhatsApp"
+          ],
+          "human": "Noite sem veterinário para a internação: a Dra. Fernanda decide.",
+          "example": { "from": "Sistema", "in": "", "out": "Semana: Dra. Fernanda 40h, Dr. Vitor 36h, 2 auxiliares. Quarta à noite sem cobertura." }
+        }
+      ]
+    }
+  ],
+  "morning": {
+    "when": "Todo dia às 7h, no WhatsApp da Dra. Fernanda.",
+    "flow": [
+      "Contar consultas, vacinas, cirurgias e internados de hoje",
+      "Listar as vacinas vencidas e os retornos pós-cirurgia atrasados",
+      "Somar o que se perdeu ontem: faltas, orçamentos parados, vagas vazias",
+      "Mandar tudo numa página só"
+    ],
+    "stats": [
+      { "value": "26", "label": "Marcados hoje", "sub": "2 cirurgias, 3 internados, a primeira às 8h" },
+      { "value": "12", "label": "Atrasados", "sub": "vacina vencida, 8 já avisados" },
+      { "value": "R$ 1.890", "label": "Perdido", "sub": "1 castração sem resposta e 4 faltas" }
+    ]
+  }
+}

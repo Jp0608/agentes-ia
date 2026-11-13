@@ -1,0 +1,321 @@
+{
+  "id": "cursos",
+  "label": "Cursos e infoprodutos",
+  "group": "educacao",
+  "icon": "cast_for_education",
+  "title": "dos cursos online",
+  "owner": "Marina",
+  "intro": "Todo agente de IA que quem vende cursos online precisa, numa página. Cada cartão é um agente com o fluxo escrito.",
+  "sectors": [
+    {
+      "name": "Atendimento pré-venda",
+      "icon": "forum",
+      "line": "Responde o direct e o WhatsApp até meia-noite, tira a dúvida de quem está quase comprando e manda o link certo.",
+      "agents": [
+        {
+          "name": "Atendente do direct e WhatsApp",
+          "when": "Chega mensagem no Instagram ou no WhatsApp de quem ainda não é aluno.",
+          "uses": ["Instagram", "WhatsApp"],
+          "flow": [
+            "Perguntar o que a pessoa quer aprender e em que nível está",
+            "Indicar o curso certo para o nível dela",
+            "Responder preço, parcelamento, tempo de acesso e garantia de 7 dias",
+            "Mandar o link de compra com o cupom da campanha, se tiver"
+          ],
+          "human": "Pedido de parceria, compra para empresa ou turma fechada: passar para a Marina.",
+          "example": { "from": "Larissa Moreira", "in": "Serve pra quem nunca mexeu com isso?", "out": "Serve sim, Larissa! O módulo 1 começa do zero. São 12x de R$ 49,70 e você tem 7 dias de garantia." }
+        },
+        {
+          "name": "Tira-dúvidas da página de vendas",
+          "when": "Alguém pergunta pelo chat da página de vendas.",
+          "uses": ["Página de vendas", "Plataforma de cursos"],
+          "flow": [
+            "Responder com o que está escrito na página e na grade do curso",
+            "Mostrar a aula grátis do módulo que a pessoa perguntou",
+            "Se a pessoa hesitar, pedir o WhatsApp para mandar mais detalhes",
+            "Anotar as perguntas que se repetem para a Marina melhorar a página"
+          ],
+          "human": "Pergunta que a página não responde: guardar e passar para a Marina no fim do dia.",
+          "example": { "from": "Otávio Rezende", "in": "Tem certificado?", "out": "Tem sim, Otávio. Ao terminar 80% das aulas, o certificado sai na hora na plataforma." }
+        },
+        {
+          "name": "Fora do horário",
+          "when": "Chega mensagem entre meia-noite e 8h.",
+          "uses": ["Instagram", "WhatsApp"],
+          "flow": [
+            "Responder na hora as dúvidas de preço, acesso e garantia",
+            "Mandar o link de compra se a pessoa já decidiu",
+            "Avisar que o suporte humano responde a partir das 9h",
+            "Deixar o resumo das conversas para a equipe"
+          ],
+          "human": "Aluno com problema de pagamento em dia de abertura de carrinho: avisar o suporte no primeiro horário.",
+          "example": { "from": "Sabrina Lins", "in": "O carrinho fecha que horas amanhã?", "out": "Fecha às 23h59 de amanhã, Sabrina. Quer o link agora?" }
+        }
+      ]
+    },
+    {
+      "name": "Carrinho abandonado",
+      "icon": "shopping_cart",
+      "line": "Chama em 30 minutos quem desistiu no meio da compra e resolve o Pix e o boleto que não foram pagos.",
+      "agents": [
+        {
+          "name": "Recuperação do carrinho",
+          "when": "Alguém preenche os dados no checkout e não paga em 30 minutos.",
+          "uses": ["Plataforma de cursos", "WhatsApp", "E-mail"],
+          "flow": [
+            "Mandar mensagem perguntando se teve algum problema no pagamento",
+            "Mandar o link do checkout já preenchido",
+            "Se não responder, mandar e-mail 24 horas depois com a principal dúvida respondida",
+            "Última mensagem em 3 dias e parar"
+          ],
+          "human": "Pessoa pergunta se pode pagar com dois cartões ou de outra forma: passar para o suporte.",
+          "example": { "from": "Larissa Moreira", "in": "", "out": "Oi, Larissa! Vi que você começou a inscrição e não terminou. Deu algum problema? Segue o link para continuar." }
+        },
+        {
+          "name": "Pix e boleto pendentes",
+          "when": "Pix gerado sem pagamento em 1 hora ou boleto sem pagamento em 1 dia.",
+          "uses": ["Plataforma de cursos", "WhatsApp"],
+          "flow": [
+            "Mandar o Pix copia e cola ou o código do boleto de novo",
+            "Lembrar que o acesso sai assim que o pagamento cair",
+            "Avisar 1 dia antes de o boleto vencer",
+            "Se vencer, gerar um novo e mandar só uma vez"
+          ],
+          "human": "Pessoa diz que pagou e o acesso não chegou: passar para o suporte com o comprovante.",
+          "example": { "from": "Rogério Paiva", "in": "", "out": "Rogério, seu boleto de R$ 497 vence amanhã. Se preferir, o Pix libera o acesso na hora." }
+        },
+        {
+          "name": "Cartão recusado",
+          "when": "O pagamento no cartão é recusado.",
+          "uses": ["Plataforma de cursos", "WhatsApp"],
+          "flow": [
+            "Avisar em até 10 minutos que o cartão não passou",
+            "Explicar as causas comuns: limite, compra bloqueada pelo banco, dado digitado errado",
+            "Mandar o link para tentar outro cartão ou pagar no Pix",
+            "Se não resolver, tentar mais uma vez no dia seguinte"
+          ],
+          "human": "Recusou 3 vezes: passar para o suporte ver com a plataforma.",
+          "example": { "from": "Débora Siqueira", "in": "", "out": "Débora, o cartão não passou. Às vezes é limite ou o banco bloqueando. Quer tentar no Pix?" }
+        }
+      ]
+    },
+    {
+      "name": "Boas-vindas e acesso",
+      "icon": "waving_hand",
+      "line": "Entrega o acesso na hora, mostra por onde começar e resolve quem não consegue entrar.",
+      "agents": [
+        {
+          "name": "Entrega do acesso",
+          "when": "O pagamento é aprovado.",
+          "uses": ["Plataforma de cursos", "E-mail", "WhatsApp"],
+          "flow": [
+            "Mandar login e link de acesso por e-mail e WhatsApp",
+            "Mandar o vídeo de 2 minutos de como usar a plataforma",
+            "Indicar a primeira aula para assistir hoje",
+            "Mandar o link da comunidade dos alunos"
+          ],
+          "human": "Compra para outra pessoa (presente): o suporte troca o e-mail do acesso.",
+          "example": { "from": "Larissa Moreira", "in": "", "out": "Bem-vinda, Larissa! Seu acesso já está liberado. Comece pela aula 1, são só 12 minutos." }
+        },
+        {
+          "name": "Primeira semana",
+          "when": "No 2º, no 4º e no 7º dia depois da compra.",
+          "uses": ["Plataforma de cursos", "WhatsApp"],
+          "flow": [
+            "Ver quantas aulas o aluno já assistiu",
+            "Se não entrou ainda, mandar o link direto da aula 1",
+            "Se já começou, parabenizar e indicar a próxima aula",
+            "No 7º dia, perguntar se está gostando, antes do fim da garantia"
+          ],
+          "human": "Aluno diz que o curso não era o que esperava: passar para a Marina antes de virar reembolso.",
+          "example": { "from": "Otávio Rezende", "in": "", "out": "Otávio, você já fez 3 aulas! A próxima é a de planilha, a que os alunos mais gostam." }
+        },
+        {
+          "name": "Problema de login",
+          "when": "Aluno diz que não consegue entrar ou não achou o e-mail de acesso.",
+          "uses": ["Plataforma de cursos", "WhatsApp"],
+          "flow": [
+            "Procurar a compra pelo e-mail, CPF ou nome",
+            "Ver se o e-mail foi digitado errado na compra",
+            "Mandar o link de trocar senha",
+            "Confirmar se o aluno entrou"
+          ],
+          "human": "Compra não encontrada: passar para o suporte com o comprovante.",
+          "example": { "from": "Sabrina Lins", "in": "Não chegou meu acesso.", "out": "Achei, Sabrina. Faltou uma letra no seu e-mail na hora da compra. Já corrigi e mandei o acesso de novo." }
+        }
+      ]
+    },
+    {
+      "name": "Alunos parados",
+      "icon": "person_off",
+      "line": "Chama de volta quem comprou e parou de assistir antes de ele esquecer que é aluno.",
+      "agents": [
+        {
+          "name": "Lista de parados",
+          "when": "Toda segunda às 8h.",
+          "uses": ["Plataforma de cursos"],
+          "flow": [
+            "Buscar alunos que não assistem nada há 14 dias",
+            "Separar quem parou no começo (menos de 20%) e quem parou no meio",
+            "Anotar a aula exata em que cada um parou",
+            "Montar a lista da semana"
+          ],
+          "human": "Muitos alunos parando na mesma aula: avisar a Marina para rever a aula.",
+          "example": { "from": "Sistema", "in": "Lista da semana", "out": "214 alunos parados. 61 pararam na aula 7 do módulo 2." }
+        },
+        {
+          "name": "Mensagem de volta",
+          "when": "A lista da semana fica pronta.",
+          "uses": ["WhatsApp", "E-mail"],
+          "flow": [
+            "Escrever pelo nome, citando a aula onde parou",
+            "Mandar o link direto para essa aula",
+            "Dizer quanto tempo falta para terminar o módulo",
+            "Se não voltar em 7 dias, mandar só mais uma vez"
+          ],
+          "human": "Aluno diz que travou numa parte e não entende: passar para o monitor.",
+          "example": { "from": "Rogério Paiva", "in": "", "out": "Rogério, você parou na aula 7 do módulo 2. Faltam 25 minutos para fechar o módulo. Segue o link." }
+        },
+        {
+          "name": "Lembrete da aula ao vivo",
+          "when": "1 dia antes e 1 hora antes de cada aula ao vivo.",
+          "uses": ["WhatsApp", "E-mail", "Agenda"],
+          "flow": [
+            "Mandar o tema, o dia e o horário",
+            "Mandar o link da sala 1 hora antes",
+            "Depois da aula, mandar a gravação para quem não foi",
+            "Contar quantos assistiram ao vivo"
+          ],
+          "human": "Link da sala com problema na hora: avisar a Marina e a equipe.",
+          "example": { "from": "Sistema", "in": "", "out": "Hoje às 20h tem aula ao vivo de dúvidas do módulo 3. O link chega às 19h." }
+        }
+      ]
+    },
+    {
+      "name": "Suporte",
+      "icon": "support_agent",
+      "line": "Responde dúvida de aula e de certificado em minutos, a qualquer hora.",
+      "agents": [
+        {
+          "name": "Dúvida de conteúdo",
+          "when": "Aluno pergunta sobre uma aula na plataforma ou no WhatsApp.",
+          "uses": ["Plataforma de cursos", "WhatsApp"],
+          "flow": [
+            "Buscar a resposta nas aulas e nos materiais do curso",
+            "Responder indicando a aula e o minuto onde o assunto aparece",
+            "Se não achar, passar para o monitor com a pergunta e a aula",
+            "Guardar as perguntas que se repetem para o FAQ"
+          ],
+          "human": "Dúvida que não está no curso: o monitor responde em até 24 horas.",
+          "example": { "from": "Débora Siqueira", "in": "Como faço a fórmula do PROCV?", "out": "Isso está na aula 4 do módulo 2, a partir do minuto 6:30. Segue o link." }
+        },
+        {
+          "name": "Certificado e materiais",
+          "when": "Aluno pede certificado, apostila ou nota fiscal.",
+          "uses": ["Plataforma de cursos", "E-mail"],
+          "flow": [
+            "Ver quanto do curso o aluno já concluiu",
+            "Se passou de 80%, mandar o certificado",
+            "Se não, dizer quantas aulas faltam",
+            "Mandar apostila ou nota fiscal pelo e-mail da compra"
+          ],
+          "human": "Pedido de certificado com nome diferente do cadastro: o suporte confere o documento.",
+          "example": { "from": "Otávio Rezende", "in": "Cadê meu certificado?", "out": "Você está com 72%, Otávio. Faltam 5 aulas para liberar o certificado." }
+        }
+      ]
+    },
+    {
+      "name": "Reembolso e renovação",
+      "icon": "currency_exchange",
+      "line": "Trata o reembolso com respeito, entende o motivo e lembra da renovação 30 dias antes.",
+      "agents": [
+        {
+          "name": "Pedido de reembolso",
+          "when": "Aluno pede o dinheiro de volta.",
+          "uses": ["Plataforma de cursos", "WhatsApp"],
+          "flow": [
+            "Ver a data da compra e se está dentro dos 7 dias de garantia",
+            "Perguntar o motivo uma vez, sem insistir",
+            "Se o motivo tiver solução (acesso, aula travando), oferecer resolver",
+            "Se o aluno mantiver, abrir o reembolso e confirmar o prazo de devolução"
+          ],
+          "human": "Pedido depois dos 7 dias ou ameaça de reclamação pública: passar para a Marina.",
+          "example": { "from": "Sabrina Lins", "in": "Quero o reembolso.", "out": "Tudo bem, Sabrina, você está no 5º dia da garantia. Pode me contar o motivo? Se for algo que dê para resolver, resolvo agora." }
+        },
+        {
+          "name": "Renovação do acesso",
+          "when": "30 dias antes de o acesso de 1 ano vencer.",
+          "uses": ["Plataforma de cursos", "WhatsApp", "E-mail"],
+          "flow": [
+            "Mostrar quanto do curso o aluno fez no ano",
+            "Oferecer renovar por mais 1 ano com 50% de desconto",
+            "Lembrar 7 dias e 1 dia antes de vencer",
+            "Se não renovar, avisar o último dia de acesso"
+          ],
+          "human": "Aluno pede mais prazo de graça: a Marina decide.",
+          "example": { "from": "Rogério Paiva", "in": "", "out": "Rogério, seu acesso vence dia 12/12. Para renovar por mais 1 ano sai R$ 248." }
+        },
+        {
+          "name": "Próximo curso",
+          "when": "Aluno conclui 100% do curso.",
+          "uses": ["Plataforma de cursos", "WhatsApp"],
+          "flow": [
+            "Parabenizar e mandar o certificado",
+            "Perguntar o que ele quer aprender agora",
+            "Indicar o próximo curso com o desconto de aluno",
+            "Se não comprar em 7 dias, não insistir"
+          ],
+          "human": "Aluno quer mentoria individual: passar para a Marina.",
+          "example": { "from": "Débora Siqueira", "in": "", "out": "Parabéns, Débora, você terminou! Para quem fez o básico, o avançado sai com 30% de desconto." }
+        }
+      ]
+    },
+    {
+      "name": "Avaliações e depoimentos",
+      "icon": "star",
+      "line": "Pede o depoimento de quem teve resultado e, se a resposta for ruim, avisa a dona primeiro.",
+      "agents": [
+        {
+          "name": "Pedido de depoimento",
+          "when": "Aluno conclui o módulo 3 ou conta um resultado na comunidade.",
+          "uses": ["WhatsApp", "Plataforma de cursos"],
+          "flow": [
+            "Perguntar como está sendo o curso, com nota de 1 a 5",
+            "Se for 4 ou 5, pedir um depoimento curto em texto ou vídeo",
+            "Pedir autorização para usar o depoimento na página de vendas",
+            "Se for 3 ou menos, passar para o Alerta à dona"
+          ],
+          "human": "Aluno com reembolso pedido ou reclamação aberta: não mandar.",
+          "example": { "from": "Larissa Moreira", "in": "5! Consegui meu primeiro cliente.", "out": "Que demais, Larissa! Topa gravar 30 segundos contando isso? Só uso com sua autorização." }
+        },
+        {
+          "name": "Alerta à dona",
+          "when": "Chega uma resposta ruim ou um comentário negativo na comunidade.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Mandar para a Marina o nome, a nota e o que o aluno escreveu",
+            "Juntar a data da compra, o progresso e as conversas com o suporte",
+            "Responder ao aluno que a Marina vai falar com ele hoje",
+            "Cobrar a Marina se ninguém respondeu em 2 horas"
+          ],
+          "human": "Sempre: quem resolve é a Marina.",
+          "example": { "from": "Henrique Bastos", "in": "Paguei caro e o módulo 4 ainda não saiu.", "out": "Aviso enviado à Marina." }
+        }
+      ]
+    }
+  ],
+  "morning": {
+    "when": "Todo dia às 7h30, no WhatsApp da Marina.",
+    "flow": [
+      "Contar as vendas de ontem e quantas vieram de carrinho recuperado",
+      "Listar alunos parados, Pix e boletos pendentes e pedidos de suporte em aberto",
+      "Somar o que se perdeu: reembolsos, carrinhos que não voltaram e acessos que não renovaram",
+      "Mandar tudo numa página só"
+    ],
+    "stats": [
+      { "value": "37", "label": "Vendas ontem", "sub": "9 de carrinho recuperado, 2 aulas ao vivo hoje" },
+      { "value": "214", "label": "Parados", "sub": "sem assistir há 14 dias, 61 na mesma aula" },
+      { "value": "R$ 3.976", "label": "Perdido", "sub": "5 reembolsos e 3 carrinhos que não voltaram" }
+    ]
+  }
+}

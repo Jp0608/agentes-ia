@@ -1,0 +1,348 @@
+{
+  "id": "academia",
+  "label": "Academia",
+  "group": "educacao",
+  "icon": "fitness_center",
+  "title": "da academia",
+  "owner": "Léo",
+  "intro": "Todo agente de IA que uma academia precisa, numa página. Cada cartão é um agente com o fluxo escrito.",
+  "sectors": [
+    {
+      "name": "Atendimento e aula experimental",
+      "icon": "forum",
+      "line": "Atende o WhatsApp e o Instagram até as 10 da noite, tira a dúvida do plano e marca a aula experimental.",
+      "agents": [
+        {
+          "name": "Atendente do WhatsApp e Instagram",
+          "when": "Chega mensagem no WhatsApp ou no Instagram da academia.",
+          "uses": ["WhatsApp", "Instagram"],
+          "flow": [
+            "Cumprimentar pelo nome se o número já é aluno ou ex-aluno",
+            "Perguntar o objetivo: emagrecer, ganhar massa, voltar a treinar, aula coletiva",
+            "Responder preço dos planos, horário de funcionamento e endereço com a tabela da academia",
+            "Oferecer uma aula experimental grátis e passar para o Agendador da experimental"
+          ],
+          "human": "Pergunta sobre dor, lesão ou cirurgia recente: passar para o professor de plantão.",
+          "example": { "from": "Juliana Prado", "in": "Quanto tá o plano mensal?", "out": "Oi, Juliana! O mensal é R$ 129 e o anual sai R$ 99 por mês. Quer fazer uma aula experimental grátis antes?" }
+        },
+        {
+          "name": "Agendador da experimental",
+          "when": "A pessoa aceita fazer a aula experimental.",
+          "uses": ["WhatsApp", "Sistema da academia"],
+          "flow": [
+            "Perguntar o melhor dia e período (manhã, tarde ou noite)",
+            "Conferir a lotação do horário e se tem professor livre para receber",
+            "Propor dois horários e reservar o escolhido",
+            "Mandar a confirmação com endereço, o que levar (toalha, garrafa, roupa de treino) e onde estacionar",
+            "Lembrar 3 horas antes da aula"
+          ],
+          "human": "Pessoa acima de 60 anos ou com problema de saúde: avisar o professor para fazer a anamnese antes.",
+          "example": { "from": "Juliana Prado", "in": "Pode ser amanhã depois do trabalho.", "out": "Tenho amanhã às 18h30 ou 19h30. Qual fica melhor?" }
+        },
+        {
+          "name": "Fora do horário",
+          "when": "Chega mensagem depois das 22h, de madrugada ou no domingo.",
+          "uses": ["WhatsApp", "Instagram", "Sistema da academia"],
+          "flow": [
+            "Responder na hora com preço, horário e endereço",
+            "Marcar a aula experimental direto no sistema",
+            "Anotar o que a pessoa quer saber e não deu para responder",
+            "Deixar o resumo para a recepção ler às 6h"
+          ],
+          "human": "Reclamação de aluno ou cobrança errada: deixar marcado como prioridade para a recepção de manhã.",
+          "example": { "from": "Diego Nunes", "in": "Vocês abrem feriado?", "out": "Abrimos sim, Diego, das 8h às 14h. Quer que eu reserve uma aula experimental para você?" }
+        }
+      ]
+    },
+    {
+      "name": "Matrícula",
+      "icon": "how_to_reg",
+      "line": "Chama quem fez a experimental no mesmo dia, fecha o plano e acompanha a primeira semana.",
+      "agents": [
+        {
+          "name": "Fechamento pós-experimental",
+          "when": "Duas horas depois de a pessoa sair da aula experimental.",
+          "uses": ["WhatsApp", "Sistema da academia"],
+          "flow": [
+            "Perguntar o que achou da aula",
+            "Mandar os planos com o valor do mês e do anual",
+            "Oferecer a matrícula sem taxa se fechar em até 48 horas",
+            "Se não responder, tentar mais uma vez 2 dias depois e parar"
+          ],
+          "human": "Pessoa pede desconto fora da tabela ou plano para a família: passar para o Léo.",
+          "example": { "from": "Juliana Prado", "in": "", "out": "E aí, Juliana, curtiu o treino? Se fechar até quinta, a matrícula sai sem taxa." }
+        },
+        {
+          "name": "Cadastro e contrato",
+          "when": "A pessoa diz que quer fechar.",
+          "uses": ["WhatsApp", "Sistema da academia"],
+          "flow": [
+            "Pedir nome completo, CPF, data de nascimento e um contato de emergência",
+            "Mandar o contrato e o link de pagamento do plano escolhido",
+            "Liberar o acesso na catraca quando o pagamento cair",
+            "Marcar a avaliação física da primeira semana"
+          ],
+          "human": "Menor de 16 anos: o responsável assina o contrato na recepção.",
+          "example": { "from": "Juliana Prado", "in": "Vou fechar o anual.", "out": "Que bom! Me passa seu CPF e um contato de emergência que eu já mando o contrato." }
+        },
+        {
+          "name": "Primeira semana",
+          "when": "No dia seguinte ao primeiro treino e de novo no 7º dia.",
+          "uses": ["WhatsApp", "Sistema da academia"],
+          "flow": [
+            "Perguntar como foi o primeiro treino",
+            "Lembrar o horário que a pessoa disse que vai treinar",
+            "No 7º dia, ver quantas vezes ela passou na catraca",
+            "Se veio menos de 2 vezes, avisar o professor responsável"
+          ],
+          "human": "Aluno diz que ficou com dor forte depois do treino: passar para o professor.",
+          "example": { "from": "Juliana Prado", "in": "", "out": "Juliana, como foi o primeiro treino? Amanhã às 18h30 tem o professor Caio no salão." }
+        }
+      ]
+    },
+    {
+      "name": "Alunos sumidos",
+      "icon": "person_off",
+      "line": "Chama de volta quem parou de passar na catraca antes de ele cancelar.",
+      "agents": [
+        {
+          "name": "Lista de sumidos",
+          "when": "Todo dia às 7h.",
+          "uses": ["Sistema da academia"],
+          "flow": [
+            "Buscar quem tem plano ativo e não passa na catraca há 10 dias",
+            "Separar em grupos: 10 dias, 20 dias e 30 dias ou mais",
+            "Tirar quem avisou que está de férias ou viajando",
+            "Montar a lista do dia, no máximo 25 pessoas"
+          ],
+          "human": "Aluno do plano anual sumido há mais de 30 dias: avisar o Léo.",
+          "example": { "from": "Sistema", "in": "Lista de hoje", "out": "22 sumidos: 12 com 10 dias, 7 com 20 dias, 3 com mais de 30." }
+        },
+        {
+          "name": "Mensagem de volta",
+          "when": "A lista do dia fica pronta.",
+          "uses": ["WhatsApp", "Sistema da academia"],
+          "flow": [
+            "Escrever pelo nome, citando o horário que a pessoa costumava treinar",
+            "Oferecer um treino concreto (aula de bike quarta às 19h, treino curto de 40 minutos)",
+            "Mandar entre 10h e 12h",
+            "Se não responder em 4 dias, mandar só mais uma vez e parar"
+          ],
+          "human": "A pessoa conta que está doente, machucada ou passando por algo difícil: parar a sequência e avisar o professor.",
+          "example": { "from": "Marcelo Souza", "in": "", "out": "Oi, Marcelo, sentimos sua falta nas manhãs! Quarta às 7h tem treino de 40 minutos. Te espero?" }
+        },
+        {
+          "name": "Pedido de cancelamento",
+          "when": "O aluno pede para cancelar o plano.",
+          "uses": ["WhatsApp", "Sistema da academia"],
+          "flow": [
+            "Perguntar o motivo com calma: preço, horário, mudança, falta de resultado",
+            "Oferecer a saída certa para o motivo: congelar até 30 dias, trocar de plano ou trocar de horário",
+            "Se a pessoa mantiver, explicar a multa do contrato e o último dia de acesso",
+            "Registrar o motivo no sistema"
+          ],
+          "human": "Aluno insiste em cancelar sem multa ou reclama do atendimento: passar para o Léo.",
+          "example": { "from": "Renata Lopes", "in": "Quero cancelar, mudei de emprego e não dá mais tempo.", "out": "Entendi, Renata. Quer congelar por 30 dias ou trocar para o plano de fim de semana, que sai R$ 79?" }
+        }
+      ]
+    },
+    {
+      "name": "Mensalidade atrasada",
+      "icon": "payments",
+      "line": "Avisa antes de vencer, cobra no dia seguinte com educação e resolve o cartão recusado.",
+      "agents": [
+        {
+          "name": "Aviso de vencimento",
+          "when": "3 dias antes de vencer a mensalidade de quem paga por boleto ou Pix.",
+          "uses": ["WhatsApp", "Sistema da academia"],
+          "flow": [
+            "Mandar o valor, a data e o link de pagamento",
+            "Lembrar de novo no dia do vencimento, às 9h",
+            "Dar baixa sozinho quando o pagamento cair",
+            "Agradecer com uma mensagem curta"
+          ],
+          "human": "Aluno diz que já pagou e o sistema não mostra: passar para a recepção conferir o comprovante.",
+          "example": { "from": "Sistema", "in": "", "out": "Oi, Diego. Sua mensalidade de R$ 129 vence sexta, dia 15. Segue o link do Pix." }
+        },
+        {
+          "name": "Cobrança do atraso",
+          "when": "1 dia depois do vencimento, sem pagamento.",
+          "uses": ["WhatsApp", "Sistema da academia"],
+          "flow": [
+            "Mandar o link de pagamento com o valor e a multa",
+            "Oferecer pagar em duas vezes se o atraso passar de 1 mês",
+            "Repetir no 5º e no 10º dia",
+            "No 15º dia, bloquear a catraca e avisar o aluno antes"
+          ],
+          "human": "Atraso de mais de 2 meses ou aluno pede para negociar: passar para o financeiro.",
+          "example": { "from": "Paulo Henrique", "in": "", "out": "Oi, Paulo. A mensalidade de outubro ficou em aberto: R$ 131,58 com a multa. Segue o link." }
+        },
+        {
+          "name": "Cartão recusado",
+          "when": "A cobrança recorrente no cartão é recusada.",
+          "uses": ["WhatsApp", "Sistema da academia"],
+          "flow": [
+            "Tentar de novo no dia seguinte às 10h",
+            "Se recusar de novo, avisar o aluno e mandar o link para trocar o cartão",
+            "Oferecer pagar o mês no Pix enquanto troca",
+            "Manter o acesso liberado por 5 dias"
+          ],
+          "human": "Recusou 3 vezes no mesmo mês: avisar o financeiro.",
+          "example": { "from": "Carla Mendes", "in": "", "out": "Oi, Carla. O cartão não passou na mensalidade deste mês. Quer atualizar por este link ou pagar no Pix?" }
+        }
+      ]
+    },
+    {
+      "name": "Avaliação física",
+      "icon": "monitoring",
+      "line": "Marca a avaliação, explica o resultado em palavras simples e chama para reavaliar em 90 dias.",
+      "agents": [
+        {
+          "name": "Marcação da avaliação",
+          "when": "Aluno novo matriculado ou 90 dias depois da última avaliação.",
+          "uses": ["WhatsApp", "Agenda"],
+          "flow": [
+            "Conferir a agenda dos professores avaliadores",
+            "Propor dois horários de 40 minutos",
+            "Mandar o que fazer antes: não treinar pesado no dia, vir de roupa leve, beber água",
+            "Lembrar na véspera às 18h"
+          ],
+          "human": "Aluno com problema de coração, pressão alta ou gravidez: pedir liberação médica e avisar o professor.",
+          "example": { "from": "Marcelo Souza", "in": "", "out": "Marcelo, faz 90 dias da sua avaliação. Tenho sábado às 9h ou segunda às 18h para reavaliar." }
+        },
+        {
+          "name": "Resultado em palavras simples",
+          "when": "O professor lança a avaliação no sistema.",
+          "uses": ["Sistema da academia", "WhatsApp"],
+          "flow": [
+            "Pegar peso, medidas e percentual de gordura que o professor anotou",
+            "Comparar com a avaliação anterior, se tiver",
+            "Escrever em palavras simples o que melhorou e o que falta",
+            "Mandar para o professor aprovar antes de enviar ao aluno"
+          ],
+          "human": "Aluno pergunta de dieta, remédio ou suplemento: indicar que fale com um nutricionista ou médico.",
+          "example": { "from": "Marcelo Souza", "in": "", "out": "Em 90 dias você perdeu 4 cm de cintura e 3 kg de gordura. O próximo passo é ganhar força nas pernas." }
+        },
+        {
+          "name": "Troca do treino",
+          "when": "45 dias depois da última ficha de treino.",
+          "uses": ["Sistema da academia", "WhatsApp"],
+          "flow": [
+            "Listar os alunos com ficha vencida",
+            "Avisar o professor responsável de cada um",
+            "Mandar ao aluno o dia em que o professor monta a ficha nova",
+            "Conferir se a ficha nova entrou no sistema em até 7 dias"
+          ],
+          "human": "Ficha atrasada há mais de 15 dias: avisar o coordenador dos professores.",
+          "example": { "from": "Sistema", "in": "", "out": "38 fichas vencidas: 14 do Caio, 13 da Bruna, 11 do Rodrigo." }
+        }
+      ]
+    },
+    {
+      "name": "Avaliações",
+      "icon": "star",
+      "line": "Pede avaliação depois do primeiro mês e, se a resposta for ruim, avisa o dono primeiro.",
+      "agents": [
+        {
+          "name": "Pedido de avaliação",
+          "when": "No 30º dia de matrícula, às 11h.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Agradecer pelo primeiro mês pelo nome",
+            "Perguntar como está sendo a academia, com nota de 1 a 5",
+            "Esperar a resposta antes de mandar qualquer link",
+            "Passar a resposta para o Leitor da resposta"
+          ],
+          "human": "Aluno que já reclamou na recepção este mês: não mandar e avisar o Léo.",
+          "example": { "from": "Juliana Prado", "in": "", "out": "Juliana, um mês de treino! Como está sendo a academia, de 1 a 5?" }
+        },
+        {
+          "name": "Leitor da resposta",
+          "when": "O aluno responde o pedido de avaliação.",
+          "uses": ["WhatsApp", "Google"],
+          "flow": [
+            "Ler se a resposta é boa, neutra ou ruim",
+            "Se for 4 ou 5, mandar o link de avaliação no Google",
+            "Se for 3, perguntar o que podia ser melhor",
+            "Se for 1 ou 2, passar para o Alerta ao dono e não mandar link"
+          ],
+          "human": "Resposta com palavrão ou ameaça: alerta direto para o Léo.",
+          "example": { "from": "Juliana Prado", "in": "5! Amo as aulas da Bruna.", "out": "Que bom! Pode contar isso numa avaliação no Google? Ajuda muito a gente." }
+        },
+        {
+          "name": "Alerta ao dono",
+          "when": "Chega uma resposta ruim.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Mandar para o Léo o nome, a nota e o que o aluno escreveu",
+            "Juntar o plano, o horário que treina e o professor dele",
+            "Responder ao aluno que o dono vai falar com ele hoje",
+            "Cobrar o Léo se ninguém respondeu em 2 horas"
+          ],
+          "human": "Sempre: quem resolve é o Léo.",
+          "example": { "from": "Thiago Ramos", "in": "Às 19h não tem aparelho livre e o ar está quebrado.", "out": "Aviso enviado ao Léo." }
+        }
+      ]
+    },
+    {
+      "name": "Equipamentos e escala",
+      "icon": "build",
+      "line": "Cuida dos aparelhos quebrados, da lotação das aulas e da escala dos professores.",
+      "agents": [
+        {
+          "name": "Aparelho quebrado",
+          "when": "Professor ou aluno avisa que um aparelho parou.",
+          "uses": ["WhatsApp", "Planilha de manutenção"],
+          "flow": [
+            "Registrar qual aparelho, o problema e quem avisou",
+            "Pedir para o professor colocar a placa de interditado",
+            "Chamar o técnico com a foto do defeito",
+            "Cobrar o técnico se não vier em 3 dias"
+          ],
+          "human": "Cabo solto, peça caindo ou risco de machucar alguém: avisar o Léo na hora.",
+          "example": { "from": "Prof. Caio", "in": "A esteira 4 está parando sozinha.", "out": "Esteira 4 interditada. Técnico chamado para amanhã às 10h." }
+        },
+        {
+          "name": "Lotação das aulas",
+          "when": "Toda segunda às 8h.",
+          "uses": ["Sistema da academia", "Planilha"],
+          "flow": [
+            "Contar quantos alunos foram em cada aula coletiva na semana",
+            "Apontar aulas com fila de espera e aulas com menos de 5 alunos",
+            "Sugerir abrir turma nova ou juntar turmas vazias",
+            "Mandar para o Léo decidir"
+          ],
+          "human": "Mudar horário de aula: o Léo decide e a recepção avisa os alunos.",
+          "example": { "from": "Sistema", "in": "", "out": "Bike das 19h lotou 4 vezes, 9 na espera. Pilates das 14h teve média de 3 alunos." }
+        },
+        {
+          "name": "Escala dos professores",
+          "when": "Toda quinta, para a semana seguinte.",
+          "uses": ["Sistema da academia", "WhatsApp"],
+          "flow": [
+            "Ver os horários de pico pela catraca da semana",
+            "Montar quem fica no salão e quem dá cada aula",
+            "Cobrir folgas e atestados",
+            "Mandar a escala para cada professor no WhatsApp"
+          ],
+          "human": "Horário sem professor no salão: o Léo decide quem cobre.",
+          "example": { "from": "Sistema", "in": "", "out": "Semana: salão coberto das 6h às 22h. Falta alguém sábado das 12h às 14h." }
+        }
+      ]
+    }
+  ],
+  "morning": {
+    "when": "Todo dia às 6h30, no WhatsApp do Léo.",
+    "flow": [
+      "Contar experimentais e avaliações marcadas para hoje",
+      "Listar alunos sumidos e mensalidades atrasadas, e quantos já foram chamados",
+      "Somar o que se perdeu ontem: cancelamentos, experimentais que não fecharam, catraca bloqueada",
+      "Mandar tudo numa página só"
+    ],
+    "stats": [
+      { "value": "9", "label": "Experimentais hoje", "sub": "6 à noite, a primeira às 7h" },
+      { "value": "47", "label": "Sumidos ou atrasados", "sub": "22 sem treinar, 25 com mensalidade aberta" },
+      { "value": "R$ 2.580", "label": "Perdido", "sub": "2 cancelamentos do anual e 4 experimentais sem matrícula" }
+    ]
+  }
+}

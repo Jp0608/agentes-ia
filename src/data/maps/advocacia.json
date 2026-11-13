@@ -1,0 +1,334 @@
+{
+  "id": "advocacia",
+  "label": "Escritório de advocacia",
+  "group": "servicos",
+  "icon": "gavel",
+  "title": "do escritório de advocacia",
+  "owner": "Dr. Ricardo",
+  "intro": "Todo agente de IA que um escritório de advocacia precisa, numa página. Cada cartão é um agente com o fluxo escrito.",
+  "sectors": [
+    {
+      "name": "Triagem do caso",
+      "icon": "forum",
+      "line": "Atende o WhatsApp até as 9 da noite, entende o assunto e leva o caso para o advogado da área.",
+      "agents": [
+        {
+          "name": "Atendente do WhatsApp",
+          "when": "Chega mensagem de alguém que procura o escritório.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Cumprimentar e dizer que a conversa é sigilosa",
+            "Pedir nome e um resumo do assunto em poucas linhas",
+            "Responder dúvidas de endereço, horário e como funciona a consulta",
+            "Se a pessoa quer uma consulta, passar para a Triagem da área"
+          ],
+          "human": "Pessoa pergunta se tem direito ou se vai ganhar: o agente explica que só o advogado pode avaliar e oferece a consulta.",
+          "example": { "from": "Fernanda Lopes", "in": "Fui demitida e não recebi a rescisão. Vocês atendem?", "out": "Atendemos, Fernanda. Quem avalia o seu caso é o advogado. Posso marcar uma consulta para esta semana?" }
+        },
+        {
+          "name": "Triagem da área",
+          "when": "A pessoa quer marcar consulta.",
+          "uses": ["WhatsApp", "Sistema do escritório"],
+          "flow": [
+            "Separar a área pelo resumo: trabalhista, família, cível, consumidor ou previdenciário",
+            "Perguntar se já existe processo e, se sim, o número",
+            "Perguntar se tem alguma data marcada, como audiência ou prazo de carta",
+            "Montar a ficha da triagem para o advogado da área"
+          ],
+          "human": "Pessoa cita audiência ou prazo nos próximos 5 dias: avisar o advogado da área na hora.",
+          "example": { "from": "Fernanda Lopes", "in": "Ainda não tem processo. Saí dia 3 de outubro.", "out": "Anotado. Vou passar seu caso para o Dr. Vinícius, da área trabalhista." }
+        },
+        {
+          "name": "Conferência de conflito",
+          "when": "A ficha da triagem fica pronta.",
+          "uses": ["Sistema do escritório"],
+          "flow": [
+            "Buscar o nome da pessoa e da outra parte entre os clientes do escritório",
+            "Buscar nos processos em andamento",
+            "Se não houver nada, liberar para marcar a consulta",
+            "Se houver qualquer coincidência, segurar o caso e avisar o sócio"
+          ],
+          "human": "Outra parte já é cliente do escritório: o Dr. Ricardo decide e ninguém responde ao interessado antes disso.",
+          "example": { "from": "Sistema", "in": "", "out": "Triagem 214: nenhum conflito encontrado. Liberado para agenda." }
+        }
+      ]
+    },
+    {
+      "name": "Agenda de consultas",
+      "icon": "event",
+      "line": "Marca a consulta, pede os documentos antes e lembra na véspera.",
+      "agents": [
+        {
+          "name": "Marcação da consulta",
+          "when": "A triagem é liberada.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Conferir a agenda do advogado da área",
+            "Reservar 1 hora para a primeira consulta",
+            "Propor dois horários, presencial ou por vídeo",
+            "Mandar a confirmação com data, hora, endereço ou link e o valor da consulta"
+          ],
+          "human": "Pessoa pede consulta gratuita ou desconto: a secretária responde pela política do escritório.",
+          "example": { "from": "Fernanda Lopes", "in": "Prefiro por vídeo.", "out": "Tenho quarta às 14h ou quinta às 10h com o Dr. Vinícius, por vídeo. Qual prefere?" }
+        },
+        {
+          "name": "Documentos antes da consulta",
+          "when": "A consulta é marcada.",
+          "uses": ["WhatsApp", "Pasta do cliente"],
+          "flow": [
+            "Mandar a lista de documentos da área (carteira de trabalho, holerites, termo de rescisão)",
+            "Receber os arquivos e salvar na pasta sigilosa do cliente",
+            "Avisar o que falta na véspera",
+            "Deixar a pasta pronta para o advogado ler antes"
+          ],
+          "human": "Cliente manda áudio contando o caso: o advogado ouve, o agente não resume conteúdo sensível para terceiros.",
+          "example": { "from": "Fernanda Lopes", "in": "Mandei os holerites.", "out": "Recebi os 3, Fernanda. Falta só o termo de rescisão, se você tiver." }
+        },
+        {
+          "name": "Lembrete e falta",
+          "when": "Na véspera às 17h e 10 minutos depois do horário da consulta.",
+          "uses": ["WhatsApp", "Agenda"],
+          "flow": [
+            "Na véspera, lembrar data, hora e link ou endereço",
+            "Pedir para confirmar",
+            "Se não entrar 10 minutos depois do horário, perguntar se vai conseguir",
+            "Se faltou, oferecer dois novos horários"
+          ],
+          "human": "Segunda falta seguida: a secretária liga antes de remarcar.",
+          "example": { "from": "Fernanda Lopes", "in": "", "out": "Oi, Fernanda. Amanhã às 14h é sua consulta com o Dr. Vinícius. O link é este. Confirma?" }
+        }
+      ]
+    },
+    {
+      "name": "Prazos processuais",
+      "icon": "alarm",
+      "line": "Lê as publicações toda manhã, conta o prazo e cobra o advogado antes de vencer.",
+      "agents": [
+        {
+          "name": "Leitor de publicações",
+          "when": "Todo dia útil às 6h.",
+          "uses": ["Diário de Justiça", "Sistema processual"],
+          "flow": [
+            "Buscar as publicações com o nome e a OAB de cada advogado do escritório",
+            "Ligar cada publicação ao processo certo",
+            "Separar o que abre prazo, o que marca audiência e o que é só ciência",
+            "Mandar a lista do dia para cada advogado"
+          ],
+          "human": "Publicação que não bate com nenhum processo do escritório: a controladoria confere.",
+          "example": { "from": "Sistema", "in": "", "out": "11 publicações hoje. 4 abrem prazo, 1 marca audiência, 6 só ciência." }
+        },
+        {
+          "name": "Controle de prazos",
+          "when": "Uma publicação abre prazo.",
+          "uses": ["Sistema processual", "Agenda"],
+          "flow": [
+            "Contar o prazo em dias úteis, tirando feriados e suspensões do tribunal",
+            "Lançar na agenda do advogado com 3 dias de folga antes do fim",
+            "Lembrar o advogado 5 dias, 2 dias e no dia da folga",
+            "Marcar como cumprido quando a peça for protocolada"
+          ],
+          "human": "Prazo que vence em 48 horas sem peça pronta: avisar o Dr. Ricardo.",
+          "example": { "from": "Sistema", "in": "", "out": "Processo 0012345: contestação, 15 dias úteis. Vence 04/12. Agenda: 01/12 com a Dra. Aline." }
+        },
+        {
+          "name": "Audiências",
+          "when": "Uma audiência é marcada ou fica a 7 dias.",
+          "uses": ["Agenda", "WhatsApp", "E-mail"],
+          "flow": [
+            "Lançar na agenda do advogado com local ou link",
+            "Avisar o cliente com 7 dias e com 1 dia de antecedência",
+            "Avisar testemunhas que o advogado indicar",
+            "Mandar ao advogado a pasta do processo na véspera"
+          ],
+          "human": "Cliente diz que não pode ir: o advogado decide o que fazer.",
+          "example": { "from": "Antônio Carvalho", "in": "", "out": "Sr. Antônio, sua audiência é dia 20/11, às 13h30, por vídeo. Mando o link na véspera." }
+        }
+      ]
+    },
+    {
+      "name": "Andamento para o cliente",
+      "icon": "update",
+      "line": "Conta ao cliente o que mudou no processo em palavras simples, antes que ele precise perguntar.",
+      "agents": [
+        {
+          "name": "Aviso de movimentação",
+          "when": "O processo do cliente tem uma movimentação nova.",
+          "uses": ["Sistema processual", "WhatsApp"],
+          "flow": [
+            "Traduzir a movimentação para palavras simples",
+            "Mandar ao advogado responsável aprovar o texto",
+            "Mandar ao cliente o texto aprovado",
+            "Não mandar nada sobre decisão antes do advogado falar com o cliente"
+          ],
+          "human": "Sentença ou decisão importante: o próprio advogado liga para o cliente.",
+          "example": { "from": "Antônio Carvalho", "in": "", "out": "Sr. Antônio, o juiz pediu um laudo de um perito. Ele deve marcar a data nas próximas semanas." }
+        },
+        {
+          "name": "Como está meu processo",
+          "when": "O cliente pergunta do processo no WhatsApp.",
+          "uses": ["WhatsApp", "Sistema processual"],
+          "flow": [
+            "Confirmar que quem pergunta é o próprio cliente, pelo número cadastrado",
+            "Contar a última movimentação já explicada pelo advogado",
+            "Dizer qual é o próximo passo esperado, sem prever resultado nem prazo de fim",
+            "Anotar a pergunta para o advogado"
+          ],
+          "human": "Pergunta sobre chance de ganhar, valor que vai receber ou acordo: passa para o advogado.",
+          "example": { "from": "Antônio Carvalho", "in": "Quanto tempo ainda vai demorar?", "out": "Agora estamos esperando a perícia. Sobre prazo, o Dr. Vinícius te responde até amanhã." }
+        },
+        {
+          "name": "Resumo do mês",
+          "when": "Todo dia 5.",
+          "uses": ["Sistema processual", "E-mail"],
+          "flow": [
+            "Listar os processos de cada cliente e o que mudou no mês",
+            "Escrever um parágrafo simples por processo",
+            "Mandar ao advogado revisar",
+            "Enviar ao cliente por e-mail"
+          ],
+          "human": "Processo sem movimentação há mais de 90 dias: o advogado avalia antes do envio.",
+          "example": { "from": "Sistema", "in": "", "out": "Resumo de novembro: 38 clientes, 52 processos. 6 esperando revisão do advogado." }
+        }
+      ]
+    },
+    {
+      "name": "Honorários",
+      "icon": "payments",
+      "line": "Manda a proposta de honorários, colhe a assinatura do contrato e lembra a parcela antes de vencer.",
+      "agents": [
+        {
+          "name": "Proposta de honorários",
+          "when": "O advogado decide aceitar o caso depois da consulta.",
+          "uses": ["Modelo de proposta", "WhatsApp"],
+          "flow": [
+            "Pegar o valor e a forma de cobrança que o advogado definiu",
+            "Montar a proposta com o que está incluído e o que não está",
+            "Explicar em palavras simples as despesas do processo",
+            "Mandar ao cliente e voltar em 3 dias se não houver resposta"
+          ],
+          "human": "Cliente pede para mudar valor ou forma de pagamento: o advogado responde.",
+          "example": { "from": "Fernanda Lopes", "in": "", "out": "Fernanda, segue a proposta do Dr. Vinícius: entrada de R$ 800 e 20% do que for recebido no final." }
+        },
+        {
+          "name": "Contrato e procuração",
+          "when": "O cliente aceita a proposta.",
+          "uses": ["Modelo de contrato", "Assinatura eletrônica"],
+          "flow": [
+            "Preencher o contrato de honorários e a procuração",
+            "Mandar o link de assinatura eletrônica",
+            "Lembrar em 2 dias se não assinar",
+            "Abrir o caso no sistema quando os dois estiverem assinados"
+          ],
+          "human": "Cliente que não consegue assinar on-line: a secretária marca a assinatura no escritório.",
+          "example": { "from": "Sistema", "in": "", "out": "Contrato e procuração da Fernanda Lopes assinados. Caso aberto: trabalhista nº 318." }
+        },
+        {
+          "name": "Lembrete da parcela",
+          "when": "3 dias antes de cada vencimento.",
+          "uses": ["WhatsApp", "Planilha financeira"],
+          "flow": [
+            "Mandar o lembrete com valor e boleto ou chave de pagamento",
+            "Dar baixa quando o pagamento cair",
+            "No dia seguinte ao vencimento, mandar uma mensagem educada",
+            "Com 15 dias de atraso, avisar o financeiro"
+          ],
+          "human": "Cliente pede para adiar ou parcelar: o Dr. Ricardo decide.",
+          "example": { "from": "Paulo Henrique Souza", "in": "", "out": "Oi, Paulo. A parcela 3 de 6, de R$ 650, vence sexta. O boleto está aqui." }
+        }
+      ]
+    },
+    {
+      "name": "Documentos",
+      "icon": "folder_open",
+      "line": "Pede o que falta, organiza a pasta e deixa tudo pronto antes de o advogado sentar para escrever.",
+      "agents": [
+        {
+          "name": "Pedido de documentos",
+          "when": "O advogado marca o que precisa para a peça.",
+          "uses": ["WhatsApp", "Pasta do cliente"],
+          "flow": [
+            "Mandar ao cliente a lista em palavras simples",
+            "Dizer a data limite, com 5 dias de folga antes do prazo",
+            "Lembrar a cada 2 dias até chegar tudo",
+            "Avisar o advogado do que chegou e do que falta"
+          ],
+          "human": "Cliente não manda até a data limite: o advogado liga.",
+          "example": { "from": "Antônio Carvalho", "in": "", "out": "Sr. Antônio, para o processo precisamos dos laudos do médico e da CTPS. Pode mandar até dia 22?" }
+        },
+        {
+          "name": "Organizador da pasta",
+          "when": "Chega qualquer arquivo de cliente.",
+          "uses": ["Pasta do cliente", "Sistema do escritório"],
+          "flow": [
+            "Renomear o arquivo com data, tipo e nome do cliente",
+            "Guardar na pasta do processo certo, com acesso só da equipe do caso",
+            "Juntar fotos de várias páginas num PDF só",
+            "Apontar arquivo ilegível, cortado ou vencido"
+          ],
+          "human": "Arquivo de outra pessoa enviado por engano: avisar o advogado e não abrir o conteúdo.",
+          "example": { "from": "Sistema", "in": "", "out": "4 arquivos de Antônio Carvalho salvos. 1 foto ilegível, pedi de novo." }
+        },
+        {
+          "name": "Pasta pronta para a peça",
+          "when": "5 dias antes da folga de um prazo.",
+          "uses": ["Pasta do cliente", "Sistema processual"],
+          "flow": [
+            "Juntar documentos, últimas decisões e anotações da consulta",
+            "Montar a linha do tempo dos fatos com datas",
+            "Listar o que ainda falta",
+            "Mandar a pasta ao advogado responsável"
+          ],
+          "human": "Sempre: quem escreve e assina a peça é o advogado.",
+          "example": { "from": "Sistema", "in": "", "out": "Pasta do processo 0012345 pronta: 23 documentos, linha do tempo com 9 datas, falta 1 recibo." }
+        }
+      ]
+    },
+    {
+      "name": "Satisfação do cliente",
+      "icon": "sentiment_satisfied",
+      "line": "Pergunta como foi o atendimento e, se a resposta for ruim, avisa o sócio primeiro.",
+      "agents": [
+        {
+          "name": "Pesquisa de satisfação",
+          "when": "30 dias depois do início do caso e quando o caso termina.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Perguntar como está o atendimento, com nota de 1 a 5",
+            "Perguntar se o cliente se sente informado sobre o processo",
+            "Guardar a resposta só para uso interno",
+            "Se a nota for 3 ou menos, passar para o Alerta ao sócio"
+          ],
+          "human": "Cliente comenta o resultado do processo: o advogado responde.",
+          "example": { "from": "Fernanda Lopes", "in": "Nota 4. Só queria mais notícias.", "out": "Obrigado, Fernanda. Vou pedir ao Dr. Vinícius para te dar um retorno esta semana." }
+        },
+        {
+          "name": "Alerta ao sócio",
+          "when": "Chega uma nota baixa ou uma reclamação.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Mandar ao Dr. Ricardo o nome, a nota e o que o cliente escreveu",
+            "Juntar o advogado responsável e o último contato com o cliente",
+            "Responder ao cliente que o sócio vai entrar em contato",
+            "Cobrar o sócio se ninguém respondeu em 4 horas"
+          ],
+          "human": "Sempre: quem resolve é o Dr. Ricardo.",
+          "example": { "from": "Gustavo Ramos", "in": "Faz um mês que ninguém me responde.", "out": "Aviso enviado ao Dr. Ricardo com o histórico do caso." }
+        }
+      ]
+    }
+  ],
+  "morning": {
+    "when": "Todo dia útil às 7h, no WhatsApp do sócio.",
+    "flow": [
+      "Contar as consultas e audiências de hoje",
+      "Listar os prazos que vencem nos próximos 3 dias e os que estão sem peça pronta",
+      "Somar o que se perdeu: consultas que faltaram, propostas sem resposta, parcelas atrasadas",
+      "Mandar tudo numa página só"
+    ],
+    "stats": [
+      { "value": "9", "label": "Consultas e audiências hoje", "sub": "6 consultas, 3 audiências, a primeira às 9h" },
+      { "value": "5", "label": "Prazos em 3 dias", "sub": "2 ainda sem peça pronta" },
+      { "value": "R$ 4.200", "label": "Perdido", "sub": "2 propostas de honorários sem resposta há 10 dias" }
+    ]
+  }
+}

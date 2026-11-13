@@ -1,0 +1,347 @@
+{
+  "id": "loja",
+  "label": "Loja e e-commerce",
+  "group": "servicos",
+  "icon": "storefront",
+  "title": "da loja",
+  "owner": "Fernanda",
+  "intro": "Todo agente de IA que uma loja física e online precisa, numa página. Cada cartão é um agente com o fluxo escrito.",
+  "sectors": [
+    {
+      "name": "Atendimento e dúvidas",
+      "icon": "forum",
+      "line": "Responde o WhatsApp e o Instagram até as 9 da noite, tira a dúvida do produto e manda o link para comprar.",
+      "agents": [
+        {
+          "name": "Atendente do WhatsApp e Instagram",
+          "when": "Chega mensagem de cliente no WhatsApp ou no direct do Instagram.",
+          "uses": ["WhatsApp", "Instagram", "Loja online"],
+          "flow": [
+            "Cumprimentar pelo nome se já é cliente e ver o último pedido",
+            "Entender se é dúvida de produto, de pedido ou de troca",
+            "Responder preço, frete e prazo pela loja online",
+            "Mandar o link do produto direto, com o tamanho ou a cor já escolhidos"
+          ],
+          "human": "Cliente bravo ou pedido acima de R$ 1.500: chamar a Fernanda.",
+          "example": { "from": "Juliana Castro", "in": "Esse vestido verde ainda tem no M?", "out": "Tem sim, Juliana! Restam 3 no M. Te mando o link já com o M escolhido." }
+        },
+        {
+          "name": "Tira-dúvidas de produto",
+          "when": "O cliente pergunta medida, tecido, tamanho ou como usar.",
+          "uses": ["Ficha dos produtos", "WhatsApp"],
+          "flow": [
+            "Buscar a ficha do produto com medidas e material",
+            "Perguntar a altura e o tamanho que a pessoa costuma usar",
+            "Indicar o tamanho pela tabela e dizer se a peça veste justa ou larga",
+            "Mandar uma foto real da peça se a pessoa pedir"
+          ],
+          "human": "Dúvida que não está na ficha: perguntar para a vendedora e responder em até 1 hora.",
+          "example": { "from": "Juliana Castro", "in": "Tenho 1,65 e uso 40. Qual pego?", "out": "Pega o M. Essa modelagem é mais soltinha no quadril e o comprimento fica no joelho pra você." }
+        },
+        {
+          "name": "Fora do horário",
+          "when": "Chega mensagem depois das 19h, no domingo ou no feriado.",
+          "uses": ["WhatsApp", "Instagram", "Loja online"],
+          "flow": [
+            "Responder na hora, até as 21h",
+            "Tirar a dúvida e mandar o link para fechar a compra online",
+            "Se for troca ou problema com pedido, abrir o atendimento e dizer o horário de retorno",
+            "Deixar o resumo para a equipe ler às 9h"
+          ],
+          "human": "Problema com pagamento cobrado duas vezes: avisar a Fernanda logo cedo.",
+          "example": { "from": "Larissa Melo", "in": "Vocês entregam no sábado?", "out": "Entregamos sim. Comprando até sexta às 14h, chega no sábado. Quer o link?" }
+        }
+      ]
+    },
+    {
+      "name": "Carrinho abandonado",
+      "icon": "shopping_cart",
+      "line": "Chama quem largou o carrinho e lembra do Pix que ficou para depois.",
+      "agents": [
+        {
+          "name": "Lembrete do carrinho",
+          "when": "Uma pessoa deixa produtos no carrinho e sai da loja online sem pagar.",
+          "uses": ["Loja online", "WhatsApp"],
+          "flow": [
+            "Esperar 1 hora",
+            "Mandar mensagem com a foto do produto e o link do carrinho",
+            "Perguntar se ficou alguma dúvida de tamanho ou frete",
+            "Se responder, passar para o Atendente do WhatsApp"
+          ],
+          "human": "Carrinho acima de R$ 800: avisar a vendedora para chamar pessoalmente.",
+          "example": { "from": "Camila Freitas", "in": "", "out": "Oi, Camila! O tênis branco ficou no seu carrinho. Ainda tem o 37. Ficou alguma dúvida?" }
+        },
+        {
+          "name": "Cupom do segundo dia",
+          "when": "24 horas depois do lembrete, sem compra.",
+          "uses": ["Loja online", "WhatsApp"],
+          "flow": [
+            "Conferir se a pessoa não comprou por outro caminho",
+            "Mandar um cupom de 10% válido por 48 horas",
+            "Avisar se o produto está acabando",
+            "Parar a sequência depois disso"
+          ],
+          "human": "Pessoa pede desconto maior: passa para a Fernanda.",
+          "example": { "from": "Camila Freitas", "in": "", "out": "Camila, separei 10% pra você no tênis. Cupom VOLTA10, vale até quinta." }
+        },
+        {
+          "name": "Pix não pago",
+          "when": "O pedido foi feito no Pix e o pagamento não caiu em 30 minutos.",
+          "uses": ["Loja online", "WhatsApp"],
+          "flow": [
+            "Mandar o código Pix de novo",
+            "Avisar que o produto fica reservado por mais 2 horas",
+            "Se não pagar, liberar o estoque",
+            "Perguntar se quer pagar no cartão"
+          ],
+          "human": "Cliente diz que pagou e não aparece: a Fernanda confere no banco.",
+          "example": { "from": "Rodrigo Lima", "in": "", "out": "Rodrigo, seu Pix de R$ 289 ainda não caiu. Segue o código de novo. Seguro o pedido até as 16h." }
+        }
+      ]
+    },
+    {
+      "name": "Pedidos e entrega",
+      "icon": "local_shipping",
+      "line": "Confirma o pedido, avisa quando sai e corre atrás do que atrasou.",
+      "agents": [
+        {
+          "name": "Confirmação e separação",
+          "when": "O pagamento de um pedido é aprovado.",
+          "uses": ["Loja online", "Sistema de estoque", "WhatsApp"],
+          "flow": [
+            "Mandar a confirmação com os itens e o prazo de entrega",
+            "Dar baixa no estoque",
+            "Montar a lista de separação do dia para a expedição",
+            "Pedidos pagos até as 14h saem no mesmo dia"
+          ],
+          "human": "Produto vendido que não está na prateleira: a expedição avisa a Fernanda.",
+          "example": { "from": "Sistema", "in": "", "out": "Pedido 2318 pago: 1 vestido verde M, 1 cinto. Sai hoje, chega até sexta." }
+        },
+        {
+          "name": "Rastreio",
+          "when": "O pedido é postado ou sai com o entregador.",
+          "uses": ["Transportadora", "WhatsApp"],
+          "flow": [
+            "Mandar o código de rastreio com o link",
+            "Avisar quando sair para entrega",
+            "Avisar quando for entregue e perguntar se chegou tudo certo",
+            "Responder \"cadê meu pedido?\" com o status do momento"
+          ],
+          "human": "Cliente diz que não recebeu um pedido marcado como entregue: a expedição abre reclamação.",
+          "example": { "from": "Juliana Castro", "in": "Cadê meu pedido?", "out": "Saiu para entrega hoje às 8h40, Juliana. A previsão é até as 18h." }
+        },
+        {
+          "name": "Entrega atrasada",
+          "when": "Todo dia às 11h.",
+          "uses": ["Transportadora", "Planilha de pedidos", "WhatsApp"],
+          "flow": [
+            "Listar os pedidos que passaram do prazo prometido",
+            "Avisar o cliente antes que ele pergunte, com a nova previsão",
+            "Abrir chamado com a transportadora",
+            "Oferecer frete grátis na próxima compra se passar de 3 dias"
+          ],
+          "human": "Pedido parado há mais de 5 dias: a Fernanda decide se reenvia.",
+          "example": { "from": "Rodrigo Lima", "in": "", "out": "Rodrigo, seu pedido atrasou na transportadora. Nova previsão: quarta. Desculpa pela demora." }
+        }
+      ]
+    },
+    {
+      "name": "Trocas e devoluções",
+      "icon": "assignment_return",
+      "line": "Recebe o pedido de troca, manda a etiqueta e devolve o dinheiro sem enrolar.",
+      "agents": [
+        {
+          "name": "Pedido de troca",
+          "when": "O cliente pede troca ou devolução.",
+          "uses": ["WhatsApp", "Loja online"],
+          "flow": [
+            "Achar o pedido pelo nome ou CPF",
+            "Conferir se está dentro dos 7 dias do arrependimento ou dos 30 da troca",
+            "Perguntar o motivo e se quer outro tamanho, outro produto ou o dinheiro de volta",
+            "Se for troca de tamanho, reservar o novo tamanho na hora"
+          ],
+          "human": "Produto com defeito ou fora do prazo: a Fernanda decide.",
+          "example": { "from": "Larissa Melo", "in": "A calça ficou apertada, dá pra trocar?", "out": "Dá sim, Larissa! Separei o 40 pra você. Te mando a etiqueta para devolver a 38." }
+        },
+        {
+          "name": "Etiqueta de devolução",
+          "when": "A troca ou devolução é aceita.",
+          "uses": ["Transportadora", "WhatsApp"],
+          "flow": [
+            "Gerar a etiqueta de devolução",
+            "Mandar com o passo a passo para embalar",
+            "Dizer que também pode trocar direto na loja física",
+            "Lembrar em 5 dias se o pacote não foi postado"
+          ],
+          "human": "Cliente sem como postar: a expedição combina a coleta.",
+          "example": { "from": "Larissa Melo", "in": "", "out": "Etiqueta pronta. Coloca a calça na embalagem, cola a etiqueta e leva a uma agência até sexta." }
+        },
+        {
+          "name": "Conferência e reembolso",
+          "when": "O produto devolvido chega na loja.",
+          "uses": ["Sistema de estoque", "Loja online", "WhatsApp"],
+          "flow": [
+            "Pedir para a expedição conferir se a peça voltou com etiqueta e sem uso",
+            "Se estiver ok, mandar a troca ou fazer o reembolso em até 2 dias",
+            "Devolver a peça ao estoque",
+            "Avisar o cliente que está resolvido"
+          ],
+          "human": "Peça voltou usada ou danificada: a Fernanda fala com o cliente.",
+          "example": { "from": "Sistema", "in": "", "out": "Devolução do pedido 2290 conferida. Calça 40 enviada, 38 de volta no estoque." }
+        }
+      ]
+    },
+    {
+      "name": "Pós-venda e recompra",
+      "icon": "autorenew",
+      "line": "Chama de volta quem comprou na hora certa de comprar de novo.",
+      "agents": [
+        {
+          "name": "Lista de recompra",
+          "when": "Toda terça às 8h.",
+          "uses": ["Loja online", "Planilha de clientes"],
+          "flow": [
+            "Buscar quem comprou há 45 dias e não voltou",
+            "Buscar quem comprou produto que acaba (perfume, creme) perto do fim",
+            "Tirar quem pediu para não receber mensagem",
+            "Montar a lista da semana, no máximo 60 pessoas"
+          ],
+          "human": "Cliente que gastou mais de R$ 3 mil no ano: a Fernanda manda a mensagem.",
+          "example": { "from": "Sistema", "in": "Lista da semana", "out": "38 clientes há 45 dias sem comprar, 12 com creme perto de acabar." }
+        },
+        {
+          "name": "Mensagem de recompra",
+          "when": "A lista da semana fica pronta.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Escrever pelo nome, citando o que a pessoa comprou",
+            "Mostrar 2 ou 3 novidades que combinam com a compra",
+            "Mandar entre 10h e 12h",
+            "Se não responder, tentar de novo só no mês seguinte"
+          ],
+          "human": "Resposta reclamando da última compra: passa para a Fernanda.",
+          "example": { "from": "Juliana Castro", "in": "", "out": "Oi, Juliana! Chegou um cinto caramelo que fica lindo com o vestido verde que você levou. Quer ver?" }
+        },
+        {
+          "name": "Avise-me quando chegar",
+          "when": "Um produto esgotado volta ao estoque.",
+          "uses": ["Loja online", "WhatsApp"],
+          "flow": [
+            "Buscar quem pediu aviso desse produto e tamanho",
+            "Mandar o aviso com o link direto",
+            "Avisar quantas peças chegaram",
+            "Mandar primeiro para quem pediu antes"
+          ],
+          "human": "Mais pedidos do que peças: a Fernanda decide se faz reposição maior.",
+          "example": { "from": "Camila Freitas", "in": "", "out": "Camila, o tênis branco 37 voltou! Chegaram só 4. Link aqui." }
+        }
+      ]
+    },
+    {
+      "name": "Avaliações",
+      "icon": "star",
+      "line": "Pede avaliação depois da entrega e, se a resposta for ruim, avisa a dona primeiro.",
+      "agents": [
+        {
+          "name": "Pedido de avaliação",
+          "when": "Dois dias depois de o pedido ser entregue, às 10h.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Perguntar se chegou tudo certo e se serviu",
+            "Pedir uma nota de 1 a 5",
+            "Esperar a resposta antes de mandar qualquer link",
+            "Passar a resposta para o Leitor da resposta"
+          ],
+          "human": "Cliente diz que o produto veio errado: abrir a troca na hora.",
+          "example": { "from": "Juliana Castro", "in": "", "out": "Oi, Juliana! O vestido serviu certinho? De 1 a 5, que nota você dá?" }
+        },
+        {
+          "name": "Leitor da resposta",
+          "when": "O cliente responde o pedido de avaliação.",
+          "uses": ["WhatsApp", "Loja online", "Google"],
+          "flow": [
+            "Ler se a resposta é boa, neutra ou ruim",
+            "Se for 4 ou 5, mandar o link para avaliar na loja online e no Google",
+            "Se for 3, perguntar o que faltou",
+            "Se for 1 ou 2, passar para o Alerta à dona e não mandar link"
+          ],
+          "human": "Cliente pede para postar foto com o produto: avisar quem cuida do Instagram.",
+          "example": { "from": "Juliana Castro", "in": "5! Amei o tecido.", "out": "Que bom! Pode deixar essa nota na loja? Ajuda outras clientes a escolher." }
+        },
+        {
+          "name": "Alerta à dona",
+          "when": "Chega uma resposta ruim.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Mandar para a Fernanda o nome, a nota e o que o cliente escreveu",
+            "Juntar o pedido, o valor e o histórico de compras",
+            "Responder ao cliente que a dona vai falar com ele hoje",
+            "Cobrar a Fernanda se ninguém respondeu em 2 horas"
+          ],
+          "human": "Sempre: quem resolve é a Fernanda.",
+          "example": { "from": "Paulo Teixeira", "in": "A blusa desbotou na primeira lavagem.", "out": "Aviso enviado à Fernanda com o pedido 2276." }
+        }
+      ]
+    },
+    {
+      "name": "Estoque",
+      "icon": "inventory_2",
+      "line": "Avisa o que está acabando, o que está parado e monta a reposição.",
+      "agents": [
+        {
+          "name": "Estoque baixo",
+          "when": "Todo dia às 18h.",
+          "uses": ["Sistema de estoque", "WhatsApp"],
+          "flow": [
+            "Ver quanto vendeu de cada produto nos últimos 14 dias",
+            "Calcular para quantos dias ainda dá o estoque",
+            "Listar o que acaba em menos de 10 dias",
+            "Montar o pedido de reposição para a Fernanda aprovar"
+          ],
+          "human": "Produto mais vendido com 2 peças ou menos: avisar na hora.",
+          "example": { "from": "Sistema", "in": "", "out": "Tênis branco: 5 pares, acaba em 4 dias. Vestido verde M: 3, acaba em 6 dias." }
+        },
+        {
+          "name": "Produto parado",
+          "when": "Todo dia 1º do mês.",
+          "uses": ["Sistema de estoque", "Loja online"],
+          "flow": [
+            "Listar o que não vendeu nenhuma peça em 60 dias",
+            "Somar quanto dinheiro está parado nesses produtos",
+            "Sugerir o que vai para promoção e o que muda de vitrine",
+            "Mandar a lista para a Fernanda decidir"
+          ],
+          "human": "Sempre: a Fernanda escolhe o desconto.",
+          "example": { "from": "Sistema", "in": "", "out": "14 produtos parados há 60 dias, R$ 4.320 em estoque. Sugestão: 6 para promoção." }
+        },
+        {
+          "name": "Loja física e online iguais",
+          "when": "Toda venda no balcão.",
+          "uses": ["Sistema de estoque", "Loja online"],
+          "flow": [
+            "Dar baixa da peça vendida no balcão também na loja online",
+            "Tirar do ar o tamanho que zerou",
+            "Conferir toda noite se os dois estoques batem",
+            "Listar o que não bateu para contar no dia seguinte"
+          ],
+          "human": "Diferença de mais de 3 peças no mesmo produto: a vendedora conta na prateleira.",
+          "example": { "from": "Sistema", "in": "", "out": "Hoje: 2 diferenças. Calça 38 (sistema 4, prateleira 3) e cinto preto (sistema 1, prateleira 0)." }
+        }
+      ]
+    }
+  ],
+  "morning": {
+    "when": "Todo dia às 8h, no WhatsApp da dona.",
+    "flow": [
+      "Contar quantos pedidos saem hoje e quanto vendeu ontem",
+      "Listar as entregas atrasadas e as trocas paradas",
+      "Somar o que se perdeu ontem: carrinhos largados, Pix não pagos, produtos esgotados",
+      "Mandar tudo numa página só"
+    ],
+    "stats": [
+      { "value": "27", "label": "Pedidos hoje", "sub": "R$ 5.940 vendidos ontem" },
+      { "value": "4", "label": "Atrasados", "sub": "3 entregas e 1 troca, todos já avisados" },
+      { "value": "R$ 3.210", "label": "Perdido", "sub": "19 carrinhos largados e 2 Pix não pagos" }
+    ]
+  }
+}

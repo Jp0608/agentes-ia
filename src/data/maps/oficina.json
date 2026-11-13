@@ -1,0 +1,339 @@
+{
+  "id": "oficina",
+  "label": "Oficina mecânica",
+  "group": "servicos",
+  "icon": "car_repair",
+  "title": "da oficina mecânica",
+  "owner": "Seu Jorge",
+  "intro": "Todo agente de IA que uma oficina mecânica precisa, numa página. Cada cartão é um agente com o fluxo escrito.",
+  "sectors": [
+    {
+      "name": "Atendimento",
+      "icon": "forum",
+      "line": "Atende o WhatsApp até as 9 da noite, entende o problema do carro e marca o dia de trazer.",
+      "agents": [
+        {
+          "name": "Atendente do WhatsApp",
+          "when": "Chega mensagem de cliente no WhatsApp da oficina.",
+          "uses": ["WhatsApp", "Cadastro de clientes"],
+          "flow": [
+            "Cumprimentar pelo nome e puxar o carro cadastrado (modelo, ano e placa)",
+            "Perguntar o que o carro está fazendo: barulho, luz no painel, vazamento",
+            "Pedir um vídeo curto ou foto do painel se ajudar a entender",
+            "Responder preço de serviço comum pela tabela (troca de óleo, alinhamento)",
+            "Passar para o Agente de agendamento com o problema já anotado"
+          ],
+          "human": "Carro parado na rua ou freio falhando: chamar o Seu Jorge na hora para ver guincho.",
+          "example": { "from": "Ricardo Souza", "in": "Meu Onix tá fazendo um barulho quando freia.", "out": "Oi, Ricardo! Barulho na frente ou atrás? Se puder, manda um vídeo curto freando." }
+        },
+        {
+          "name": "Agente de agendamento",
+          "when": "O atendente pede um dia para o cliente trazer o carro.",
+          "uses": ["Agenda da oficina", "WhatsApp"],
+          "flow": [
+            "Ver quantos elevadores e mecânicos estão livres em cada dia",
+            "Reservar o tempo do serviço (revisão 3 horas, troca de pastilha 1 hora)",
+            "Propor dois horários de entrega do carro, de manhã cedo de preferência",
+            "Marcar e mandar a confirmação com endereço e o que trazer (manual, chave reserva)"
+          ],
+          "human": "Serviço que precisa de diagnóstico antes: marcar só a avaliação e avisar o mecânico chefe.",
+          "example": { "from": "Ricardo Souza", "in": "Posso levar amanhã?", "out": "Amanhã tenho às 8h ou às 13h. Qual fica melhor pra você?" }
+        },
+        {
+          "name": "Fora do horário",
+          "when": "Chega mensagem depois das 18h, no sábado à tarde ou no domingo.",
+          "uses": ["WhatsApp", "Agenda da oficina"],
+          "flow": [
+            "Responder na hora, sem deixar para o dia seguinte",
+            "Anotar o problema, o carro e a placa",
+            "Marcar o horário direto na agenda, até as 21h",
+            "Deixar o resumo para o balcão ler às 7h30"
+          ],
+          "human": "Pedido de guincho à noite: mandar o contato do guincho parceiro e avisar o Seu Jorge.",
+          "example": { "from": "Patrícia Nunes", "in": "Vocês abrem sábado?", "out": "Abrimos sábado das 8h às 12h. Quer que eu já deixe reservado às 8h?" }
+        }
+      ]
+    },
+    {
+      "name": "Orçamento",
+      "icon": "request_quote",
+      "line": "Manda o orçamento com foto da peça, explica em palavras simples e só mexe no carro depois do sim.",
+      "agents": [
+        {
+          "name": "Montador do orçamento",
+          "when": "O mecânico termina o diagnóstico e anota as peças e o serviço.",
+          "uses": ["Tabela de preços", "Sistema de estoque"],
+          "flow": [
+            "Pegar as peças e a mão de obra que o mecânico anotou",
+            "Ver se a peça tem no estoque ou quanto o fornecedor cobra",
+            "Somar peça, mão de obra e prazo de entrega",
+            "Separar o que é urgente do que pode esperar",
+            "Mandar para o Seu Jorge conferir antes de ir para o cliente"
+          ],
+          "human": "Orçamento acima de R$ 3 mil: o Seu Jorge liga para o cliente.",
+          "example": { "from": "Sistema", "in": "", "out": "Pastilha dianteira R$ 180, disco par R$ 420, mão de obra R$ 150. Total R$ 750, pronto em 1 dia." }
+        },
+        {
+          "name": "Orçamento com fotos",
+          "when": "O Seu Jorge confere o orçamento.",
+          "uses": ["WhatsApp", "Fotos do mecânico"],
+          "flow": [
+            "Juntar as fotos da peça gasta que o mecânico tirou",
+            "Explicar cada item em palavras simples, sem termo técnico",
+            "Dizer o que acontece se não trocar agora",
+            "Mandar o valor com um botão de aprovar tudo ou só o urgente"
+          ],
+          "human": "Cliente pede para ver a peça pessoalmente: marcar com o mecânico.",
+          "example": { "from": "Ricardo Souza", "in": "", "out": "Ricardo, o disco está riscado e a pastilha no fim (foto acima). Se rodar assim, o freio perde força. Total R$ 750. Posso fazer?" }
+        },
+        {
+          "name": "Aprovação e retorno",
+          "when": "O orçamento foi enviado e o cliente ainda não respondeu.",
+          "uses": ["WhatsApp", "Agenda da oficina"],
+          "flow": [
+            "Esperar 3 horas e perguntar se ficou alguma dúvida",
+            "Registrar o sim com data e hora antes de liberar o serviço",
+            "Se achar caro, oferecer fazer só o urgente agora",
+            "Se recusar, avisar que o carro fica pronto para buscar e cobrar só o diagnóstico",
+            "Se não responder em 3 dias, mandar mais uma mensagem e parar"
+          ],
+          "human": "Cliente pede desconto: passa para o Seu Jorge.",
+          "example": { "from": "Ricardo Souza", "in": "Pode fazer só a pastilha por enquanto?", "out": "Pode sim. Fica R$ 330 e o carro sai hoje às 17h. Anoto o disco para a próxima." }
+        }
+      ]
+    },
+    {
+      "name": "Andamento do carro",
+      "icon": "build",
+      "line": "Avisa o cliente em cada etapa, sem ele precisar ligar perguntando.",
+      "agents": [
+        {
+          "name": "Aviso de etapa",
+          "when": "O mecânico muda o status do carro na planilha.",
+          "uses": ["Planilha de serviços", "WhatsApp"],
+          "flow": [
+            "Mandar mensagem quando o carro entra no elevador",
+            "Avisar quando a peça chegou, se estava esperando",
+            "Dar a previsão de entrega em horário, nunca só \"hoje\"",
+            "Responder quem pergunta \"e aí, ficou pronto?\" com o status do momento"
+          ],
+          "human": "Cliente perguntou 3 vezes no mesmo dia: o balcão liga.",
+          "example": { "from": "Patrícia Nunes", "in": "E meu carro, como está?", "out": "Está no elevador agora, Patrícia. A previsão é às 16h." }
+        },
+        {
+          "name": "Serviço extra encontrado",
+          "when": "O mecânico acha outro problema no meio do serviço.",
+          "uses": ["WhatsApp", "Fotos do mecânico"],
+          "flow": [
+            "Parar o serviço extra até o cliente aprovar",
+            "Mandar a foto do problema e o valor em palavras simples",
+            "Dizer quanto tempo a mais leva",
+            "Registrar a resposta antes de o mecânico continuar"
+          ],
+          "human": "Problema de segurança (freio, direção, pneu): o Seu Jorge liga para explicar.",
+          "example": { "from": "Patrícia Nunes", "in": "", "out": "Achamos a correia dentada rachada (foto). Troca fica R$ 520 e mais 2 horas. Posso incluir?" }
+        },
+        {
+          "name": "Carro pronto",
+          "when": "O mecânico marca o carro como pronto.",
+          "uses": ["WhatsApp", "Planilha de serviços"],
+          "flow": [
+            "Avisar que está pronto, com o valor final e o horário até quando pode buscar",
+            "Mandar o link do Pix ou dizer as formas de pagamento",
+            "Listar o que foi feito e a garantia de cada serviço",
+            "Se não buscar até o dia seguinte, lembrar às 9h"
+          ],
+          "human": "Carro pronto há mais de 3 dias no pátio: avisar o Seu Jorge.",
+          "example": { "from": "Patrícia Nunes", "in": "", "out": "Seu carro está pronto, Patrícia! Total R$ 1.270. Pode buscar até as 18h. Garantia de 3 meses na correia." }
+        }
+      ]
+    },
+    {
+      "name": "Revisão por quilometragem",
+      "icon": "autorenew",
+      "line": "Chama quem está na hora da revisão ou da troca de óleo e marca pela resposta.",
+      "agents": [
+        {
+          "name": "Lista de revisões",
+          "when": "Toda segunda às 8h.",
+          "uses": ["Cadastro de clientes", "Planilha de serviços"],
+          "flow": [
+            "Calcular a quilometragem de cada carro pela média que ele roda por mês",
+            "Buscar quem passou de 10 mil km ou 6 meses desde a última troca de óleo",
+            "Buscar quem deixou um serviço anotado para depois (disco, amortecedor)",
+            "Tirar quem pediu para não receber mensagem",
+            "Montar a lista da semana, no máximo 30 carros"
+          ],
+          "human": "Cliente com serviço de segurança pendente há mais de 30 dias: avisar o Seu Jorge.",
+          "example": { "from": "Sistema", "in": "Lista da semana", "out": "22 carros na hora do óleo, 5 com disco ou amortecedor anotado para depois." }
+        },
+        {
+          "name": "Mensagem de revisão",
+          "when": "A lista da semana fica pronta.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Escrever pelo nome, citando o carro e o último serviço",
+            "Oferecer um dia e horário concretos",
+            "Mandar entre 9h e 11h, de terça a quinta",
+            "Se não responder em 4 dias, lembrar uma vez só"
+          ],
+          "human": "Cliente diz que vendeu o carro: atualizar o cadastro e perguntar do carro novo.",
+          "example": { "from": "Marcelo Pinto", "in": "", "out": "Oi, Marcelo. Seu HB20 deve estar perto dos 10 mil km da última troca de óleo. Posso marcar quinta, 8h?" }
+        },
+        {
+          "name": "Marcação pela resposta",
+          "when": "O cliente responde a mensagem de revisão.",
+          "uses": ["WhatsApp", "Agenda da oficina"],
+          "flow": [
+            "Entender sim, não ou outro dia",
+            "Se sim, marcar e mandar a confirmação",
+            "Se outro dia, propor dois horários livres",
+            "Se não, perguntar se pode lembrar daqui a um mês"
+          ],
+          "human": "Cliente diz que foi em outra oficina: avisar o Seu Jorge.",
+          "example": { "from": "Marcelo Pinto", "in": "Quinta não dá, sexta pode?", "out": "Sexta tenho às 8h ou às 10h. Qual prefere?" }
+        }
+      ]
+    },
+    {
+      "name": "Avaliações",
+      "icon": "star",
+      "line": "Pede avaliação no dia seguinte e, se a resposta for ruim, avisa o dono primeiro.",
+      "agents": [
+        {
+          "name": "Pedido de avaliação",
+          "when": "No dia seguinte à retirada do carro, às 10h.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Agradecer pelo nome e perguntar se o carro está andando bem",
+            "Pedir uma nota de 1 a 5 para o serviço",
+            "Esperar a resposta antes de mandar qualquer link",
+            "Passar a resposta para o Leitor da resposta"
+          ],
+          "human": "Cliente diz que o problema voltou: o balcão marca retorno na garantia no mesmo dia.",
+          "example": { "from": "Ricardo Souza", "in": "", "out": "Oi, Ricardo. O freio ficou bom? De 1 a 5, que nota você dá pro serviço?" }
+        },
+        {
+          "name": "Leitor da resposta",
+          "when": "O cliente responde o pedido de avaliação.",
+          "uses": ["WhatsApp", "Google"],
+          "flow": [
+            "Ler se a resposta é boa, neutra ou ruim",
+            "Se for 4 ou 5, mandar o link de avaliação no Google",
+            "Se for 3, perguntar o que poderia ter sido melhor",
+            "Se for 1 ou 2, passar para o Alerta ao dono e não mandar link"
+          ],
+          "human": "Resposta com ameaça de processo ou Procon: alerta direto para o Seu Jorge.",
+          "example": { "from": "Ricardo Souza", "in": "5, ficou ótimo!", "out": "Valeu, Ricardo! Pode deixar essa nota no Google? Ajuda muito a oficina." }
+        },
+        {
+          "name": "Alerta ao dono",
+          "when": "Chega uma resposta ruim.",
+          "uses": ["WhatsApp", "Planilha de serviços"],
+          "flow": [
+            "Mandar para o Seu Jorge o nome, a nota e o que o cliente escreveu",
+            "Juntar o serviço feito, o valor e qual mecânico fez",
+            "Responder ao cliente que o dono vai ligar ainda hoje",
+            "Cobrar o Seu Jorge se ninguém ligou em 2 horas"
+          ],
+          "human": "Sempre: quem resolve é o Seu Jorge.",
+          "example": { "from": "Fábio Ramos", "in": "Disseram que ficava pronto às 16h e saiu às 19h.", "out": "Aviso enviado ao Seu Jorge com o histórico do carro." }
+        }
+      ]
+    },
+    {
+      "name": "Peças e estoque",
+      "icon": "inventory_2",
+      "line": "Confere o que tem na prateleira, cota com três fornecedores e não deixa carro parado esperando peça.",
+      "agents": [
+        {
+          "name": "Controle de estoque",
+          "when": "Toda sexta às 16h e quando o mecânico dá baixa de peça.",
+          "uses": ["Sistema de estoque", "WhatsApp"],
+          "flow": [
+            "Somar o que saiu na semana pelas ordens de serviço",
+            "Comparar com o mínimo de cada item (óleo, filtro, pastilha, lâmpada)",
+            "Montar a lista do que está abaixo do mínimo",
+            "Mandar a lista para o Seu Jorge aprovar"
+          ],
+          "human": "Óleo ou filtro abaixo de 5 unidades: avisar no mesmo dia.",
+          "example": { "from": "Sistema", "in": "", "out": "Óleo 5W30: 8 litros (mínimo 20). Filtro de óleo: 3 (mínimo 10). Pastilha ok." }
+        },
+        {
+          "name": "Cotação de peça",
+          "when": "Um orçamento aprovado precisa de peça que não tem no estoque.",
+          "uses": ["WhatsApp", "Planilha de fornecedores"],
+          "flow": [
+            "Mandar o pedido com modelo, ano e código da peça para 3 fornecedores",
+            "Esperar as respostas por até 40 minutos",
+            "Comparar preço, prazo e se é original ou paralela",
+            "Fechar com o mais barato que entrega até o dia seguinte",
+            "Avisar o mecânico e atualizar a previsão do carro"
+          ],
+          "human": "Peça só com prazo acima de 3 dias: o balcão avisa o cliente e oferece outra opção.",
+          "example": { "from": "Sistema", "in": "", "out": "Correia dentada: R$ 210 (amanhã 9h), R$ 195 (em 3 dias), R$ 240 (hoje 15h). Fechado o de amanhã." }
+        },
+        {
+          "name": "Garantia de peças",
+          "when": "Um cliente volta com a mesma peça com defeito dentro da garantia.",
+          "uses": ["Planilha de serviços", "WhatsApp"],
+          "flow": [
+            "Achar a ordem de serviço, a nota da peça e o fornecedor",
+            "Conferir se está dentro do prazo de garantia",
+            "Abrir o pedido de troca com o fornecedor mandando a nota e as fotos",
+            "Marcar o retorno do cliente sem cobrar a mão de obra"
+          ],
+          "human": "Fornecedor nega a garantia: o Seu Jorge decide se a oficina assume.",
+          "example": { "from": "Sistema", "in": "", "out": "Amortecedor do Gol placa ABC1D23: trocado há 2 meses, garantia de 1 ano. Pedido de troca aberto." }
+        }
+      ]
+    },
+    {
+      "name": "Pátio e equipe",
+      "icon": "garage",
+      "line": "Cuida da escala dos mecânicos e de quem está parado no pátio.",
+      "agents": [
+        {
+          "name": "Escala dos mecânicos",
+          "when": "Toda quinta, para a semana seguinte.",
+          "uses": ["Agenda da oficina", "WhatsApp"],
+          "flow": [
+            "Ver quantos carros estão marcados por dia e de que tipo",
+            "Distribuir os serviços pelos 4 elevadores e por quem sabe fazer cada um",
+            "Cobrir folgas e férias",
+            "Mandar a escala para cada mecânico no WhatsApp"
+          ],
+          "human": "Dia com mais serviço do que mecânico: o Seu Jorge decide se segura algum carro.",
+          "example": { "from": "Sistema", "in": "", "out": "Semana: Cláudio motor e câmbio, Diego freio e suspensão, Lucas elétrica. Sábado: Diego." }
+        },
+        {
+          "name": "Carro parado no pátio",
+          "when": "Todo dia às 17h.",
+          "uses": ["Planilha de serviços"],
+          "flow": [
+            "Listar os carros que estão no pátio e há quantos dias",
+            "Separar o motivo: esperando aprovação, esperando peça ou pronto sem buscar",
+            "Mandar a cobrança certa para cada caso",
+            "Montar o resumo para o Seu Jorge"
+          ],
+          "human": "Carro parado há mais de 7 dias: o Seu Jorge liga para o cliente.",
+          "example": { "from": "Sistema", "in": "", "out": "11 carros no pátio: 3 esperando aprovação, 2 esperando peça, 2 prontos sem buscar." }
+        }
+      ]
+    }
+  ],
+  "morning": {
+    "when": "Todo dia às 7h, no WhatsApp do Seu Jorge.",
+    "flow": [
+      "Contar quantos carros entram hoje e em quais elevadores",
+      "Listar os carros atrasados e os orçamentos esperando resposta",
+      "Somar o que se perdeu ontem: orçamentos recusados, clientes que não vieram, carros parados",
+      "Mandar tudo numa página só"
+    ],
+    "stats": [
+      { "value": "14", "label": "Carros hoje", "sub": "4 elevadores, o primeiro às 7h30" },
+      { "value": "5", "label": "Atrasados", "sub": "3 esperando peça, 2 esperando aprovação" },
+      { "value": "R$ 2.180", "label": "Perdido", "sub": "2 orçamentos recusados e 1 cliente que não veio" }
+    ]
+  }
+}

@@ -1,0 +1,354 @@
+{
+  "id": "fisio",
+  "label": "Clínica de fisioterapia",
+  "group": "saude",
+  "icon": "physical_therapy",
+  "title": "da clínica de fisioterapia",
+  "owner": "Dra. Larissa",
+  "intro": "Todo agente de IA que uma clínica de fisioterapia precisa, numa página. Cada cartão é um agente com o fluxo escrito.",
+  "sectors": [
+    {
+      "name": "Recepção",
+      "icon": "forum",
+      "line": "Atende o WhatsApp até as 9 da noite, pede o pedido médico e marca a avaliação.",
+      "agents": [
+        {
+          "name": "Atendente do WhatsApp",
+          "when": "Chega mensagem de paciente no WhatsApp da clínica.",
+          "uses": ["WhatsApp", "Cadastro de pacientes"],
+          "flow": [
+            "Cumprimentar pelo nome se o número já é paciente",
+            "Perguntar se é avaliação nova ou se já faz sessões aqui",
+            "Responder valor da avaliação, do pacote, endereço e convênios com a tabela da clínica",
+            "Se for para começar, passar para o Agente da avaliação"
+          ],
+          "human": "Paciente pergunta se o caso dele tem jeito ou qual tratamento fazer: quem responde é o fisioterapeuta.",
+          "example": { "from": "Patrícia Moura", "in": "Vocês atendem joelho operado?", "out": "Atendemos sim, Patrícia! O primeiro passo é a avaliação. Quer que eu veja os horários?" }
+        },
+        {
+          "name": "Agente da avaliação",
+          "when": "O paciente quer começar o tratamento.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Conferir a agenda do fisio da área certa (ortopedia, neuro, pélvica)",
+            "Reservar 60 minutos para a avaliação",
+            "Propor dois horários livres no período pedido",
+            "Marcar e mandar o endereço e o que trazer: pedido médico, exames de imagem e roupa confortável"
+          ],
+          "human": "Cirurgia há menos de 7 dias: confirmar com o fisio antes de marcar.",
+          "example": { "from": "Patrícia Moura", "in": "Prefiro de manhã.", "out": "Tenho segunda às 8h ou quarta às 10h com a Dra. Larissa. Qual fica melhor?" }
+        },
+        {
+          "name": "Cadastro e pedido médico",
+          "when": "Paciente novo marca a avaliação.",
+          "uses": ["WhatsApp", "Cadastro de pacientes"],
+          "flow": [
+            "Pedir nome completo, data de nascimento e CPF",
+            "Pedir foto do pedido médico e da carteirinha, se for convênio",
+            "Conferir se o pedido tem data, CID e número de sessões",
+            "Salvar na ficha e avisar a recepção do que falta"
+          ],
+          "human": "Pedido médico sem número de sessões para convênio: a recepção orienta o paciente a pedir outro ao médico.",
+          "example": { "from": "Gustavo Ribeiro", "in": "Mandei o pedido.", "out": "Recebi, Gustavo. Está pedindo 10 sessões, tudo certo. Falta só a foto da carteirinha." }
+        }
+      ]
+    },
+    {
+      "name": "Sessões do pacote",
+      "icon": "event_repeat",
+      "line": "Marca todas as sessões do pacote de uma vez, conta quantas faltam e renova antes de acabar.",
+      "agents": [
+        {
+          "name": "Montador do pacote",
+          "when": "O fisio fecha a avaliação e define o número de sessões.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Pegar quantas sessões e quantas vezes por semana o fisio definiu",
+            "Reservar os mesmos dias e horários fixos até o fim do pacote",
+            "Mandar a lista com todas as datas para o paciente",
+            "Avisar o caixa do valor do pacote (10 sessões, R$ 900)"
+          ],
+          "human": "Não tem horário fixo livre para o pacote inteiro: a recepção encaixa com o paciente.",
+          "example": { "from": "Gustavo Ribeiro", "in": "", "out": "Gustavo, suas 10 sessões: segundas e quintas às 18h, de 4/11 a 5/12." }
+        },
+        {
+          "name": "Contador de sessões",
+          "when": "Cada sessão termina.",
+          "uses": ["Agenda", "Ficha do paciente"],
+          "flow": [
+            "Dar baixa na sessão feita",
+            "Atualizar quantas faltam no pacote",
+            "Quando faltarem 2, avisar o fisio para marcar a reavaliação",
+            "Quando faltar 1, passar para a Renovação do pacote"
+          ],
+          "human": "Sessão feita sem pacote pago: avisar o caixa no mesmo dia.",
+          "example": { "from": "Sistema", "in": "", "out": "Gustavo Ribeiro: sessão 8 de 10. Reavaliação pedida à Dra. Larissa." }
+        },
+        {
+          "name": "Renovação do pacote",
+          "when": "O fisio indica que o tratamento continua depois da reavaliação.",
+          "uses": ["WhatsApp", "Agenda"],
+          "flow": [
+            "Mandar quantas sessões o fisio indicou e o valor do novo pacote",
+            "Oferecer manter os mesmos dias e horários",
+            "Se aceitar, reservar a agenda e avisar o caixa",
+            "Se não responder em 2 dias, lembrar uma vez"
+          ],
+          "human": "Paciente diz que não pode pagar outro pacote: a Dra. Larissa conversa sobre as opções.",
+          "example": { "from": "Gustavo Ribeiro", "in": "", "out": "Gustavo, a Dra. Larissa indicou mais 10 sessões. Mantenho segundas e quintas às 18h?" }
+        }
+      ]
+    },
+    {
+      "name": "Faltas",
+      "icon": "event_busy",
+      "line": "Confirma na véspera, oferece a reposição na hora e passa a vaga para a lista de espera.",
+      "agents": [
+        {
+          "name": "Confirmação na véspera",
+          "when": "Todo dia às 15h, para as sessões do dia seguinte.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Mandar o horário da sessão e o número dela no pacote",
+            "Pedir 1 para confirmar ou 2 para remarcar",
+            "Quem pediu para remarcar recebe dois horários na mesma semana",
+            "Quem não respondeu até as 19h recebe mais uma mensagem"
+          ],
+          "human": "Paciente avisa que está com dor forte ou machucou de novo: avisar o fisio antes da sessão.",
+          "example": { "from": "Lúcia Fernandes", "in": "", "out": "Oi, Lúcia. Amanhã às 7h, sessão 4 de 10. Responda 1 para confirmar ou 2 para remarcar." }
+        },
+        {
+          "name": "Falta e reposição",
+          "when": "O paciente não chega 10 minutos depois do horário.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Mandar mensagem perguntando se está a caminho",
+            "Se não responder em 10 minutos, marcar como falta",
+            "Oferecer a reposição em até 7 dias, conforme a regra do pacote",
+            "Registrar a falta e se ela conta ou não como sessão feita"
+          ],
+          "human": "Terceira falta no mesmo pacote: o fisio conversa com o paciente sobre o tratamento.",
+          "example": { "from": "Lúcia Fernandes", "in": "", "out": "Oi, Lúcia. Sua sessão era às 7h. Quer repor quinta às 8h ou sábado às 9h?" }
+        },
+        {
+          "name": "Lista de espera",
+          "when": "Abre uma vaga por falta ou fim de pacote.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Buscar quem está esperando horário fixo no mesmo turno",
+            "Oferecer a vaga ao primeiro da lista",
+            "Se não responder em 30 minutos, passar para o próximo",
+            "Quando alguém aceitar, marcar, tirar da lista e avisar a recepção"
+          ],
+          "human": "Vaga fixa no horário mais procurado (18h às 20h): a Dra. Larissa escolhe quem entra.",
+          "example": { "from": "Daniel Couto", "in": "", "out": "Oi, Daniel. Abriu horário fixo terças e sextas às 19h. Quer ficar com ele?" }
+        }
+      ]
+    },
+    {
+      "name": "Evolução",
+      "icon": "trending_up",
+      "line": "Cobra a evolução escrita de cada sessão, marca a reavaliação e prepara o relatório para o médico.",
+      "agents": [
+        {
+          "name": "Cobrança da evolução",
+          "when": "Todo dia às 20h.",
+          "uses": ["Ficha do paciente", "WhatsApp"],
+          "flow": [
+            "Listar as sessões feitas no dia",
+            "Ver quais estão sem a evolução escrita pelo fisio",
+            "Mandar para cada fisio a lista do que falta",
+            "Repetir às 8h do dia seguinte se ainda faltar"
+          ],
+          "human": "Evolução em branco há mais de 3 dias: avisar a Dra. Larissa.",
+          "example": { "from": "Sistema", "in": "", "out": "Dr. Fábio, faltam 3 evoluções de hoje: Lúcia, Gustavo e Paulo." }
+        },
+        {
+          "name": "Reavaliação",
+          "when": "O paciente chega na sessão 8 de 10 ou completa 30 dias de tratamento.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Reservar 30 minutos a mais na próxima sessão para a reavaliação",
+            "Avisar o paciente que nesse dia o fisio vai medir de novo",
+            "Pedir para trazer exame novo, se tiver",
+            "Avisar o fisio que a reavaliação está marcada"
+          ],
+          "human": "O fisio decide se continua, muda o tratamento ou dá alta.",
+          "example": { "from": "Gustavo Ribeiro", "in": "", "out": "Gustavo, quinta a Dra. Larissa vai fazer sua reavaliação. A sessão vai até 19h30." }
+        },
+        {
+          "name": "Relatório para o médico",
+          "when": "Na alta ou quando o médico ou o convênio pede.",
+          "uses": ["Ficha do paciente"],
+          "flow": [
+            "Juntar a avaliação, as medidas da reavaliação e o número de sessões feitas",
+            "Montar o rascunho do relatório no modelo da clínica",
+            "Mandar para o fisio revisar e assinar",
+            "Depois de assinado, mandar ao paciente em PDF"
+          ],
+          "human": "Sempre: o conteúdo é do fisio, que revisa e assina.",
+          "example": { "from": "Sistema", "in": "", "out": "Rascunho do relatório de Patrícia Moura pronto: 20 sessões, 2 reavaliações. Falta revisar." }
+        }
+      ]
+    },
+    {
+      "name": "Convênio",
+      "icon": "assignment",
+      "line": "Pede a autorização das sessões e avisa antes de o pedido médico vencer.",
+      "agents": [
+        {
+          "name": "Autorização das sessões",
+          "when": "Paciente de convênio faz a avaliação.",
+          "uses": ["Sistema do convênio", "Ficha do paciente"],
+          "flow": [
+            "Montar a guia com pedido médico, CID e número de sessões",
+            "Mandar para autorização",
+            "Quando autorizar, liberar a agenda do pacote",
+            "Avisar o paciente quantas sessões o convênio liberou"
+          ],
+          "human": "Convênio liberou menos sessões do que o pedido: a recepção explica as opções ao paciente.",
+          "example": { "from": "Sistema", "in": "", "out": "Guia 2290 autorizada: 10 sessões para Lúcia Fernandes." }
+        },
+        {
+          "name": "Validade do pedido médico",
+          "when": "Toda segunda às 9h.",
+          "uses": ["Ficha do paciente", "WhatsApp"],
+          "flow": [
+            "Listar pedidos médicos que vencem nos próximos 15 dias",
+            "Avisar cada paciente que vai precisar de pedido novo",
+            "Mandar o modelo do relatório do fisio para levar ao médico",
+            "Cobrar de novo 5 dias antes de vencer"
+          ],
+          "human": "Pedido vencido com sessão marcada: a recepção avisa o paciente que a sessão fica particular ou é remarcada.",
+          "example": { "from": "Lúcia Fernandes", "in": "", "out": "Oi, Lúcia. Seu pedido médico vence dia 28. Já dá para pedir um novo ao seu médico." }
+        },
+        {
+          "name": "Faturamento do mês",
+          "when": "Todo dia 25.",
+          "uses": ["Sistema do convênio", "Planilha de faturamento"],
+          "flow": [
+            "Juntar as sessões feitas por convênio",
+            "Conferir se cada sessão tem a assinatura do paciente",
+            "Montar o lote de cada convênio",
+            "Mandar o resumo para o faturamento conferir"
+          ],
+          "human": "Sessão sem assinatura: a recepção pega a assinatura na próxima visita.",
+          "example": { "from": "Sistema", "in": "", "out": "Novembro: 418 sessões, 6 sem assinatura, R$ 16.700 a faturar." }
+        }
+      ]
+    },
+    {
+      "name": "Exercícios de casa",
+      "icon": "exercise",
+      "line": "Manda a série que o fisio passou e pergunta toda semana se o paciente está fazendo.",
+      "agents": [
+        {
+          "name": "Envio da série",
+          "when": "O fisio marca na ficha os exercícios de casa.",
+          "uses": ["Ficha do paciente", "WhatsApp"],
+          "flow": [
+            "Pegar os exercícios que o fisio escolheu",
+            "Mandar os vídeos gravados pela equipe, um por exercício",
+            "Escrever quantas vezes e quantas séries, como o fisio anotou",
+            "Mandar de novo quando o fisio mudar a série"
+          ],
+          "human": "Paciente pergunta se pode fazer outro exercício ou aumentar a carga: o fisio responde.",
+          "example": { "from": "Patrícia Moura", "in": "", "out": "Patrícia, seus exercícios de casa: 3 vídeos abaixo. 3 séries de 10, uma vez por dia." }
+        },
+        {
+          "name": "Pergunta da semana",
+          "when": "Todo domingo às 18h.",
+          "uses": ["WhatsApp", "Ficha do paciente"],
+          "flow": [
+            "Perguntar quantos dias da semana fez os exercícios",
+            "Perguntar se sentiu alguma dor diferente",
+            "Anotar a resposta na ficha para o fisio ver",
+            "Se fez menos de 3 dias, mandar uma mensagem de incentivo"
+          ],
+          "human": "Paciente diz que a dor piorou: avisar o fisio na hora e não mandar mais exercício até ele responder.",
+          "example": { "from": "Patrícia Moura", "in": "Fiz 4 dias, sem dor.", "out": "Muito bem, Patrícia! Anotei para a Dra. Larissa ver na quinta." }
+        }
+      ]
+    },
+    {
+      "name": "Avaliações",
+      "icon": "star",
+      "line": "Pede avaliação na alta e, se a resposta for ruim, avisa a dona primeiro.",
+      "agents": [
+        {
+          "name": "Pedido de avaliação",
+          "when": "No dia seguinte à alta ou à última sessão do pacote, às 10h.",
+          "uses": ["WhatsApp", "Google"],
+          "flow": [
+            "Agradecer pelo tratamento pelo nome",
+            "Perguntar como foi, com nota de 1 a 5",
+            "Se for 4 ou 5, mandar o link de avaliação no Google",
+            "Se for 3 ou menos, passar para o Alerta à dona e não mandar link"
+          ],
+          "human": "Paciente que parou o tratamento no meio: a Dra. Larissa decide se manda.",
+          "example": { "from": "Patrícia Moura", "in": "Nota 5, voltei a correr!", "out": "Que notícia boa, Patrícia! Pode contar no Google como foi?" }
+        },
+        {
+          "name": "Alerta à dona",
+          "when": "Chega uma resposta ruim.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Mandar para a Dra. Larissa o nome, a nota e o que o paciente escreveu",
+            "Juntar quem atendeu e quantas sessões o paciente fez",
+            "Responder ao paciente que a Dra. Larissa vai entrar em contato",
+            "Cobrar se ninguém respondeu em 2 horas"
+          ],
+          "human": "Sempre: quem resolve é a Dra. Larissa.",
+          "example": { "from": "Rui Teixeira", "in": "Cada sessão era com um fisio diferente.", "out": "Aviso enviado à Dra. Larissa." }
+        }
+      ]
+    },
+    {
+      "name": "Operação",
+      "icon": "inventory_2",
+      "line": "Cuida do material, dos aparelhos e da escala dos fisios.",
+      "agents": [
+        {
+          "name": "Controle de material",
+          "when": "Toda sexta às 16h.",
+          "uses": ["Planilha de estoque", "WhatsApp"],
+          "flow": [
+            "Somar o que foi usado na semana (eletrodos, gel, fita, lençol descartável)",
+            "Comparar com o estoque mínimo de cada item",
+            "Lembrar a manutenção dos aparelhos na data marcada",
+            "Montar o pedido e mandar para a Dra. Larissa aprovar"
+          ],
+          "human": "Aparelho com defeito: tirar da agenda e avisar a Dra. Larissa no mesmo dia.",
+          "example": { "from": "Sistema", "in": "", "out": "Eletrodos em 12%. Gel 60%, fita 45%. Ultrassom 2 com manutenção dia 20." }
+        },
+        {
+          "name": "Escala dos fisios",
+          "when": "Toda quinta, para a semana seguinte.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Ver quantas sessões cada turno tem marcadas",
+            "Montar quem fica em cada turno e em cada sala",
+            "Manter o paciente com o mesmo fisio sempre que der",
+            "Mandar a escala para cada pessoa no WhatsApp"
+          ],
+          "human": "Turno com mais de 4 pacientes por fisio na mesma hora: a Dra. Larissa decide.",
+          "example": { "from": "Sistema", "in": "", "out": "Semana: Dra. Larissa 30h, Dr. Fábio 40h, Dra. Aline 20h. Sábado sem cobertura às 11h." }
+        }
+      ]
+    }
+  ],
+  "morning": {
+    "when": "Todo dia às 6h30, no WhatsApp da Dra. Larissa.",
+    "flow": [
+      "Contar as sessões e avaliações de hoje por fisio",
+      "Listar pacotes que acabam esta semana e pedidos médicos vencendo",
+      "Somar o que se perdeu ontem: faltas sem reposição, horários vazios, guias negadas",
+      "Mandar tudo numa página só"
+    ],
+    "stats": [
+      { "value": "64", "label": "Sessões hoje", "sub": "4 fisios, 2 avaliações novas" },
+      { "value": "5", "label": "Atrasados", "sub": "pacote acabando sem renovação, 3 já avisados" },
+      { "value": "R$ 720", "label": "Perdido", "sub": "8 sessões vazias sem reposição" }
+    ]
+  }
+}

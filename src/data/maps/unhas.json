@@ -1,0 +1,323 @@
+{
+  "id": "unhas",
+  "label": "Manicure e nail designer",
+  "group": "beleza",
+  "icon": "back_hand",
+  "title": "do estúdio de unhas",
+  "owner": "Juliana",
+  "intro": "Todo agente de IA que um estúdio de unhas precisa, numa página. Cada cartão é um agente com o fluxo escrito.",
+  "sectors": [
+    {
+      "name": "Recepção",
+      "icon": "forum",
+      "line": "Atende o WhatsApp até as 9 da noite, pede a foto da unha, confere a agenda e marca.",
+      "agents": [
+        {
+          "name": "Atendente do WhatsApp",
+          "when": "Chega mensagem de cliente no WhatsApp do estúdio.",
+          "uses": ["WhatsApp", "Cadastro de clientes"],
+          "flow": [
+            "Cumprimentar pelo nome se o número já é cliente",
+            "Perguntar se é manicure, pé e mão, alongamento, manutenção ou banho de gel",
+            "Pedir foto da referência quando for decoração",
+            "Responder preço de tabela, endereço e formas de pagamento",
+            "Se for para marcar, passar para o Agente da agenda"
+          ],
+          "human": "Cliente conta que a unha está descolando com dor ou vermelhidão: avisar a Juliana na hora.",
+          "example": { "from": "Beatriz Almeida", "in": "Quanto é o alongamento em gel?", "out": "Oi, Beatriz! Alongamento em gel sai R$ 180, a manutenção R$ 110. Quer marcar?" }
+        },
+        {
+          "name": "Agente da agenda",
+          "when": "O atendente pede um horário para um serviço.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Conferir a agenda da nail designer certa para o serviço",
+            "Reservar o tempo real (manicure 45 min, manutenção 1h30, alongamento 2h30)",
+            "Somar 30 minutos se a decoração for elaborada",
+            "Propor dois horários livres e marcar o escolhido",
+            "Mandar a confirmação com hora, serviço e a regra do sinal"
+          ],
+          "human": "Cliente quer alongamento e pé e mão no mesmo horário: a Juliana vê se cabe com duas profissionais.",
+          "example": { "from": "Beatriz Almeida", "in": "Sexta à tarde dá?", "out": "Dá sim! Sexta às 13h ou às 15h30. O alongamento leva umas 2h30. Qual prefere?" }
+        },
+        {
+          "name": "Fora do horário",
+          "when": "Chega mensagem depois das 19h, no domingo ou em feriado.",
+          "uses": ["WhatsApp", "Agenda"],
+          "flow": [
+            "Responder na hora, sem esperar o estúdio abrir",
+            "Marcar direto na agenda até as 21h",
+            "Mandar o link do sinal para garantir o horário",
+            "Deixar o resumo da conversa para a Juliana ler de manhã"
+          ],
+          "human": "Unha quebrada antes de evento no dia seguinte: avisar a Juliana para ver encaixe.",
+          "example": { "from": "Camila Teixeira", "in": "Quebrei uma unha, casamento amanhã!", "out": "Vou ver um encaixe pra você. A Juliana te responde logo cedo, às 8h." }
+        }
+      ]
+    },
+    {
+      "name": "Manutenção",
+      "icon": "autorenew",
+      "line": "Chama quem está na hora da manutenção e marca pela resposta.",
+      "agents": [
+        {
+          "name": "Lista de manutenção",
+          "when": "Todo dia às 8h.",
+          "uses": ["Cadastro de clientes", "Agenda"],
+          "flow": [
+            "Buscar quem fez alongamento ou banho de gel há 18 dias e não marcou a manutenção",
+            "Buscar quem faz manicure toda semana e não marcou",
+            "Tirar quem pediu para não receber mensagem",
+            "Montar a lista do dia, no máximo 20 clientes"
+          ],
+          "human": "Cliente passou de 30 dias sem manutenção: avisar a nail designer, porque o serviço vira reconstrução.",
+          "example": { "from": "Sistema", "in": "Lista de hoje", "out": "12 na hora da manutenção, 5 da manicure semanal." }
+        },
+        {
+          "name": "Mensagem de manutenção",
+          "when": "A lista do dia fica pronta.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Escrever pelo nome, citando o serviço e a data",
+            "Lembrar que depois de 21 dias o preço é de reconstrução",
+            "Oferecer um horário certo com a mesma profissional",
+            "Se não responder em 2 dias, lembrar só mais uma vez"
+          ],
+          "human": "Resposta irritada: parar a sequência e avisar a Juliana.",
+          "example": { "from": "Tatiane Rocha", "in": "", "out": "Oi, Tati! Seu alongamento faz 18 dias. Quinta às 10h fica bom para a manutenção?" }
+        },
+        {
+          "name": "Marcação pela resposta",
+          "when": "A cliente responde a mensagem de manutenção.",
+          "uses": ["WhatsApp", "Agenda"],
+          "flow": [
+            "Entender se é sim, não ou outro horário",
+            "Se sim, marcar e confirmar",
+            "Se outro horário, propor dois horários livres",
+            "Se vai tirar o alongamento, marcar a remoção"
+          ],
+          "human": "Cliente diz que vai fazer em outro lugar: avisar a Juliana.",
+          "example": { "from": "Tatiane Rocha", "in": "Pode ser!", "out": "Marcado: quinta, 10h. Te lembro na véspera." }
+        }
+      ]
+    },
+    {
+      "name": "Faltas",
+      "icon": "event_busy",
+      "line": "Cobra o sinal antes, cobra na hora da falta e oferece a vaga para a lista de espera.",
+      "agents": [
+        {
+          "name": "Sinal e confirmação",
+          "when": "Logo depois de marcar e na véspera do horário.",
+          "uses": ["WhatsApp", "Agenda", "Link de pagamento"],
+          "flow": [
+            "Mandar o link do sinal de 30% para alongamento e nail art",
+            "Se o sinal não cair em 24 horas, liberar o horário",
+            "Na véspera, mandar a confirmação com hora e endereço",
+            "Lembrar a regra: cancelamento com menos de 24 horas perde o sinal"
+          ],
+          "human": "Cliente antiga pede para marcar sem sinal: a Juliana decide.",
+          "example": { "from": "Beatriz Almeida", "in": "", "out": "Beatriz, seu horário de sexta às 13h fica garantido com o sinal de R$ 54. Segue o link." }
+        },
+        {
+          "name": "Aviso de falta",
+          "when": "A cliente não chega 15 minutos depois do horário.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Mandar mensagem perguntando se está a caminho",
+            "Se não responder em 10 minutos, marcar como falta",
+            "Avisar que o sinal fica de crédito só se remarcar em 7 dias",
+            "Registrar a falta na ficha da cliente"
+          ],
+          "human": "Cliente diz que teve emergência: a Juliana decide sobre o sinal.",
+          "example": { "from": "Renata Lima", "in": "", "out": "Oi, Renata. Sua manutenção era às 14h. Está a caminho?" }
+        },
+        {
+          "name": "Lista de espera",
+          "when": "Abre uma vaga por falta ou cancelamento.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Buscar quem pediu horário mais cedo e cabe no tempo que vagou",
+            "Mandar a vaga para a primeira da lista",
+            "Se não responder em 15 minutos, passar para a próxima",
+            "Quando alguém aceitar, marcar, tirar da lista e avisar a profissional"
+          ],
+          "human": "Vaga em menos de 1 hora: oferecer só manicure simples, que cabe rápido.",
+          "example": { "from": "Larissa Freitas", "in": "", "out": "Oi, Larissa! Vagou hoje às 14h. Dá pra fazer sua manutenção. Quer?" }
+        }
+      ]
+    },
+    {
+      "name": "Orçamentos",
+      "icon": "request_quote",
+      "line": "Manda o valor pela foto da referência, explica sem enrolar e volta três dias depois.",
+      "agents": [
+        {
+          "name": "Orçamento pela foto",
+          "when": "A cliente manda foto de uma unha que quer fazer.",
+          "uses": ["WhatsApp", "Tabela de preços"],
+          "flow": [
+            "Pedir a foto da referência e uma foto das unhas dela hoje",
+            "Perguntar formato e tamanho que quer",
+            "Somar o alongamento com cada tipo de decoração (pedraria, encapsulada, francesinha)",
+            "Mandar o valor, o tempo do serviço e explicar a diferença entre gel e fibra se ela perguntar"
+          ],
+          "human": "Decoração que a equipe nunca fez: a Juliana olha antes de passar o preço.",
+          "example": { "from": "Mariana Costa", "in": "Quero igual essa da foto.", "out": "Mariana, alongamento em gel com francesinha e pedraria em 2 dedos sai R$ 230, umas 3 horas." }
+        },
+        {
+          "name": "Retorno do terceiro dia",
+          "when": "Três dias depois de mandar o orçamento, sem resposta.",
+          "uses": ["WhatsApp", "Agenda"],
+          "flow": [
+            "Perguntar se ficou alguma dúvida",
+            "Oferecer dois horários livres",
+            "Se disser que está caro, oferecer uma decoração mais simples",
+            "Se não responder, tentar de novo em 7 dias e parar"
+          ],
+          "human": "Cliente pede desconto: passa para a Juliana.",
+          "example": { "from": "Mariana Costa", "in": "", "out": "Oi, Mariana! Ainda quer fazer aquela da foto? Tenho sábado às 9h." }
+        }
+      ]
+    },
+    {
+      "name": "Ficha de alongamento",
+      "icon": "assignment",
+      "line": "Deixa a ficha de cada cliente pronta antes de ela sentar na mesa.",
+      "agents": [
+        {
+          "name": "Ficha da cliente",
+          "when": "A nail designer termina um alongamento ou manutenção.",
+          "uses": ["Cadastro de clientes"],
+          "flow": [
+            "Pedir à profissional a técnica (gel, fibra, tips), o formato e o tamanho",
+            "Anotar a cor e a decoração de cada dedo",
+            "Guardar a foto do resultado",
+            "Antes do próximo horário, mandar o resumo para a profissional"
+          ],
+          "human": "Cliente comenta coceira ou ardência depois do gel: anotar e avisar a nail designer.",
+          "example": { "from": "Juliana", "in": "Tati: gel, amendoado médio, nude com francesinha.", "out": "Salvo na ficha da Tati, com a foto de hoje." }
+        },
+        {
+          "name": "Registro de quebra e garantia",
+          "when": "A cliente avisa que uma unha quebrou ou descolou.",
+          "uses": ["WhatsApp", "Cadastro de clientes", "Agenda"],
+          "flow": [
+            "Pedir foto da unha",
+            "Ver na ficha quando foi feito o serviço",
+            "Se estiver dentro dos 5 dias de garantia, marcar o reparo sem custo",
+            "Se passou, mandar o valor do reparo e oferecer horário"
+          ],
+          "human": "Mais de 3 unhas descolando na mesma cliente: a Juliana olha a técnica.",
+          "example": { "from": "Renata Lima", "in": "Descolou uma unha ontem.", "out": "Seu alongamento foi há 3 dias, está na garantia. Amanhã às 11h dá?" }
+        }
+      ]
+    },
+    {
+      "name": "Avaliações",
+      "icon": "star",
+      "line": "Pede avaliação no dia seguinte e, se a resposta for ruim, avisa a dona primeiro.",
+      "agents": [
+        {
+          "name": "Pedido de avaliação",
+          "when": "No dia seguinte ao atendimento, às 10h.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Agradecer pelo nome e mandar a foto do resultado",
+            "Perguntar como ficou, com nota de 1 a 5",
+            "Esperar a resposta antes de mandar qualquer link",
+            "Passar a resposta para o Leitor da resposta"
+          ],
+          "human": "Cliente teve atraso grande ontem: a Juliana manda a mensagem.",
+          "example": { "from": "Tatiane Rocha", "in": "", "out": "Obrigada pela visita, Tati! Olha como ficou. Que nota você dá?" }
+        },
+        {
+          "name": "Leitor da resposta",
+          "when": "A cliente responde o pedido de avaliação.",
+          "uses": ["WhatsApp", "Google"],
+          "flow": [
+            "Ler se a resposta é boa, neutra ou ruim",
+            "Se for boa (4 ou 5), mandar o link de avaliação no Google",
+            "Se for neutra, perguntar o que poderia ser melhor",
+            "Se for ruim, passar para o Alerta à dona e não mandar link"
+          ],
+          "human": "Resposta com palavrão ou ameaça: alerta direto para a Juliana.",
+          "example": { "from": "Tatiane Rocha", "in": "Perfeita, 5!", "out": "Ebaa! Pode deixar uma avaliação no Google?" }
+        },
+        {
+          "name": "Alerta à dona",
+          "when": "Chega uma resposta ruim.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Mandar para a Juliana o nome, a nota e o que a cliente escreveu",
+            "Juntar a ficha e a foto do serviço",
+            "Responder à cliente que a Juliana vai entrar em contato",
+            "Cobrar a Juliana se ninguém respondeu em 2 horas"
+          ],
+          "human": "Sempre: quem resolve é a Juliana.",
+          "example": { "from": "Paula Viana", "in": "Duas unhas ficaram tortas.", "out": "Aviso enviado à Juliana." }
+        }
+      ]
+    },
+    {
+      "name": "Operação",
+      "icon": "inventory_2",
+      "line": "Cuida do estoque de gel, da esterilização dos alicates e da escala.",
+      "agents": [
+        {
+          "name": "Controle de estoque",
+          "when": "Toda sexta às 17h.",
+          "uses": ["Planilha de estoque", "WhatsApp"],
+          "flow": [
+            "Somar géis, lixas, tips e esmaltes usados na semana pela agenda",
+            "Comparar com o estoque mínimo de cada item",
+            "Montar o pedido do que está abaixo do mínimo",
+            "Mandar o pedido para a Juliana aprovar"
+          ],
+          "human": "Gel de construção acabando com alongamentos marcados: avisar no mesmo dia.",
+          "example": { "from": "Sistema", "in": "", "out": "Gel de construção: 1 pote. Lixas: 30 unidades. Tips: 55%." }
+        },
+        {
+          "name": "Esterilização dos alicates",
+          "when": "Cada ciclo da autoclave termina.",
+          "uses": ["Planilha de esterilização"],
+          "flow": [
+            "Registrar data, hora, ciclo e quem operou",
+            "Registrar quantos kits foram embalados",
+            "Lembrar de trocar lixa e palito a cada cliente",
+            "Guardar o registro para a vigilância sanitária"
+          ],
+          "human": "Indicador reprovado: parar o uso dos kits do ciclo e avisar a Juliana.",
+          "example": { "from": "Sistema", "in": "", "out": "Autoclave: ciclo 3 aprovado, 12h20, 8 kits embalados por Dani." }
+        },
+        {
+          "name": "Escala das profissionais",
+          "when": "Toda quinta, para a semana seguinte.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Ver quantos horários estão marcados por dia",
+            "Montar quem fica em cada mesa",
+            "Cobrir folgas e férias",
+            "Mandar a escala para cada profissional no WhatsApp"
+          ],
+          "human": "Dia com mais alongamentos do que nail designers: a Juliana decide.",
+          "example": { "from": "Sistema", "in": "", "out": "Semana: Juliana 40h, Dani 36h, Keila (manicure) 30h." }
+        }
+      ]
+    }
+  ],
+  "morning": {
+    "when": "Todo dia às 7h30, no WhatsApp da Juliana.",
+    "flow": [
+      "Contar quantas clientes estão marcadas hoje e quantos sinais caíram",
+      "Listar quem passou da hora da manutenção e quantas já foram chamadas",
+      "Somar o que se perdeu ontem: faltas, horários vazios, orçamentos parados",
+      "Mandar tudo numa página só"
+    ],
+    "stats": [
+      { "value": "14", "label": "Marcadas hoje", "sub": "3 mesas, 2 sinais ainda sem pagar" },
+      { "value": "7", "label": "Atrasadas", "sub": "manutenção vencida, 5 já chamadas" },
+      { "value": "R$ 290", "label": "Perdido", "sub": "1 falta e 1 alongamento sem resposta" }
+    ]
+  }
+}

@@ -1,0 +1,349 @@
+{
+  "id": "salao",
+  "label": "Salão de beleza",
+  "group": "beleza",
+  "icon": "face_retouching_natural",
+  "title": "do salão",
+  "owner": "Renata",
+  "intro": "Todo agente de IA que um salão de beleza precisa, numa página. Cada cartão é um agente com o fluxo escrito.",
+  "sectors": [
+    {
+      "name": "Recepção",
+      "icon": "forum",
+      "line": "Atende o WhatsApp até as 9 da noite, confere a agenda de cada profissional e marca o horário.",
+      "agents": [
+        {
+          "name": "Atendente do WhatsApp",
+          "when": "Chega mensagem de cliente no WhatsApp do salão.",
+          "uses": ["WhatsApp", "Cadastro de clientes"],
+          "flow": [
+            "Cumprimentar pelo nome se o número já é cliente",
+            "Perguntar qual serviço quer: corte, escova, coloração, mechas, progressiva, manicure",
+            "Responder preço de tabela, endereço e forma de pagamento",
+            "Se for química ou mudança grande, pedir foto do cabelo hoje e da referência",
+            "Se for para marcar, passar para o Agente da agenda"
+          ],
+          "human": "Cliente reclama de serviço feito no salão: chamar a Renata na hora.",
+          "example": { "from": "Patrícia Gomes", "in": "Quanto tá a escova?", "out": "Oi, Patrícia! Escova a partir de R$ 70, depende do comprimento. Quer marcar?" }
+        },
+        {
+          "name": "Agente da agenda",
+          "when": "O atendente pede um horário para um serviço.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Conferir a agenda da profissional certa para o serviço",
+            "Reservar o tempo real (escova 1h, coloração 2h, mechas 4h)",
+            "Juntar serviços no mesmo dia quando der (raiz e manicure ao mesmo tempo)",
+            "Propor dois horários livres e marcar o escolhido",
+            "Mandar a confirmação com data, hora, profissional e endereço"
+          ],
+          "human": "Mechas ou mudança de cor sem avaliação: marcar a avaliação primeiro.",
+          "example": { "from": "Patrícia Gomes", "in": "Sábado de manhã.", "out": "Com a Bia tenho sábado às 9h ou 10h30. Qual prefere?" }
+        },
+        {
+          "name": "Cadastro da cliente nova",
+          "when": "Um número que não está no cadastro marca pela primeira vez.",
+          "uses": ["WhatsApp", "Cadastro de clientes"],
+          "flow": [
+            "Pedir nome completo e data de aniversário",
+            "Perguntar a última química que fez no cabelo e quando",
+            "Perguntar se já teve alergia a tinta ou produto de salão",
+            "Salvar na ficha e avisar a profissional que é cliente nova"
+          ],
+          "human": "Cliente conta que já teve alergia a tinta: avisar a colorista antes de marcar.",
+          "example": { "from": "Larissa Pinto", "in": "Nunca fui aí.", "out": "Seja bem-vinda, Larissa! Me conta a última química que você fez e faz quanto tempo?" }
+        }
+      ]
+    },
+    {
+      "name": "Retornos",
+      "icon": "autorenew",
+      "line": "Chama quem está na hora da raiz, do corte e da hidratação e marca pela resposta.",
+      "agents": [
+        {
+          "name": "Lista de retornos",
+          "when": "Todo dia às 8h.",
+          "uses": ["Cadastro de clientes", "Agenda"],
+          "flow": [
+            "Buscar quem retocou a raiz há mais de 30 dias",
+            "Buscar quem cortou há mais de 2 meses e quem tem cronograma de hidratação parado",
+            "Tirar quem já tem horário ou pediu para não receber mensagem",
+            "Montar a lista do dia, no máximo 20 clientes"
+          ],
+          "human": "Cliente fiel que sumiu há mais de 3 meses: avisar a profissional dela.",
+          "example": { "from": "Sistema", "in": "Lista de hoje", "out": "11 na hora da raiz, 6 na hora do corte, 3 com hidratação parada." }
+        },
+        {
+          "name": "Mensagem de retorno",
+          "when": "A lista do dia fica pronta.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Escrever pelo nome, citando a profissional e o último serviço",
+            "Oferecer um horário certo na agenda da mesma profissional",
+            "Mandar entre 9h e 11h",
+            "Se não responder em 3 dias, lembrar só mais uma vez"
+          ],
+          "human": "Resposta irritada: parar a sequência e avisar a Renata.",
+          "example": { "from": "Juliana Castro", "in": "", "out": "Oi, Juliana. Já faz 5 semanas da sua raiz com a Bia. Quarta às 14h fica bom?" }
+        },
+        {
+          "name": "Marcação pela resposta",
+          "when": "A cliente responde a mensagem de retorno.",
+          "uses": ["WhatsApp", "Agenda"],
+          "flow": [
+            "Entender se é sim, não ou outro horário",
+            "Se sim, marcar e confirmar",
+            "Se outro horário, propor dois horários livres",
+            "Se não, perguntar se pode lembrar daqui a duas semanas"
+          ],
+          "human": "Cliente diz que mudou de salão: avisar a Renata.",
+          "example": { "from": "Juliana Castro", "in": "Pode ser.", "out": "Marcado: quarta, 14h, com a Bia. Te lembro na véspera." }
+        }
+      ]
+    },
+    {
+      "name": "Faltas",
+      "icon": "event_busy",
+      "line": "Confirma na véspera, cobra na hora da falta e oferece a vaga para a lista de espera.",
+      "agents": [
+        {
+          "name": "Confirmação na véspera",
+          "when": "Todo dia às 17h, para os horários do dia seguinte.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Mandar a confirmação com hora, serviço e profissional",
+            "Pedir para responder sim ou remarcar",
+            "Quem não responder até as 20h recebe mais uma mensagem",
+            "Serviço de mais de 3 horas sem confirmação vai para a recepção ligar"
+          ],
+          "human": "Mechas ou progressiva sem confirmar até a manhã do dia: a recepção liga.",
+          "example": { "from": "Fernanda Lopes", "in": "", "out": "Oi, Fernanda. Amanhã às 10h você tem mechas com a Bia. Confirma?" }
+        },
+        {
+          "name": "Aviso de falta",
+          "when": "A cliente não chega 15 minutos depois do horário.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Mandar mensagem perguntando se está a caminho",
+            "Se não responder em 10 minutos, marcar como falta",
+            "Oferecer remarcar com dois horários",
+            "Registrar a falta na ficha da cliente"
+          ],
+          "human": "Segunda falta em serviço longo: a Renata decide se pede sinal na próxima.",
+          "example": { "from": "Fernanda Lopes", "in": "", "out": "Oi, Fernanda. Suas mechas eram às 10h. Está a caminho?" }
+        },
+        {
+          "name": "Lista de espera",
+          "when": "Abre uma vaga por falta ou cancelamento.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Buscar quem pediu horário mais cedo com a mesma profissional",
+            "Escolher quem cabe no tempo que vagou",
+            "Mandar a vaga para a primeira da lista e esperar 15 minutos",
+            "Quando alguém aceitar, marcar e avisar a profissional"
+          ],
+          "human": "Vagou um horário de 4 horas: a Renata decide se divide em serviços menores.",
+          "example": { "from": "Carla Mendes", "in": "", "out": "Oi, Carla. Vagou hoje às 10h com a Bia para a sua escova. Quer?" }
+        }
+      ]
+    },
+    {
+      "name": "Orçamentos",
+      "icon": "request_quote",
+      "line": "Manda o valor das mechas e da noiva, explica em palavras simples e volta três dias depois.",
+      "agents": [
+        {
+          "name": "Orçamento pela foto",
+          "when": "A cliente manda foto e pede preço de mechas, coloração, progressiva ou penteado de noiva.",
+          "uses": ["WhatsApp", "Tabela de preços"],
+          "flow": [
+            "Pedir foto do cabelo solto, com luz do dia, e a foto da referência",
+            "Perguntar a última química e quando foi feita",
+            "Mandar as fotos para a colorista dar a faixa de preço e o número de sessões",
+            "Montar o orçamento com valor, tempo e formas de pagamento"
+          ],
+          "human": "Cabelo com muita química por cima: a colorista quer ver pessoalmente antes do preço.",
+          "example": { "from": "Vanessa Ribeiro", "in": "Quero sair desse preto pro loiro mel.", "out": "Vanessa, a Bia viu as fotos. Fica entre R$ 680 e R$ 850, em 2 sessões." }
+        },
+        {
+          "name": "Explicador em palavras simples",
+          "when": "O orçamento fica pronto.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Explicar por que é em mais de uma sessão",
+            "Dizer quanto tempo cada sessão leva",
+            "Dizer o que a cliente vai precisar em casa depois (matizador, máscara)",
+            "Mandar junto com o orçamento"
+          ],
+          "human": "Cliente pergunta se o cabelo vai quebrar: a colorista responde.",
+          "example": { "from": "Vanessa Ribeiro", "in": "", "out": "Tirar o preto aos poucos protege o fio. Na primeira sessão clareia, na segunda chega no mel." }
+        },
+        {
+          "name": "Retorno do terceiro dia",
+          "when": "Três dias depois de mandar o orçamento, sem resposta.",
+          "uses": ["WhatsApp", "Agenda"],
+          "flow": [
+            "Perguntar se ficou alguma dúvida",
+            "Oferecer reservar a primeira sessão",
+            "Se disser que está caro, oferecer o parcelamento",
+            "Se não responder, tentar de novo em 10 dias e parar"
+          ],
+          "human": "Cliente pede desconto maior: passa para a Renata.",
+          "example": { "from": "Vanessa Ribeiro", "in": "", "out": "Oi, Vanessa. Ficou alguma dúvida? Tenho sábado, dia 22, para a primeira sessão." }
+        }
+      ]
+    },
+    {
+      "name": "Química",
+      "icon": "science",
+      "line": "Marca o teste de mecha antes e guarda a fórmula de cada cliente.",
+      "agents": [
+        {
+          "name": "Teste de mecha e de toque",
+          "when": "Cliente nova marca coloração, mechas ou progressiva.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Marcar o teste de mecha pelo menos 2 dias antes do serviço",
+            "Marcar o teste de toque para quem vai colorir pela primeira vez",
+            "Lembrar a cliente na véspera do teste",
+            "Registrar o resultado que a profissional anotar"
+          ],
+          "human": "Teste com vermelhidão, coceira ou mecha que quebrou: a colorista decide e fala com a cliente.",
+          "example": { "from": "Larissa Pinto", "in": "", "out": "Larissa, antes das mechas a gente faz um teste rápido. Pode passar quinta às 17h?" }
+        },
+        {
+          "name": "Ficha de química",
+          "when": "A profissional termina uma coloração, mechas ou progressiva.",
+          "uses": ["Cadastro de clientes"],
+          "flow": [
+            "Pedir à profissional a fórmula: tom, volume do oxidante, tempo de pausa",
+            "Anotar a técnica e o produto usado",
+            "Guardar a foto de antes e depois",
+            "Salvar na ficha com a data para a próxima vez"
+          ],
+          "human": "Ficha sem fórmula no fim do dia: avisar a profissional.",
+          "example": { "from": "Bia", "in": "Juliana: raiz 6.0 com 20 volumes, 35 minutos.", "out": "Salvo na ficha da Juliana, com a foto de hoje." }
+        },
+        {
+          "name": "Intervalo entre químicas",
+          "when": "Uma cliente marca química.",
+          "uses": ["Cadastro de clientes", "Agenda"],
+          "flow": [
+            "Conferir na ficha a última química e a data",
+            "Ver se o intervalo bate com a regra da casa",
+            "Se estiver perto demais, avisar a profissional antes de confirmar",
+            "Registrar a decisão na ficha"
+          ],
+          "human": "Progressiva em cima de descoloração recente: a profissional decide.",
+          "example": { "from": "Sistema", "in": "", "out": "Juliana fez descoloração há 12 dias e marcou progressiva. Bia precisa ver antes." }
+        }
+      ]
+    },
+    {
+      "name": "Avaliações",
+      "icon": "star",
+      "line": "Pede avaliação no dia seguinte e, se a resposta for ruim, avisa a dona primeiro.",
+      "agents": [
+        {
+          "name": "Pedido de avaliação",
+          "when": "No dia seguinte ao atendimento, às 10h.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Agradecer pela visita pelo nome e citar a profissional",
+            "Perguntar como ficou, com nota de 1 a 5",
+            "Esperar a resposta antes de mandar qualquer link",
+            "Passar a resposta para o Leitor da resposta"
+          ],
+          "human": "Cliente de noiva ou de mudança grande: a profissional manda a mensagem.",
+          "example": { "from": "Juliana Castro", "in": "", "out": "Obrigada pela visita ontem, Juliana. Como ficou a raiz?" }
+        },
+        {
+          "name": "Leitor da resposta",
+          "when": "A cliente responde o pedido de avaliação.",
+          "uses": ["WhatsApp", "Google"],
+          "flow": [
+            "Ler se a resposta é boa, neutra ou ruim",
+            "Se for boa (4 ou 5), mandar o link de avaliação no Google",
+            "Se for neutra, perguntar o que poderia ser melhor",
+            "Se for ruim, passar para o Alerta à dona e não mandar link"
+          ],
+          "human": "Resposta com palavrão ou ameaça: alerta direto para a Renata.",
+          "example": { "from": "Juliana Castro", "in": "Amei, nota 5!", "out": "Que bom! Pode deixar uma avaliação no Google?" }
+        },
+        {
+          "name": "Alerta à dona",
+          "when": "Chega uma resposta ruim.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Mandar para a Renata o nome, a nota e o que a cliente escreveu",
+            "Juntar a ficha de química e quem atendeu",
+            "Responder à cliente que a Renata vai entrar em contato",
+            "Cobrar a Renata se ninguém respondeu em 2 horas"
+          ],
+          "human": "Sempre: quem resolve é a Renata.",
+          "example": { "from": "Aline Duarte", "in": "A cor ficou bem diferente da foto.", "out": "Aviso enviado à Renata." }
+        }
+      ]
+    },
+    {
+      "name": "Operação",
+      "icon": "inventory_2",
+      "line": "Cuida do estoque de tinta, da higiene e da escala das profissionais.",
+      "agents": [
+        {
+          "name": "Controle de estoque",
+          "when": "Toda sexta às 16h e quando alguém dá baixa de produto.",
+          "uses": ["Planilha de estoque", "WhatsApp"],
+          "flow": [
+            "Somar tintas, oxidantes e pó descolorante usados na semana pela agenda",
+            "Comparar com o estoque mínimo de cada tom",
+            "Montar o pedido do que está abaixo do mínimo",
+            "Mandar o pedido para a Renata aprovar"
+          ],
+          "human": "Tom muito usado zerado com cliente marcada: avisar no mesmo dia.",
+          "example": { "from": "Sistema", "in": "", "out": "Tinta 6.0: 2 bisnagas. Oxidante 20 vol: 1 litro. Pó descolorante: 40%." }
+        },
+        {
+          "name": "Registro de higiene",
+          "when": "Ao fechar o salão.",
+          "uses": ["Planilha de higiene"],
+          "flow": [
+            "Registrar a lavagem das escovas, pentes e toalhas",
+            "Registrar a esterilização dos alicates da manicure",
+            "Registrar a limpeza dos lavatórios",
+            "Guardar o registro para a vigilância sanitária"
+          ],
+          "human": "Autoclave com falha: parar o uso dos alicates e avisar a Renata.",
+          "example": { "from": "Sistema", "in": "", "out": "Fechamento: alicates esterilizados às 19h10. Toalhas lavadas. Lavatórios ok." }
+        },
+        {
+          "name": "Escala das profissionais",
+          "when": "Toda quinta, para a semana seguinte.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Ver quantos serviços estão marcados por dia",
+            "Montar quem fica em cada cadeira e no lavatório",
+            "Cobrir folgas e férias",
+            "Mandar a escala para cada profissional no WhatsApp"
+          ],
+          "human": "Sábado sem colorista: a Renata decide.",
+          "example": { "from": "Sistema", "in": "", "out": "Sábado: Bia (cor), Kátia (corte), Rose (unhas), das 8h às 18h." }
+        }
+      ]
+    }
+  ],
+  "morning": {
+    "when": "Todo dia às 7h30, no WhatsApp da Renata.",
+    "flow": [
+      "Contar quantas clientes estão marcadas hoje e com qual profissional",
+      "Listar quem passou da hora da raiz e quantas já foram chamadas",
+      "Somar o que se perdeu ontem: faltas, horários vazios, orçamentos parados",
+      "Mandar tudo numa página só"
+    ],
+    "stats": [
+      { "value": "27", "label": "Marcadas hoje", "sub": "4 profissionais, 2 mechas longas" },
+      { "value": "9", "label": "Atrasadas", "sub": "raiz vencida, 6 já chamadas" },
+      { "value": "R$ 760", "label": "Perdido", "sub": "cliente das mechas faltou e não remarcou" }
+    ]
+  }
+}

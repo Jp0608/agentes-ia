@@ -1,0 +1,321 @@
+{
+  "id": "personal",
+  "label": "Personal trainer e estúdio",
+  "group": "educacao",
+  "icon": "sprint",
+  "title": "do estúdio de personal",
+  "owner": "Gustavo",
+  "intro": "Todo agente de IA que um estúdio de personal precisa, numa página. Cada cartão é um agente com o fluxo escrito.",
+  "sectors": [
+    {
+      "name": "Atendimento",
+      "icon": "forum",
+      "line": "Responde o WhatsApp e o Instagram até as 9 da noite, entende o objetivo e marca a aula de avaliação.",
+      "agents": [
+        {
+          "name": "Atendente do WhatsApp e Instagram",
+          "when": "Chega mensagem de alguém interessado no WhatsApp ou no Instagram.",
+          "uses": ["WhatsApp", "Instagram"],
+          "flow": [
+            "Perguntar o objetivo e há quanto tempo a pessoa não treina",
+            "Perguntar quantas vezes por semana ela quer treinar e em que horário",
+            "Mandar os pacotes com preço (2x, 3x ou 5x por semana)",
+            "Oferecer uma aula de avaliação e passar para o Agendador"
+          ],
+          "human": "Pessoa conta que tem lesão, hérnia ou acabou de operar: passar para o Gustavo antes de marcar.",
+          "example": { "from": "Fernanda Castro", "in": "Quero voltar a treinar, mas tenho pouco tempo.", "out": "Dá para fazer muito com 2 treinos de 50 minutos por semana, Fernanda. Que horário fica bom para você?" }
+        },
+        {
+          "name": "Agendador da avaliação",
+          "when": "A pessoa aceita marcar a aula de avaliação.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Conferir a agenda dos treinadores no período que a pessoa pediu",
+            "Propor dois horários de 60 minutos",
+            "Mandar a ficha de saúde para preencher antes",
+            "Confirmar com endereço e lembrar 3 horas antes"
+          ],
+          "human": "Ficha de saúde com problema de coração ou pressão alta: pedir liberação médica e avisar o treinador.",
+          "example": { "from": "Fernanda Castro", "in": "De manhã cedo.", "out": "Tenho quinta às 6h30 ou sexta às 7h. Qual prefere?" }
+        },
+        {
+          "name": "Fora do horário",
+          "when": "Chega mensagem depois das 21h ou no domingo.",
+          "uses": ["WhatsApp", "Agenda"],
+          "flow": [
+            "Responder na hora com os pacotes e o endereço",
+            "Marcar a aula de avaliação direto na agenda",
+            "Se for aluno pedindo para desmarcar o treino de amanhã cedo, desmarcar e avisar o treinador",
+            "Deixar o resumo para o Gustavo ler às 6h"
+          ],
+          "human": "Aluno diz que se machucou no treino: avisar o treinador dele na mesma hora.",
+          "example": { "from": "Rodrigo Lima", "in": "Não vou conseguir ir amanhã às 6h.", "out": "Desmarquei, Rodrigo. Quer repor sábado às 8h?" }
+        }
+      ]
+    },
+    {
+      "name": "Agenda de treinos",
+      "icon": "event",
+      "line": "Confirma o treino na véspera e não deixa nenhum horário vazio sem tentar preencher.",
+      "agents": [
+        {
+          "name": "Confirmação na véspera",
+          "when": "Todo dia às 18h, para os treinos do dia seguinte.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Mandar a cada aluno o horário e o treinador de amanhã",
+            "Pedir para responder com 1 para confirmar ou 2 para remarcar",
+            "Quem pedir para remarcar vai para o Agente de reposição",
+            "Às 21h, mandar ao treinador a lista de quem confirmou"
+          ],
+          "human": "Aluno sem resposta que treina às 6h: o treinador decide se espera ou libera o horário.",
+          "example": { "from": "Fernanda Castro", "in": "", "out": "Fernanda, amanhã às 6h30 com o Gustavo. Responde 1 para confirmar ou 2 para remarcar." }
+        },
+        {
+          "name": "Agenda da semana",
+          "when": "Todo domingo às 19h.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Montar a semana de cada aluno pelos dias fixos do pacote",
+            "Apontar alunos com feriado ou viagem marcada",
+            "Mandar a semana de cada treinador com os alunos e o tipo de treino",
+            "Listar os horários vagos da semana"
+          ],
+          "human": "Dois alunos no mesmo horário com o mesmo treinador: o Gustavo resolve.",
+          "example": { "from": "Sistema", "in": "", "out": "Semana: 86 treinos marcados, 11 horários vagos, 2 alunos viajando." }
+        },
+        {
+          "name": "Horário vago",
+          "when": "Um horário fica livre por cancelamento ou na lista da semana.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Buscar alunos que têm reposição para fazer",
+            "Buscar alunos que pediram um treino extra",
+            "Oferecer o horário para o primeiro e esperar 20 minutos",
+            "Passar para o próximo até alguém aceitar"
+          ],
+          "human": "Horário com menos de 2 horas de antecedência: só oferecer a quem mora perto do estúdio.",
+          "example": { "from": "Lucas Ferreira", "in": "", "out": "Lucas, vagou hoje às 12h com a Mariana. Quer usar para repor a falta de terça?" }
+        }
+      ]
+    },
+    {
+      "name": "Faltas e reposição",
+      "icon": "event_busy",
+      "line": "Avisa a falta na hora, oferece a reposição e cobra quem falta sem avisar.",
+      "agents": [
+        {
+          "name": "Aviso de falta",
+          "when": "O aluno não chega 10 minutos depois do horário.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Mandar mensagem perguntando se está a caminho",
+            "Se não responder em 10 minutos, marcar como falta",
+            "Avisar que falta sem aviso de 6 horas não tem reposição, conforme o contrato",
+            "Liberar o treinador e oferecer o horário para a lista de vagas"
+          ],
+          "human": "Terceira falta no mês do mesmo aluno: avisar o Gustavo para conversar.",
+          "example": { "from": "Rodrigo Lima", "in": "", "out": "Oi, Rodrigo. Seu treino era às 7h com a Mariana. Está a caminho?" }
+        },
+        {
+          "name": "Reposição",
+          "when": "O aluno avisa com mais de 6 horas que não vai.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Desmarcar o treino e avisar o treinador",
+            "Propor dois horários de reposição na mesma semana",
+            "Marcar o escolhido",
+            "Se não usar em 15 dias, avisar que a reposição vence"
+          ],
+          "human": "Aluno com muitas reposições acumuladas (mais de 4): o Gustavo combina como fica.",
+          "example": { "from": "Patrícia Gomes", "in": "Amanhã tenho médico, não consigo.", "out": "Sem problema, Patrícia. Posso repor sexta às 9h ou sábado às 10h." }
+        },
+        {
+          "name": "Controle de reposições",
+          "when": "Todo dia 25.",
+          "uses": ["Agenda", "Planilha"],
+          "flow": [
+            "Listar as reposições ainda não usadas no mês",
+            "Avisar cada aluno quantas tem e até quando valem",
+            "Oferecer horários vagos da última semana do mês",
+            "Mandar o resumo para o Gustavo"
+          ],
+          "human": "Aluno reclama que perdeu reposição: o Gustavo decide.",
+          "example": { "from": "Sistema", "in": "", "out": "17 reposições em aberto, 6 vencem dia 30." }
+        }
+      ]
+    },
+    {
+      "name": "Evolução do aluno",
+      "icon": "monitoring",
+      "line": "Guarda cada treino, mostra a evolução todo mês e chama para medir de novo.",
+      "agents": [
+        {
+          "name": "Registro do treino",
+          "when": "O treinador fecha o treino no celular.",
+          "uses": ["Planilha de treinos", "WhatsApp"],
+          "flow": [
+            "Salvar exercícios, cargas e repetições que o treinador anotou",
+            "Comparar a carga com a semana anterior",
+            "Mandar ao aluno um resumo de 2 linhas do treino",
+            "Anotar qualquer queixa que o treinador registrou"
+          ],
+          "human": "Treinador anotou dor ou desconforto: avisar o Gustavo e não mexer no treino até ele ver.",
+          "example": { "from": "Sistema", "in": "", "out": "Fernanda, hoje você subiu o agachamento de 20 kg para 24 kg. Boa!" }
+        },
+        {
+          "name": "Relatório do mês",
+          "when": "No último dia útil do mês.",
+          "uses": ["Planilha de treinos", "WhatsApp"],
+          "flow": [
+            "Contar quantos treinos o aluno fez e quantos faltou",
+            "Pegar as cargas que mais subiram",
+            "Escrever em palavras simples o que melhorou e o foco do mês que vem",
+            "Mandar para o treinador aprovar antes de enviar"
+          ],
+          "human": "Aluno pergunta de dieta ou suplemento: indicar que fale com um nutricionista.",
+          "example": { "from": "Sistema", "in": "", "out": "Outubro: 11 de 12 treinos. Supino subiu 6 kg e a prancha passou de 30 para 75 segundos." }
+        },
+        {
+          "name": "Medidas e fotos",
+          "when": "A cada 60 dias de treino.",
+          "uses": ["WhatsApp", "Agenda"],
+          "flow": [
+            "Avisar o aluno que é dia de medir no próximo treino",
+            "Lembrar o treinador de reservar 10 minutos para isso",
+            "Guardar peso, medidas e fotos na pasta do aluno",
+            "Montar o antes e depois para o aluno ver"
+          ],
+          "human": "Aluno não quer tirar foto: só medidas, sem insistir.",
+          "example": { "from": "Patrícia Gomes", "in": "", "out": "Patrícia, quinta fecha 60 dias! Vamos medir no começo do treino." }
+        }
+      ]
+    },
+    {
+      "name": "Pacotes e renovação",
+      "icon": "payments",
+      "line": "Avisa quando o pacote está acabando, cobra no dia e chama de volta quem não renovou.",
+      "agents": [
+        {
+          "name": "Fim do pacote",
+          "when": "Faltando 3 treinos para acabar o pacote.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Avisar quantos treinos faltam",
+            "Mandar o resumo da evolução no pacote",
+            "Oferecer renovar o mesmo pacote ou passar para o trimestral com desconto",
+            "Mandar o link de pagamento quando o aluno escolher"
+          ],
+          "human": "Aluno pede para mudar dias ou treinador: o Gustavo ajusta.",
+          "example": { "from": "Lucas Ferreira", "in": "", "out": "Lucas, faltam 3 treinos do seu pacote. No trimestral, 3x por semana sai R$ 890 por mês." }
+        },
+        {
+          "name": "Cobrança",
+          "when": "No dia do vencimento, sem pagamento.",
+          "uses": ["WhatsApp", "Planilha financeira"],
+          "flow": [
+            "Mandar o valor e o link do Pix às 9h",
+            "Lembrar de novo 2 dias depois",
+            "No 5º dia, avisar que os treinos ficam pausados até o pagamento",
+            "Dar baixa e agradecer quando o pagamento cair"
+          ],
+          "human": "Aluno pede para parcelar ou pagar depois: passar para o Gustavo.",
+          "example": { "from": "Sistema", "in": "", "out": "Oi, Rodrigo. O pacote de novembro (R$ 720) vence hoje. Segue o link do Pix." }
+        },
+        {
+          "name": "Quem não renovou",
+          "when": "15 dias depois do último treino de um pacote não renovado.",
+          "uses": ["WhatsApp", "Planilha de treinos"],
+          "flow": [
+            "Escrever pelo nome, citando o resultado que o aluno teve",
+            "Perguntar o que pesou: preço, horário ou tempo",
+            "Oferecer um pacote menor, de 2x por semana",
+            "Se não responder, tentar uma vez em 30 dias e parar"
+          ],
+          "human": "Aluno saiu chateado com o treinador: passar para o Gustavo.",
+          "example": { "from": "Carolina Reis", "in": "", "out": "Oi, Carolina. Você chegou a correr 5 km sem parar! Quer voltar com 2 treinos por semana?" }
+        }
+      ]
+    },
+    {
+      "name": "Avaliações",
+      "icon": "star",
+      "line": "Pede avaliação depois do primeiro mês e, se a resposta for ruim, avisa o dono primeiro.",
+      "agents": [
+        {
+          "name": "Pedido de avaliação",
+          "when": "No dia seguinte ao 12º treino, às 10h.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Agradecer pelos primeiros treinos pelo nome",
+            "Perguntar como está sendo, com nota de 1 a 5",
+            "Se for 4 ou 5, mandar o link de avaliação no Google",
+            "Se for 3 ou menos, passar para o Alerta ao dono e não mandar link"
+          ],
+          "human": "Aluno que já reclamou este mês: não mandar e avisar o Gustavo.",
+          "example": { "from": "Fernanda Castro", "in": "5, nunca treinei tão bem.", "out": "Que bom, Fernanda! Pode deixar uma avaliação no Google? Ajuda muito o estúdio." }
+        },
+        {
+          "name": "Alerta ao dono",
+          "when": "Chega uma resposta ruim.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Mandar para o Gustavo o nome, a nota e o que o aluno escreveu",
+            "Juntar o pacote, o treinador e as faltas do aluno",
+            "Responder ao aluno que o Gustavo vai ligar hoje",
+            "Cobrar o Gustavo se ninguém respondeu em 2 horas"
+          ],
+          "human": "Sempre: quem resolve é o Gustavo.",
+          "example": { "from": "André Moura", "in": "O treinador chegou atrasado duas vezes.", "out": "Aviso enviado ao Gustavo." }
+        }
+      ]
+    },
+    {
+      "name": "Operação do estúdio",
+      "icon": "inventory_2",
+      "line": "Cuida da escala dos treinadores, dos aparelhos e da limpeza.",
+      "agents": [
+        {
+          "name": "Escala dos treinadores",
+          "when": "Toda sexta, para a semana seguinte.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Ver quantos treinos estão marcados por horário",
+            "Montar quem atende cada aluno e quem cobre folga",
+            "Conferir que nenhum horário passa de 3 alunos por treinador",
+            "Mandar a escala para cada treinador"
+          ],
+          "human": "Treinador doente sem substituto: o Gustavo decide quem cobre.",
+          "example": { "from": "Sistema", "in": "", "out": "Semana: Gustavo 32 treinos, Mariana 28, Felipe 26. Sábado 9h sem cobertura." }
+        },
+        {
+          "name": "Aparelhos e limpeza",
+          "when": "Todo dia às 21h e quando alguém avisa um problema.",
+          "uses": ["Planilha de manutenção", "WhatsApp"],
+          "flow": [
+            "Conferir o checklist de limpeza do dia",
+            "Registrar aparelho com defeito e tirar de uso",
+            "Chamar o técnico e cobrar se não vier em 3 dias",
+            "Montar o pedido de material (álcool, papel, elásticos) quando acabar"
+          ],
+          "human": "Cabo, polia ou banco com risco de machucar: avisar o Gustavo na hora.",
+          "example": { "from": "Mariana", "in": "O cabo do crossover está desfiando.", "out": "Crossover fora de uso. Técnico chamado para amanhã às 14h." }
+        }
+      ]
+    }
+  ],
+  "morning": {
+    "when": "Todo dia às 5h45, no WhatsApp do Gustavo.",
+    "flow": [
+      "Contar os treinos de hoje por treinador e quem já confirmou",
+      "Listar faltas de ontem, pacotes vencidos e alunos sem treinar há 10 dias",
+      "Somar o que se perdeu: horários vazios e pacotes que não renovaram",
+      "Mandar tudo numa página só"
+    ],
+    "stats": [
+      { "value": "18", "label": "Treinos hoje", "sub": "3 treinadores, o primeiro às 6h" },
+      { "value": "5", "label": "Atrasados ou sumidos", "sub": "3 pacotes vencidos, 2 sem treinar há 10 dias" },
+      { "value": "R$ 1.440", "label": "Perdido", "sub": "2 pacotes que não renovaram" }
+    ]
+  }
+}

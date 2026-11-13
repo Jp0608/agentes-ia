@@ -1,0 +1,336 @@
+{
+  "id": "restaurante",
+  "label": "Restaurante e delivery",
+  "group": "servicos",
+  "icon": "restaurant",
+  "title": "do restaurante",
+  "owner": "Dona Rita",
+  "intro": "Todo agente de IA que um restaurante com delivery precisa, numa página. Cada cartão é um agente com o fluxo escrito.",
+  "sectors": [
+    {
+      "name": "Pedidos no WhatsApp",
+      "icon": "delivery_dining",
+      "line": "Anota o pedido no WhatsApp até a cozinha fechar, confirma o endereço e avisa quando o motoboy sai.",
+      "agents": [
+        {
+          "name": "Atendente de pedidos",
+          "when": "Chega mensagem de cliente no WhatsApp do restaurante.",
+          "uses": ["WhatsApp", "Cardápio do dia"],
+          "flow": [
+            "Cumprimentar pelo nome e oferecer o pedido de sempre se já é cliente",
+            "Mandar o cardápio do dia com preços",
+            "Anotar cada item, a quantidade e as observações (sem cebola, ponto da carne)",
+            "Ler o pedido inteiro de volta com o total e a taxa de entrega",
+            "Passar para o Agente de confirmação"
+          ],
+          "human": "Pedido para mais de 20 pessoas ou evento: chamar a Dona Rita.",
+          "example": { "from": "André Moreira", "in": "Quero 2 marmitas de frango e 1 de carne.", "out": "Anotado, André: 2 frango e 1 carne, R$ 66 mais R$ 6 de entrega. Mesmo endereço da Rua das Flores?" }
+        },
+        {
+          "name": "Agente de confirmação",
+          "when": "O cliente confirma o pedido.",
+          "uses": ["WhatsApp", "Impressora da cozinha"],
+          "flow": [
+            "Confirmar o endereço e o ponto de referência",
+            "Perguntar a forma de pagamento e se precisa de troco",
+            "Mandar o pedido para a impressora da cozinha",
+            "Dar a previsão de entrega em minutos, contando a fila da cozinha"
+          ],
+          "human": "Endereço fora da área de entrega: o caixa vê se dá para levar com taxa maior.",
+          "example": { "from": "André Moreira", "in": "Pix, pode mandar.", "out": "Pedido na cozinha! Chega em uns 40 minutos. Segue a chave Pix." }
+        },
+        {
+          "name": "Saiu para entrega",
+          "when": "A cozinha marca o pedido como pronto e o motoboy pega.",
+          "uses": ["WhatsApp", "Planilha de entregas"],
+          "flow": [
+            "Avisar o cliente que saiu e o nome do motoboy",
+            "Se passar 15 minutos da previsão, avisar antes de o cliente perguntar",
+            "Perguntar 20 minutos depois da entrega se chegou tudo certo",
+            "Registrar o tempo total do pedido"
+          ],
+          "human": "Pedido chegou errado ou faltando item: o caixa manda o que faltou na hora.",
+          "example": { "from": "André Moreira", "in": "", "out": "Saiu agora com o Wesley! Chega em 10 minutos." }
+        },
+        {
+          "name": "Pedidos do app de delivery",
+          "when": "Chega pedido ou mensagem pelo app de delivery.",
+          "uses": ["App de delivery", "Impressora da cozinha"],
+          "flow": [
+            "Aceitar o pedido em até 2 minutos",
+            "Mandar para a impressora da cozinha junto com os do WhatsApp",
+            "Responder mensagens do cliente dentro do app",
+            "Pausar o item no app quando a cozinha avisar que acabou"
+          ],
+          "human": "Pedido cancelado pelo app depois de pronto: avisar o caixa para contestar.",
+          "example": { "from": "Sistema", "in": "", "out": "Pedido do app aceito: 1 parmegiana, 1 refrigerante lata. Na fila da cozinha, posição 4." }
+        }
+      ]
+    },
+    {
+      "name": "Reservas",
+      "icon": "table_restaurant",
+      "line": "Reserva a mesa, confirma no dia e oferece a vaga para quem está esperando.",
+      "agents": [
+        {
+          "name": "Reserva de mesa",
+          "when": "Alguém pede para reservar mesa.",
+          "uses": ["WhatsApp", "Planilha de reservas"],
+          "flow": [
+            "Perguntar dia, horário e quantas pessoas",
+            "Ver na planilha se tem mesa do tamanho certo",
+            "Perguntar se é aniversário ou se tem criança ou cadeirante",
+            "Marcar e mandar a confirmação com o horário de tolerância de 15 minutos"
+          ],
+          "human": "Grupo acima de 15 pessoas: a Dona Rita fecha o cardápio e o sinal.",
+          "example": { "from": "Fernanda Gomes", "in": "Mesa pra 6 sábado às 20h?", "out": "Tenho sim, Fernanda! Mesa para 6 no sábado, 20h. É algum aniversário?" }
+        },
+        {
+          "name": "Confirmação no dia",
+          "when": "No dia da reserva, às 11h.",
+          "uses": ["WhatsApp", "Planilha de reservas"],
+          "flow": [
+            "Mandar mensagem pedindo para confirmar a reserva",
+            "Se confirmar, deixar a mesa separada",
+            "Se não responder até as 16h, lembrar mais uma vez",
+            "Se cancelar, passar a mesa para a Lista de espera"
+          ],
+          "human": "Reserva grande sem resposta até as 17h: o gerente liga.",
+          "example": { "from": "Fernanda Gomes", "in": "", "out": "Oi, Fernanda! Confirma a mesa para 6 hoje às 20h?" }
+        },
+        {
+          "name": "Lista de espera",
+          "when": "Uma mesa reservada é cancelada ou a pessoa não chega em 15 minutos.",
+          "uses": ["WhatsApp", "Planilha de reservas"],
+          "flow": [
+            "Buscar quem pediu mesa para esse horário e não conseguiu",
+            "Oferecer a mesa para o primeiro da lista",
+            "Se não responder em 10 minutos, passar para o próximo",
+            "Marcar quem não apareceu na ficha do cliente"
+          ],
+          "human": "Cliente faltou em 2 reservas: o gerente decide se pede sinal na próxima.",
+          "example": { "from": "Gustavo Reis", "in": "", "out": "Oi, Gustavo! Vagou uma mesa para 4 às 20h30 hoje. Quer?" }
+        }
+      ]
+    },
+    {
+      "name": "Cardápio do dia",
+      "icon": "restaurant_menu",
+      "line": "Avisa o prato do dia antes do almoço e tira do ar o que acabou.",
+      "agents": [
+        {
+          "name": "Prato do dia",
+          "when": "Todo dia às 10h.",
+          "uses": ["WhatsApp", "Instagram", "App de delivery"],
+          "flow": [
+            "Pegar com a cozinha o prato do dia e a sobremesa",
+            "Atualizar o cardápio no app de delivery",
+            "Postar nos status do WhatsApp e nos stories com a foto",
+            "Mandar para a lista de quem pediu para receber o cardápio"
+          ],
+          "human": "Cozinha não mandou o prato até as 9h45: o agente cobra o cozinheiro chefe.",
+          "example": { "from": "Sistema", "in": "", "out": "Hoje: feijoada completa R$ 32, sobremesa pudim. Enviado para 214 pessoas." }
+        },
+        {
+          "name": "Item acabou",
+          "when": "A cozinha avisa que um prato acabou.",
+          "uses": ["App de delivery", "WhatsApp"],
+          "flow": [
+            "Pausar o item no app de delivery na hora",
+            "Avisar o Atendente de pedidos para parar de oferecer",
+            "Sugerir um prato parecido para quem pedir",
+            "Anotar a hora que acabou para a compra do dia seguinte"
+          ],
+          "human": "Item principal acabou antes das 12h30: avisar a Dona Rita.",
+          "example": { "from": "Sistema", "in": "", "out": "Feijoada acabou às 13h10. Pausada no app. Sugerindo o virado à paulista." }
+        }
+      ]
+    },
+    {
+      "name": "Clientes sumidos",
+      "icon": "autorenew",
+      "line": "Chama de volta quem pedia toda semana e parou.",
+      "agents": [
+        {
+          "name": "Lista de sumidos",
+          "when": "Toda segunda às 9h.",
+          "uses": ["Planilha de clientes", "WhatsApp"],
+          "flow": [
+            "Buscar quem pedia pelo menos 2 vezes por mês e está há 30 dias sem pedir",
+            "Ver qual era o pedido de sempre de cada um",
+            "Tirar quem pediu para não receber mensagem",
+            "Montar a lista da semana, no máximo 40 pessoas"
+          ],
+          "human": "Cliente sumiu logo depois de uma reclamação: avisar a Dona Rita.",
+          "example": { "from": "Sistema", "in": "Lista da semana", "out": "31 clientes sumidos. 9 pediam toda semana, 2 reclamaram no último pedido." }
+        },
+        {
+          "name": "Mensagem de volta",
+          "when": "A lista da semana fica pronta.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Escrever pelo nome, citando o prato que a pessoa mais pedia",
+            "Oferecer entrega grátis no próximo pedido",
+            "Mandar entre 10h30 e 11h30, antes do almoço",
+            "Se não responder, tentar de novo só no mês seguinte"
+          ],
+          "human": "Resposta dizendo que a comida piorou: passa para a Dona Rita.",
+          "example": { "from": "Luciana Prado", "in": "", "out": "Oi, Luciana! Faz tempo que não sai sua parmegiana daqui. Hoje a entrega é por nossa conta. Bora?" }
+        },
+        {
+          "name": "Pedido de sempre",
+          "when": "O cliente responde que quer pedir.",
+          "uses": ["WhatsApp", "Impressora da cozinha"],
+          "flow": [
+            "Oferecer repetir o último pedido com um toque",
+            "Confirmar endereço e pagamento",
+            "Tirar a taxa de entrega prometida",
+            "Mandar para a cozinha"
+          ],
+          "human": "Cliente quer mudar muita coisa no pedido: passa para o Atendente de pedidos.",
+          "example": { "from": "Luciana Prado", "in": "Quero! A de sempre.", "out": "Parmegiana com arroz e fritas, R$ 38, entrega grátis. Mesmo endereço?" }
+        }
+      ]
+    },
+    {
+      "name": "Avaliações",
+      "icon": "star",
+      "line": "Pede avaliação depois da entrega e, se a resposta for ruim, avisa a dona primeiro.",
+      "agents": [
+        {
+          "name": "Pedido de avaliação",
+          "when": "1 hora depois da entrega, ou no dia seguinte para quem jantou no salão.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Perguntar se a comida chegou quente e se gostou",
+            "Pedir uma nota de 1 a 5",
+            "Esperar a resposta antes de mandar qualquer link",
+            "Passar a resposta para o Leitor da resposta"
+          ],
+          "human": "Cliente fala de passar mal: a Dona Rita liga na hora.",
+          "example": { "from": "André Moreira", "in": "", "out": "Oi, André! A marmita chegou quentinha? De 1 a 5, que nota você dá?" }
+        },
+        {
+          "name": "Leitor da resposta",
+          "when": "O cliente responde o pedido de avaliação.",
+          "uses": ["WhatsApp", "Google", "App de delivery"],
+          "flow": [
+            "Ler se a resposta é boa, neutra ou ruim",
+            "Se for 4 ou 5, mandar o link de avaliação no Google",
+            "Se for 3, perguntar o que faltou",
+            "Se for 1 ou 2, passar para o Alerta à dona e não mandar link",
+            "Ler também as avaliações novas do app de delivery e mandar as ruins para o alerta"
+          ],
+          "human": "Avaliação ruim pública no app: a Dona Rita escreve a resposta.",
+          "example": { "from": "André Moreira", "in": "5, tava ótima!", "out": "Que bom, André! Deixa essa nota no Google? Ajuda muito a gente." }
+        },
+        {
+          "name": "Alerta à dona",
+          "when": "Chega uma resposta ruim.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Mandar para a Dona Rita o nome, a nota e o que o cliente escreveu",
+            "Juntar o pedido, o horário e quem entregou",
+            "Responder ao cliente que a dona vai falar com ele hoje",
+            "Cobrar a Dona Rita se ninguém respondeu em 1 hora"
+          ],
+          "human": "Sempre: quem resolve é a Dona Rita.",
+          "example": { "from": "Sérgio Campos", "in": "Chegou frio e demorou 1 hora e meia.", "out": "Aviso enviado à Dona Rita com o pedido das 20h12 e o motoboy." }
+        }
+      ]
+    },
+    {
+      "name": "Estoque e compras",
+      "icon": "inventory_2",
+      "line": "Conta o que tem, cota com os fornecedores e não deixa nada vencer.",
+      "agents": [
+        {
+          "name": "Contagem do fechamento",
+          "when": "Todo dia às 22h30, depois que a cozinha fecha.",
+          "uses": ["Planilha de estoque", "WhatsApp"],
+          "flow": [
+            "Pedir ao cozinheiro a contagem dos itens principais (carne, frango, arroz, óleo)",
+            "Comparar com o que foi vendido no dia",
+            "Apontar diferença acima de 10%",
+            "Montar a lista do que precisa comprar amanhã"
+          ],
+          "human": "Diferença grande em carne: avisar a Dona Rita.",
+          "example": { "from": "Sistema", "in": "", "out": "Frango: 12 kg (precisa de 25 para amanhã). Carne: 8 kg, diferença de 2 kg do esperado." }
+        },
+        {
+          "name": "Pedido aos fornecedores",
+          "when": "A lista de compras fica pronta.",
+          "uses": ["WhatsApp", "Planilha de fornecedores"],
+          "flow": [
+            "Mandar a lista para 2 ou 3 fornecedores de cada item",
+            "Comparar preço e horário de entrega",
+            "Montar o pedido para a Dona Rita aprovar até as 7h",
+            "Mandar o pedido aprovado e conferir na entrega"
+          ],
+          "human": "Preço subiu mais de 15% de uma semana para outra: a Dona Rita decide.",
+          "example": { "from": "Sistema", "in": "", "out": "Frango 25 kg: R$ 14,90/kg (entrega 7h) ou R$ 13,80/kg (entrega 10h). Sugestão: o das 7h." }
+        },
+        {
+          "name": "Validade",
+          "when": "Todo dia às 9h.",
+          "uses": ["Planilha de estoque"],
+          "flow": [
+            "Listar o que vence em até 2 dias",
+            "Sugerir à cozinha usar esses itens no prato do dia",
+            "Registrar o que foi jogado fora e quanto custou",
+            "Somar o desperdício da semana"
+          ],
+          "human": "Desperdício da semana acima de R$ 500: avisar a Dona Rita.",
+          "example": { "from": "Sistema", "in": "", "out": "Vencem amanhã: 3 kg de queijo e 2 litros de creme de leite. Sugestão: lasanha no prato do dia." }
+        }
+      ]
+    },
+    {
+      "name": "Escala",
+      "icon": "badge",
+      "line": "Monta a escala pelo movimento e cobre quem faltou.",
+      "agents": [
+        {
+          "name": "Escala da semana",
+          "when": "Toda quinta, para a semana seguinte.",
+          "uses": ["Planilha de escala", "WhatsApp"],
+          "flow": [
+            "Ver o movimento de cada dia nas últimas 4 semanas",
+            "Colocar mais gente no almoço de sexta e no jantar de sábado",
+            "Cobrir folgas e férias de cozinha, salão e motoboys",
+            "Mandar a escala para cada pessoa no WhatsApp"
+          ],
+          "human": "Dia sem cozinheiro para cobrir: a Dona Rita decide.",
+          "example": { "from": "Sistema", "in": "", "out": "Sábado jantar: 3 na cozinha, 4 no salão, 3 motoboys. Folga do Wesley na terça." }
+        },
+        {
+          "name": "Falta de última hora",
+          "when": "Alguém avisa que não vem trabalhar.",
+          "uses": ["WhatsApp", "Planilha de escala"],
+          "flow": [
+            "Registrar a falta na planilha",
+            "Chamar quem está de folga e já fez a mesma função, um por vez",
+            "Se ninguém aceitar em 30 minutos, avisar o gerente",
+            "Atualizar a escala do dia"
+          ],
+          "human": "Falta de motoboy no jantar de sexta ou sábado: o gerente aumenta o tempo de entrega no app.",
+          "example": { "from": "Sistema", "in": "", "out": "Juliano faltou (cozinha, almoço). Thiago aceitou cobrir. Escala atualizada." }
+        }
+      ]
+    }
+  ],
+  "morning": {
+    "when": "Todo dia às 9h, no WhatsApp da dona.",
+    "flow": [
+      "Contar as reservas de hoje e quantos pedidos saíram ontem",
+      "Listar os pedidos que atrasaram ontem e as compras que ainda não chegaram",
+      "Somar o que se perdeu ontem: pedidos cancelados, mesas vazias, comida jogada fora",
+      "Mandar tudo numa página só"
+    ],
+    "stats": [
+      { "value": "12", "label": "Reservas hoje", "sub": "48 pessoas, a maior mesa às 20h" },
+      { "value": "7", "label": "Atrasados", "sub": "pedidos de ontem com mais de 60 minutos" },
+      { "value": "R$ 860", "label": "Perdido", "sub": "4 cancelamentos, 2 mesas que não vieram e R$ 140 de comida" }
+    ]
+  }
+}

@@ -1,0 +1,103 @@
+"use client";
+
+import { useActionState, useState, useTransition, type ReactNode } from "react";
+import { useFormStatus } from "react-dom";
+import type { ActionState } from "@/app/painel/actions";
+import { Icon } from "./Icon";
+
+/** Formulário ligado a uma server action, com aviso de salvo/erro. */
+export function ActionForm({
+  action,
+  children,
+  className = "",
+  submit,
+}: {
+  action: (s: ActionState, f: FormData) => Promise<ActionState>;
+  children: ReactNode;
+  className?: string;
+  submit: string;
+}) {
+  const [state, run] = useActionState(action, null);
+  return (
+    <form action={run} className={className}>
+      {children}
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <Submit>{submit}</Submit>
+        {state?.ok && (
+          <span className="flex items-center gap-1 text-[13px] text-signal">
+            <Icon name="check_circle" size={16} /> {state.ok}
+          </span>
+        )}
+        {state?.error && (
+          <span role="alert" className="flex items-center gap-1 text-[13px] text-alert">
+            <Icon name="error" size={16} /> {state.error}
+          </span>
+        )}
+      </div>
+    </form>
+  );
+}
+
+function Submit({ children }: { children: ReactNode }) {
+  const { pending } = useFormStatus();
+  return (
+    <button type="submit" disabled={pending} className="btn-main">
+      {pending ? "Salvando…" : children}
+    </button>
+  );
+}
+
+/** Botão que chama uma ação e mostra "…" enquanto roda. */
+export function ActButton({ onRun, children, className = "btn-soft", confirmText }: { onRun: () => Promise<unknown>; children: ReactNode; className?: string; confirmText?: string }) {
+  const [pending, start] = useTransition();
+  const [ask, setAsk] = useState(false);
+  if (confirmText && ask) {
+    return (
+      <span className="inline-flex items-center gap-2 text-[13px]">
+        <span className="text-soft">{confirmText}</span>
+        <button type="button" className="btn-danger min-h-8 px-3" disabled={pending} onClick={() => start(async () => { await onRun(); setAsk(false); })}>
+          Sim
+        </button>
+        <button type="button" className="btn-quiet min-h-8" onClick={() => setAsk(false)}>Não</button>
+      </span>
+    );
+  }
+  return (
+    <button type="button" disabled={pending} className={className} onClick={() => (confirmText ? setAsk(true) : start(async () => { await onRun(); }))}>
+      {pending ? "…" : children}
+    </button>
+  );
+}
+
+export function PageHead({ eyebrow, title, children }: { eyebrow?: string; title: string; children?: ReactNode }) {
+  return (
+    <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
+      <div>
+        {eyebrow && <p className="eyebrow mb-1">{eyebrow}</p>}
+        <h1 className="text-[28px] font-bold leading-tight tracking-tight">{title}</h1>
+      </div>
+      {children && <div className="flex flex-wrap gap-2">{children}</div>}
+    </header>
+  );
+}
+
+const STATUS: Record<string, { label: string; color: string }> = {
+  marcado: { label: "Marcado", color: "#a9b3ae" },
+  confirmado: { label: "Confirmado", color: "#4ade80" },
+  concluido: { label: "Atendido", color: "#60a5fa" },
+  faltou: { label: "Faltou", color: "#fb7185" },
+  cancelado: { label: "Cancelado", color: "#6f7a75" },
+  rascunho: { label: "Rascunho", color: "#a9b3ae" },
+  enviado: { label: "Enviado", color: "#fbbf24" },
+  aceito: { label: "Aceito", color: "#4ade80" },
+  recusado: { label: "Recusado", color: "#fb7185" },
+};
+
+export function StatusTag({ status }: { status: string }) {
+  const s = STATUS[status] ?? { label: status, color: "#a9b3ae" };
+  return (
+    <span className="tag" style={{ color: s.color, borderColor: `color-mix(in oklab, ${s.color} 45%, transparent)`, background: `color-mix(in oklab, ${s.color} 12%, transparent)` }}>
+      {s.label}
+    </span>
+  );
+}

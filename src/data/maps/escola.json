@@ -1,0 +1,367 @@
+{
+  "id": "escola",
+  "label": "Escola",
+  "group": "educacao",
+  "icon": "school",
+  "title": "da escola",
+  "owner": "Diretora Sandra",
+  "intro": "Todo agente de IA que uma escola precisa, numa página. Cada cartão é um agente com o fluxo escrito.",
+  "sectors": [
+    {
+      "name": "Atendimento e visitas",
+      "icon": "forum",
+      "line": "Atende os pais no WhatsApp até as 9 da noite, tira a dúvida da mensalidade e marca a visita à escola.",
+      "agents": [
+        {
+          "name": "Atendente do WhatsApp",
+          "when": "Chega mensagem de pai, mãe ou responsável no WhatsApp da escola.",
+          "uses": ["WhatsApp", "Sistema da escola"],
+          "flow": [
+            "Ver se o número é de responsável de aluno ou de família interessada",
+            "Responder dúvidas de horário, uniforme, material e mensalidade com as informações da escola",
+            "Se for família nova, perguntar a idade da criança e a série",
+            "Oferecer uma visita e passar para o Agendador de visitas"
+          ],
+          "human": "Assunto de comportamento, saúde ou conflito entre alunos: passar para a coordenação.",
+          "example": { "from": "Aline Barbosa", "in": "Vocês têm vaga para o 2º ano à tarde?", "out": "Temos sim, Aline! São 4 vagas no 2º ano da tarde. Quer conhecer a escola esta semana?" }
+        },
+        {
+          "name": "Agendador de visitas",
+          "when": "A família aceita conhecer a escola.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Propor dois horários de visita com a coordenação (40 minutos)",
+            "Marcar o escolhido e mandar endereço e onde estacionar",
+            "Lembrar na véspera às 18h",
+            "Depois da visita, mandar a proposta de matrícula no mesmo dia"
+          ],
+          "human": "Criança com laudo ou necessidade especial: a coordenadora pedagógica participa da visita.",
+          "example": { "from": "Aline Barbosa", "in": "Pode ser quinta de manhã.", "out": "Tenho quinta às 8h30 ou 10h com a coordenadora Lúcia. Qual fica melhor?" }
+        },
+        {
+          "name": "Fora do horário",
+          "when": "Chega mensagem depois das 18h, no fim de semana ou em feriado.",
+          "uses": ["WhatsApp", "Sistema da escola"],
+          "flow": [
+            "Responder na hora as dúvidas de rotina",
+            "Marcar visita direto na agenda",
+            "Registrar aviso de falta do aluno para amanhã",
+            "Deixar o resumo para a secretaria ler às 7h"
+          ],
+          "human": "Pai relata acidente, briga ou ameaça: avisar a coordenação de plantão na hora.",
+          "example": { "from": "Fábio Torres", "in": "O Pedro está com febre e não vai amanhã.", "out": "Anotado, Fábio. Aviso a professora do Pedro. Melhoras para ele!" }
+        }
+      ]
+    },
+    {
+      "name": "Matrículas e rematrícula",
+      "icon": "how_to_reg",
+      "line": "Fecha a matrícula com a papelada certa e garante a rematrícula antes de novembro acabar.",
+      "agents": [
+        {
+          "name": "Matrícula nova",
+          "when": "A família decide matricular.",
+          "uses": ["WhatsApp", "Sistema da escola"],
+          "flow": [
+            "Pedir certidão de nascimento, CPF do responsável, comprovante de endereço e declaração da escola anterior",
+            "Conferir se veio tudo e apontar o que falta",
+            "Mandar o contrato e o boleto da primeira parcela",
+            "Confirmar a vaga quando o contrato e o pagamento chegarem"
+          ],
+          "human": "Pedido de bolsa ou desconto para irmãos: passar para a Diretora Sandra.",
+          "example": { "from": "Aline Barbosa", "in": "Quero matricular o Davi.", "out": "Que bom, Aline! Me manda a certidão do Davi, seu CPF e um comprovante de endereço." }
+        },
+        {
+          "name": "Campanha de rematrícula",
+          "when": "1º de outubro, para o ano seguinte.",
+          "uses": ["WhatsApp", "E-mail", "Sistema da escola"],
+          "flow": [
+            "Mandar a cada família o valor do próximo ano e o desconto até 30 de novembro",
+            "Lembrar quem não respondeu a cada 10 dias",
+            "Mandar o contrato para quem confirmar",
+            "Listar quem disse que vai sair e o motivo"
+          ],
+          "human": "Família diz que vai sair: avisar a Diretora Sandra para ligar.",
+          "example": { "from": "Sistema", "in": "", "out": "Oi, Fábio. A rematrícula do Pedro para 2027 está aberta. Até 30/11, 10% de desconto na primeira parcela." }
+        },
+        {
+          "name": "Vagas e lista de espera",
+          "when": "Toda segunda às 8h e quando alguém cancela a matrícula.",
+          "uses": ["Sistema da escola", "WhatsApp"],
+          "flow": [
+            "Contar as vagas por série e turno",
+            "Buscar famílias na lista de espera da série",
+            "Avisar a primeira família e esperar 2 dias",
+            "Passar para a próxima se não responder"
+          ],
+          "human": "Turma passa do limite de alunos: a direção decide se abre exceção.",
+          "example": { "from": "Sistema", "in": "", "out": "Vagou 1 no 4º ano da manhã. 3 famílias na espera, avisando a primeira." }
+        }
+      ]
+    },
+    {
+      "name": "Comunicados aos pais",
+      "icon": "campaign",
+      "line": "Manda o recado certo para a família certa e confere quem leu.",
+      "agents": [
+        {
+          "name": "Comunicado da turma",
+          "when": "A coordenação ou o professor libera um comunicado.",
+          "uses": ["WhatsApp", "E-mail", "Sistema da escola"],
+          "flow": [
+            "Mandar só para os responsáveis da turma certa",
+            "Escrever curto: o que é, quando, o que a família precisa fazer",
+            "Pedir confirmação de leitura quando for autorização ou pagamento",
+            "No dia seguinte, lembrar quem não confirmou"
+          ],
+          "human": "Comunicado sobre caso de doença, briga ou segurança: a coordenação escreve e aprova.",
+          "example": { "from": "Sistema", "in": "", "out": "3º ano B: passeio ao museu na sexta, 27/11. Mande a autorização assinada até quarta." }
+        },
+        {
+          "name": "Lembrete de provas e eventos",
+          "when": "3 dias e 1 dia antes de cada prova, reunião ou evento.",
+          "uses": ["WhatsApp", "Agenda escolar"],
+          "flow": [
+            "Pegar o calendário de provas e eventos da semana",
+            "Mandar aos responsáveis a data, a matéria e o conteúdo",
+            "Lembrar material especial (calculadora, fantasia, lanche coletivo)",
+            "Avisar mudanças de data no mesmo dia em que forem decididas"
+          ],
+          "human": "Pai pede para o filho fazer prova em outro dia: passar para a coordenação.",
+          "example": { "from": "Sistema", "in": "", "out": "Prova de Matemática do 6º ano na quinta. Conteúdo: frações e porcentagem, páginas 40 a 62." }
+        },
+        {
+          "name": "Leitor das respostas",
+          "when": "Um responsável responde um comunicado.",
+          "uses": ["WhatsApp", "Sistema da escola"],
+          "flow": [
+            "Separar resposta simples (ok, ciente) de dúvida",
+            "Responder dúvidas de data, valor e horário",
+            "Encaminhar o resto para quem escreveu o comunicado",
+            "Registrar quem confirmou"
+          ],
+          "human": "Reclamação ou assunto sobre o aluno: passar para a coordenação.",
+          "example": { "from": "Mônica Freitas", "in": "O passeio volta que horas?", "out": "Volta às 16h30, Mônica, direto para a escola." }
+        }
+      ]
+    },
+    {
+      "name": "Faltas dos alunos",
+      "icon": "person_off",
+      "line": "Avisa a família no mesmo dia da falta e chama a coordenação quando as faltas se repetem.",
+      "agents": [
+        {
+          "name": "Aviso de falta",
+          "when": "Às 9h, depois da chamada da manhã, e às 14h, depois da chamada da tarde.",
+          "uses": ["Sistema da escola", "WhatsApp"],
+          "flow": [
+            "Pegar a lista de faltas da chamada",
+            "Tirar quem já tinha avisado",
+            "Mandar mensagem ao responsável perguntando se está tudo bem",
+            "Registrar o motivo que a família responder"
+          ],
+          "human": "Família diz que não sabia que o aluno faltou: avisar a coordenação na hora.",
+          "example": { "from": "Sistema", "in": "", "out": "Bom dia, Mônica. A Laura não veio hoje. Está tudo bem com ela?" }
+        },
+        {
+          "name": "Faltas seguidas",
+          "when": "Toda sexta às 15h.",
+          "uses": ["Sistema da escola"],
+          "flow": [
+            "Listar alunos com 3 faltas seguidas ou 5 no mês",
+            "Juntar os motivos que as famílias deram",
+            "Calcular quem está perto do limite de 25% de faltas",
+            "Mandar a lista para a coordenação marcar conversa com a família"
+          ],
+          "human": "Sempre: a coordenação fala com a família.",
+          "example": { "from": "Sistema", "in": "", "out": "7 alunos com faltas seguidas. 2 perto do limite: Igor (7º A) e Vitória (9º B)." }
+        },
+        {
+          "name": "Atestados",
+          "when": "O responsável manda atestado médico.",
+          "uses": ["WhatsApp", "Sistema da escola"],
+          "flow": [
+            "Salvar o atestado na pasta do aluno",
+            "Justificar as faltas dos dias do atestado",
+            "Avisar os professores das provas perdidas",
+            "Mandar à família as datas da segunda chamada"
+          ],
+          "human": "Atestado fala de doença contagiosa ou restrição para educação física: avisar a coordenação.",
+          "example": { "from": "Fábio Torres", "in": "Segue o atestado do Pedro.", "out": "Recebido, Fábio. Faltas de 10 e 11 justificadas. A segunda chamada de Ciências é dia 18." }
+        }
+      ]
+    },
+    {
+      "name": "Mensalidades",
+      "icon": "payments",
+      "line": "Manda o boleto antes, cobra no dia seguinte com respeito e passa a negociação para o financeiro.",
+      "agents": [
+        {
+          "name": "Boleto do mês",
+          "when": "5 dias antes do vencimento.",
+          "uses": ["WhatsApp", "E-mail", "Sistema da escola"],
+          "flow": [
+            "Mandar o boleto e o Pix com o valor e o desconto de pontualidade",
+            "Lembrar no dia do vencimento às 8h",
+            "Dar baixa quando o pagamento cair",
+            "Mandar o recibo"
+          ],
+          "human": "Responsável diz que o valor está errado: passar para o financeiro.",
+          "example": { "from": "Sistema", "in": "", "out": "Mensalidade de novembro da Laura: R$ 1.180, ou R$ 1.120 até o dia 5. Segue o boleto." }
+        },
+        {
+          "name": "Cobrança do atraso",
+          "when": "1 dia depois do vencimento, sem pagamento.",
+          "uses": ["WhatsApp", "Sistema da escola"],
+          "flow": [
+            "Mandar mensagem só ao responsável financeiro, nunca ao aluno",
+            "Mandar o boleto atualizado com multa e juros",
+            "Repetir no 7º e no 15º dia",
+            "No 30º dia, passar para o financeiro"
+          ],
+          "human": "Responsável pede para parcelar ou conta que perdeu o emprego: passar para o financeiro.",
+          "example": { "from": "Sistema", "in": "", "out": "Oi, Rogério. A mensalidade de outubro do Igor ficou em aberto. Segue o boleto atualizado." }
+        },
+        {
+          "name": "Acordo do financeiro",
+          "when": "O financeiro fecha um acordo de parcelamento.",
+          "uses": ["Sistema da escola", "WhatsApp"],
+          "flow": [
+            "Gerar os boletos das parcelas do acordo",
+            "Mandar ao responsável com as datas",
+            "Lembrar 3 dias antes de cada parcela",
+            "Avisar o financeiro se uma parcela atrasar"
+          ],
+          "human": "Parcela do acordo atrasada: o financeiro liga.",
+          "example": { "from": "Sistema", "in": "", "out": "Acordo do Igor: 4 parcelas de R$ 612, a primeira em 10/12." }
+        }
+      ]
+    },
+    {
+      "name": "Documentos e secretaria",
+      "icon": "assignment",
+      "line": "Deixa a declaração, o histórico e a transferência prontos antes de a família chegar na secretaria.",
+      "agents": [
+        {
+          "name": "Pedido de declaração",
+          "when": "O responsável pede declaração de matrícula, de frequência ou de quitação.",
+          "uses": ["WhatsApp", "Sistema da escola"],
+          "flow": [
+            "Perguntar qual declaração e para que vai usar",
+            "Preencher com os dados do aluno",
+            "Mandar para a secretária assinar",
+            "Enviar o PDF assinado em até 2 dias úteis"
+          ],
+          "human": "Declaração de quitação com mensalidade em aberto: passar para o financeiro.",
+          "example": { "from": "Mônica Freitas", "in": "Preciso de uma declaração de matrícula para o plano de saúde.", "out": "Pode deixar, Mônica. Até quinta mando o PDF assinado." }
+        },
+        {
+          "name": "Histórico e transferência",
+          "when": "A família pede transferência para outra escola.",
+          "uses": ["Sistema da escola", "WhatsApp"],
+          "flow": [
+            "Conferir notas e frequência de todos os anos",
+            "Montar o histórico e a declaração de transferência",
+            "Conferir se há pendência de livro ou mensalidade",
+            "Avisar a família o dia de buscar"
+          ],
+          "human": "Sempre: a secretária confere e assina o histórico.",
+          "example": { "from": "Sistema", "in": "", "out": "Histórico do Igor pronto. Falta devolver 2 livros da biblioteca." }
+        },
+        {
+          "name": "Documentos pendentes",
+          "when": "Todo dia 1º do mês.",
+          "uses": ["Sistema da escola", "WhatsApp"],
+          "flow": [
+            "Listar alunos com documento faltando na pasta",
+            "Mandar ao responsável o que falta e até quando",
+            "Lembrar 7 dias depois",
+            "Mandar a lista do que ainda falta para a secretaria"
+          ],
+          "human": "Falta de vacina na carteira ou documento de guarda: a secretaria liga para a família.",
+          "example": { "from": "Sistema", "in": "", "out": "12 pastas incompletas: 8 sem comprovante de endereço, 4 sem carteira de vacinação." }
+        }
+      ]
+    },
+    {
+      "name": "Avaliações dos pais",
+      "icon": "star",
+      "line": "Pergunta aos pais como está a escola no fim de cada bimestre e, se a resposta for ruim, avisa a diretora primeiro.",
+      "agents": [
+        {
+          "name": "Pesquisa do bimestre",
+          "when": "3 dias depois da entrega dos boletins.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Perguntar ao responsável a nota da escola, de 1 a 5",
+            "Perguntar o que mais gostou e o que melhoraria",
+            "Se for 4 ou 5, mandar o link de avaliação no Google",
+            "Se for 3 ou menos, passar para o Alerta à direção e não mandar link"
+          ],
+          "human": "Família com reclamação aberta na coordenação: não mandar a pesquisa.",
+          "example": { "from": "Aline Barbosa", "in": "5! O Davi adora a professora.", "out": "Que bom, Aline! Pode contar isso numa avaliação no Google?" }
+        },
+        {
+          "name": "Alerta à direção",
+          "when": "Chega uma resposta ruim.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Mandar para a Diretora Sandra o nome, a nota e o que a família escreveu",
+            "Juntar a turma do aluno, faltas e notas do bimestre",
+            "Responder à família que a diretora vai entrar em contato",
+            "Cobrar a direção se ninguém respondeu em 4 horas"
+          ],
+          "human": "Sempre: quem resolve é a Diretora Sandra.",
+          "example": { "from": "Rogério Dias", "in": "A saída das 17h é uma confusão, ninguém controla.", "out": "Aviso enviado à Diretora Sandra." }
+        }
+      ]
+    },
+    {
+      "name": "Operação",
+      "icon": "inventory_2",
+      "line": "Cobre o professor que faltou, cuida do material e da cantina.",
+      "agents": [
+        {
+          "name": "Substituição de professor",
+          "when": "Um professor avisa que vai faltar.",
+          "uses": ["WhatsApp", "Sistema da escola"],
+          "flow": [
+            "Ver as aulas daquele professor no dia",
+            "Buscar professores com janela no mesmo horário",
+            "Avisar o substituto com a turma e a atividade deixada",
+            "Avisar a coordenação de como ficou o dia"
+          ],
+          "human": "Nenhum professor livre: a coordenação decide.",
+          "example": { "from": "Prof. Marcos", "in": "Estou com virose, não vou hoje.", "out": "Melhoras, Marcos. A Patrícia cobre o 6º A às 8h; o 7º B às 10h ainda está sem ninguém." }
+        },
+        {
+          "name": "Material e cantina",
+          "when": "Toda sexta às 14h.",
+          "uses": ["Planilha de estoque", "WhatsApp"],
+          "flow": [
+            "Conferir papel, toner, material de limpeza e itens da cantina",
+            "Comparar com o estoque mínimo",
+            "Montar o pedido do que está abaixo do mínimo",
+            "Mandar para a direção aprovar"
+          ],
+          "human": "Pedido acima de R$ 3 mil: a Diretora Sandra aprova.",
+          "example": { "from": "Sistema", "in": "", "out": "Papel A4 em 15%, toner em 20%. Pedido de R$ 1.240 para aprovar." }
+        }
+      ]
+    }
+  ],
+  "morning": {
+    "when": "Todo dia às 6h45, no WhatsApp da Diretora Sandra.",
+    "flow": [
+      "Contar alunos esperados hoje, visitas marcadas e professores que avisaram falta",
+      "Listar faltas seguidas, mensalidades atrasadas e rematrículas sem resposta",
+      "Somar o que se perdeu: famílias que disseram que vão sair e mensalidades acima de 30 dias",
+      "Mandar tudo numa página só"
+    ],
+    "stats": [
+      { "value": "412", "label": "Alunos hoje", "sub": "3 visitas marcadas, 1 professor de atestado" },
+      { "value": "23", "label": "Atrasados", "sub": "15 mensalidades em aberto, 8 com faltas seguidas" },
+      { "value": "R$ 14.160", "label": "Perdido", "sub": "1 família que não vai rematricular, 12 mensalidades" }
+    ]
+  }
+}

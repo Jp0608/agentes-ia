@@ -1,0 +1,360 @@
+{
+  "id": "clinica",
+  "label": "Clínica médica e consultório",
+  "group": "saude",
+  "icon": "stethoscope",
+  "title": "da clínica médica",
+  "owner": "Dr. Henrique",
+  "intro": "Todo agente de IA que uma clínica médica precisa, numa página. Cada cartão é um agente com o fluxo escrito.",
+  "sectors": [
+    {
+      "name": "Recepção",
+      "icon": "forum",
+      "line": "Atende o WhatsApp até as 9 da noite, confere a agenda do médico, marca a consulta e manda a confirmação.",
+      "agents": [
+        {
+          "name": "Atendente do WhatsApp",
+          "when": "Chega mensagem de paciente no WhatsApp da clínica.",
+          "uses": ["WhatsApp", "Cadastro de pacientes"],
+          "flow": [
+            "Cumprimentar pelo nome se o número já é paciente",
+            "Perguntar se é consulta nova, retorno ou mostrar exame",
+            "Responder valor da consulta, endereço e convênios aceitos com a tabela da clínica",
+            "Se for para marcar, passar para o Agente da agenda com a especialidade e o período que a pessoa quer"
+          ],
+          "human": "Dor no peito, falta de ar, desmaio ou qualquer sintoma forte: orientar a ir ao pronto-socorro e chamar a recepção na hora.",
+          "example": { "from": "Juliana Prado", "in": "Queria marcar com clínico geral essa semana.", "out": "Claro, Juliana! Vou ver os horários livres desta semana." }
+        },
+        {
+          "name": "Agente da agenda",
+          "when": "O atendente pede um horário para uma consulta.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Conferir a agenda do médico certo para o que a pessoa pediu",
+            "Reservar o tempo certo (primeira consulta 40 min, retorno 20 min)",
+            "Propor dois horários livres no período pedido",
+            "Marcar o escolhido e mandar data, hora, endereço e o que trazer (documento, carteirinha, exames antigos)"
+          ],
+          "human": "Paciente pede um médico com agenda cheia por mais de 30 dias: a recepção vê se dá para encaixar.",
+          "example": { "from": "Juliana Prado", "in": "Pode ser quinta à tarde.", "out": "Tenho quinta às 14h20 ou 16h com o Dr. Henrique. Qual fica melhor?" }
+        },
+        {
+          "name": "Cadastro do paciente novo",
+          "when": "Um número que não está no cadastro marca pela primeira vez.",
+          "uses": ["WhatsApp", "Cadastro de pacientes"],
+          "flow": [
+            "Pedir nome completo, data de nascimento e CPF",
+            "Perguntar se é particular ou convênio, e qual",
+            "Pedir foto da carteirinha quando for convênio",
+            "Salvar na ficha e avisar a recepção que é paciente novo"
+          ],
+          "human": "Paciente menor de idade: pedir os dados do responsável.",
+          "example": { "from": "Eduardo Nunes", "in": "Nunca fui aí.", "out": "Seja bem-vindo, Eduardo! Me passa seu nome completo e a data de nascimento?" }
+        },
+        {
+          "name": "Fora do horário",
+          "when": "Chega mensagem depois das 19h, em fim de semana ou feriado.",
+          "uses": ["WhatsApp", "Agenda"],
+          "flow": [
+            "Responder na hora, sem esperar a clínica abrir",
+            "Marcar consulta normal direto na agenda, até as 21h",
+            "Se a pessoa falar de sintoma forte, mandar procurar o pronto-socorro mais perto",
+            "Deixar o resumo da conversa para a recepção ler às 8h"
+          ],
+          "human": "Paciente em tratamento que piorou à noite: avisar o médico responsável pelo contato de plantão da clínica.",
+          "example": { "from": "Rogério Lima", "in": "Vocês abrem sábado?", "out": "Abrimos sábado das 8h às 12h. Quer que eu já reserve um horário?" }
+        }
+      ]
+    },
+    {
+      "name": "Retornos",
+      "icon": "autorenew",
+      "line": "Chama quem está na hora do check-up ou do retorno com exame e marca pela resposta.",
+      "agents": [
+        {
+          "name": "Lista de retornos",
+          "when": "Todo dia às 8h.",
+          "uses": ["Cadastro de pacientes", "Agenda"],
+          "flow": [
+            "Buscar quem o médico pediu para voltar em uma data e não tem nada marcado",
+            "Buscar quem fez check-up há 12 meses",
+            "Tirar da lista quem pediu para não receber mensagem",
+            "Montar a lista do dia, no máximo 25 pessoas"
+          ],
+          "human": "Paciente com doença crônica sem retorno há mais de 90 dias: avisar o médico.",
+          "example": { "from": "Sistema", "in": "Lista de hoje", "out": "17 pacientes no prazo do retorno, 6 no check-up anual." }
+        },
+        {
+          "name": "Mensagem de retorno",
+          "when": "A lista do dia fica pronta.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Escrever pelo nome, citando a última consulta e o médico",
+            "Oferecer um horário concreto",
+            "Mandar entre 9h e 11h",
+            "Se não responder em 3 dias, lembrar só mais uma vez"
+          ],
+          "human": "Resposta irritada ou paciente que diz que está pior: parar a sequência e avisar a recepção.",
+          "example": { "from": "Marta Siqueira", "in": "", "out": "Oi, Marta. O Dr. Henrique pediu seu retorno em março. Posso marcar terça, 10h?" }
+        },
+        {
+          "name": "Marcação pela resposta",
+          "when": "O paciente responde a mensagem de retorno.",
+          "uses": ["WhatsApp", "Agenda"],
+          "flow": [
+            "Entender sim, não ou outro horário",
+            "Se sim, marcar e pedir para trazer os exames",
+            "Se outro horário, propor dois horários livres",
+            "Se não, perguntar se pode lembrar daqui a um mês"
+          ],
+          "human": "Paciente diz que passou a se tratar em outro lugar: avisar o médico.",
+          "example": { "from": "Marta Siqueira", "in": "Terça pode.", "out": "Marcado: terça, 10h, com o Dr. Henrique. Traga os exames, tá? Te lembro na véspera." }
+        }
+      ]
+    },
+    {
+      "name": "Faltas",
+      "icon": "event_busy",
+      "line": "Confirma na véspera, cobra na hora da falta e oferece a vaga para a lista de espera.",
+      "agents": [
+        {
+          "name": "Confirmação na véspera",
+          "when": "Todo dia às 14h, para as consultas do dia seguinte.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Mandar data, hora e médico para cada paciente de amanhã",
+            "Pedir para responder 1 para confirmar ou 2 para remarcar",
+            "Quem pediu para remarcar recebe dois horários novos",
+            "Quem não respondeu até as 18h recebe mais uma mensagem"
+          ],
+          "human": "Mais de 5 sem resposta às 19h: a recepção liga de manhã cedo.",
+          "example": { "from": "Paulo Andrade", "in": "", "out": "Oi, Paulo. Amanhã às 9h20 com a Dra. Sílvia. Responda 1 para confirmar ou 2 para remarcar." }
+        },
+        {
+          "name": "Aviso de falta",
+          "when": "O paciente não chega 15 minutos depois do horário.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Mandar mensagem perguntando se está a caminho",
+            "Se não responder em 10 minutos, marcar como falta",
+            "Oferecer remarcar com dois horários",
+            "Registrar a falta na ficha"
+          ],
+          "human": "Terceira falta do mesmo paciente: a recepção decide se pede pagamento antecipado.",
+          "example": { "from": "Paulo Andrade", "in": "", "out": "Oi, Paulo. Sua consulta era às 9h20. Está a caminho?" }
+        },
+        {
+          "name": "Lista de espera",
+          "when": "Abre uma vaga por falta ou cancelamento.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Buscar quem pediu para adiantar consulta com o mesmo médico",
+            "Mandar a vaga para o primeiro da lista",
+            "Se não responder em 15 minutos, passar para o próximo",
+            "Quando alguém aceitar, marcar, tirar da lista e avisar a recepção"
+          ],
+          "human": "Dois aceitaram ao mesmo tempo: o primeiro fica, o segundo recebe outro horário.",
+          "example": { "from": "Renata Costa", "in": "", "out": "Oi, Renata. Vagou um horário hoje às 15h com o Dr. Henrique. Quer?" }
+        }
+      ]
+    },
+    {
+      "name": "Exames e documentos",
+      "icon": "lab_profile",
+      "line": "Manda o preparo do exame, avisa quando o resultado chega e leva os pedidos de receita para o médico.",
+      "agents": [
+        {
+          "name": "Preparo do exame",
+          "when": "O médico pede exames na consulta.",
+          "uses": ["Ficha do paciente", "WhatsApp"],
+          "flow": [
+            "Pegar a lista de exames que o médico pediu",
+            "Mandar o preparo de cada um com o texto aprovado pela clínica (jejum de 8 horas, trazer urina da manhã)",
+            "Mandar a foto do pedido para o paciente levar ao laboratório",
+            "Anotar a data em que o paciente disse que vai fazer"
+          ],
+          "human": "Paciente pergunta se pode tomar o remédio de sempre antes do exame: o médico responde.",
+          "example": { "from": "Sandra Melo", "in": "", "out": "Sandra, para o exame de sangue: 8 horas de jejum, só água. O pedido está na foto acima." }
+        },
+        {
+          "name": "Resultado chegou",
+          "when": "O paciente manda o resultado ou o laboratório libera.",
+          "uses": ["WhatsApp", "Ficha do paciente", "Agenda"],
+          "flow": [
+            "Salvar o arquivo na ficha do paciente",
+            "Avisar o médico que tem resultado novo para ver",
+            "Oferecer o retorno para mostrar o exame",
+            "Nunca comentar valores nem dizer se está bom ou ruim"
+          ],
+          "human": "Sempre que o paciente pergunta o que o resultado quer dizer: só o médico responde.",
+          "example": { "from": "Sandra Melo", "in": "Chegou meu exame, tá tudo certo?", "out": "Recebi, Sandra. Já está com o Dr. Henrique. Quem explica é ele no retorno. Posso marcar quarta, 11h?" }
+        },
+        {
+          "name": "Pedido de receita e atestado",
+          "when": "Paciente pede renovação de receita, atestado ou relatório.",
+          "uses": ["WhatsApp", "Ficha do paciente"],
+          "flow": [
+            "Anotar o que a pessoa pediu e para quando precisa",
+            "Juntar a última consulta e a última receita da ficha",
+            "Mandar o pedido para o médico decidir",
+            "Avisar o paciente do prazo de resposta (até 2 dias úteis)"
+          ],
+          "human": "Sempre: quem decide se renova, se precisa de consulta ou se emite o documento é o médico.",
+          "example": { "from": "Antônio Reis", "in": "Preciso renovar a receita da pressão.", "out": "Anotei, Antônio. Passei para o Dr. Henrique e te respondo em até 2 dias úteis." }
+        }
+      ]
+    },
+    {
+      "name": "Convênio",
+      "icon": "assignment",
+      "line": "Confere a carteirinha antes da consulta e prepara as guias.",
+      "agents": [
+        {
+          "name": "Conferidor da carteirinha",
+          "when": "Na véspera de cada consulta por convênio.",
+          "uses": ["Sistema do convênio", "WhatsApp"],
+          "flow": [
+            "Conferir se a carteirinha está ativa",
+            "Conferir se o plano cobre a especialidade marcada",
+            "Ver se o retorno ainda está dentro do prazo sem cobrança",
+            "Se tiver problema, avisar o paciente antes de ele sair de casa"
+          ],
+          "human": "Carteirinha inativa: a recepção oferece a consulta particular.",
+          "example": { "from": "Sistema", "in": "", "out": "Amanhã: 14 carteirinhas ok, 1 inativa (Paulo Andrade), 1 retorno fora do prazo." }
+        },
+        {
+          "name": "Montador da guia",
+          "when": "O médico encerra a consulta ou pede exame pelo convênio.",
+          "uses": ["Sistema do convênio", "Ficha do paciente"],
+          "flow": [
+            "Preencher a guia de consulta com paciente, carteirinha e médico",
+            "Montar a guia dos exames com os códigos certos",
+            "Mandar para autorização o que precisa de autorização",
+            "Avisar o paciente quando a guia for autorizada"
+          ],
+          "human": "Exame negado pelo convênio: o faturamento recorre e o médico faz o relatório.",
+          "example": { "from": "Sistema", "in": "", "out": "Guia nº 8812: ultrassom de abdome, autorizada. Paciente avisado." }
+        },
+        {
+          "name": "Fechamento do faturamento",
+          "when": "Todo dia 25.",
+          "uses": ["Sistema do convênio", "Planilha de faturamento"],
+          "flow": [
+            "Juntar as guias do mês por convênio",
+            "Apontar guias sem assinatura ou com dado faltando",
+            "Montar o lote de cada convênio",
+            "Mandar o resumo para o faturamento conferir"
+          ],
+          "human": "Glosa acima de R$ 500 no mês anterior: o faturamento analisa antes de mandar o lote.",
+          "example": { "from": "Sistema", "in": "", "out": "Novembro: 312 guias, 4 sem assinatura, R$ 38.900 a faturar." }
+        }
+      ]
+    },
+    {
+      "name": "Avaliações",
+      "icon": "star",
+      "line": "Pede avaliação no dia seguinte e, se a resposta for ruim, avisa o dono primeiro.",
+      "agents": [
+        {
+          "name": "Pedido de avaliação",
+          "when": "No dia seguinte à consulta, às 10h.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Agradecer pela visita pelo nome",
+            "Perguntar como foi o atendimento, com nota de 1 a 5",
+            "Esperar a resposta antes de mandar qualquer link",
+            "Passar a resposta para o Leitor da resposta"
+          ],
+          "human": "Paciente que recebeu notícia difícil na consulta: não mandar pedido de avaliação.",
+          "example": { "from": "Juliana Prado", "in": "", "out": "Obrigado pela visita ontem, Juliana. Como foi o atendimento, de 1 a 5?" }
+        },
+        {
+          "name": "Leitor da resposta",
+          "when": "O paciente responde o pedido de avaliação.",
+          "uses": ["WhatsApp", "Google"],
+          "flow": [
+            "Ler se a resposta é boa, neutra ou ruim",
+            "Se for 4 ou 5, mandar o link de avaliação no Google",
+            "Se for 3, perguntar o que poderia ser melhor",
+            "Se for 1 ou 2, passar para o Alerta ao dono e não mandar link"
+          ],
+          "human": "Resposta com ameaça ou reclamação de erro médico: alerta direto para o Dr. Henrique.",
+          "example": { "from": "Juliana Prado", "in": "Nota 5, muito atenciosos!", "out": "Que bom, Juliana! Pode deixar sua avaliação no Google? É rapidinho." }
+        },
+        {
+          "name": "Alerta ao dono",
+          "when": "Chega uma resposta ruim.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Mandar para o Dr. Henrique o nome, a nota e o que o paciente escreveu",
+            "Juntar quem atendeu e quanto tempo o paciente esperou",
+            "Responder ao paciente que o Dr. Henrique vai entrar em contato",
+            "Cobrar o Dr. Henrique se ninguém respondeu em 2 horas"
+          ],
+          "human": "Sempre: quem resolve é o Dr. Henrique.",
+          "example": { "from": "Cláudio Ferraz", "in": "Esperei uma hora e meia na recepção.", "out": "Aviso enviado ao Dr. Henrique." }
+        }
+      ]
+    },
+    {
+      "name": "Operação",
+      "icon": "inventory_2",
+      "line": "Cuida do material, da escala dos médicos e do caixa do dia.",
+      "agents": [
+        {
+          "name": "Controle de material",
+          "when": "Toda sexta às 16h e quando alguém dá baixa de material.",
+          "uses": ["Planilha de estoque", "WhatsApp"],
+          "flow": [
+            "Somar o que foi usado na semana (luvas, seringas, papel de maca, curativos)",
+            "Comparar com o estoque mínimo de cada item",
+            "Apontar o que vence nos próximos 60 dias",
+            "Montar o pedido e mandar para o Dr. Henrique aprovar"
+          ],
+          "human": "Item da sala de procedimento abaixo de 10%: avisar no mesmo dia.",
+          "example": { "from": "Sistema", "in": "", "out": "Papel de maca em 15%. Luvas 70%, seringas 52%, álcool 64%." }
+        },
+        {
+          "name": "Escala dos médicos e salas",
+          "when": "Toda quinta, para a semana seguinte.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Ver quantas consultas cada médico tem por dia",
+            "Distribuir os consultórios por turno",
+            "Cobrir férias e congressos bloqueando a agenda com antecedência",
+            "Mandar a escala para cada pessoa no WhatsApp"
+          ],
+          "human": "Turno sem médico e com pacientes marcados: o Dr. Henrique decide quem cobre.",
+          "example": { "from": "Sistema", "in": "", "out": "Semana: Dr. Henrique 32h, Dra. Sílvia 24h, Dr. Otávio 16h. Sala 2 livre sexta à tarde." }
+        },
+        {
+          "name": "Fechamento do caixa",
+          "when": "Todo dia às 19h.",
+          "uses": ["Planilha de caixa", "Agenda"],
+          "flow": [
+            "Somar as consultas particulares pagas no dia por forma de pagamento",
+            "Comparar com as consultas atendidas na agenda",
+            "Apontar quem foi atendido e não pagou",
+            "Mandar o resumo para a recepção conferir"
+          ],
+          "human": "Diferença no caixa acima de R$ 100: a gerente confere no dia seguinte.",
+          "example": { "from": "Sistema", "in": "", "out": "Hoje: 19 particulares, R$ 6.650. 1 sem pagamento registrado." }
+        }
+      ]
+    }
+  ],
+  "morning": {
+    "when": "Todo dia às 7h, no WhatsApp do Dr. Henrique.",
+    "flow": [
+      "Contar quantas consultas estão marcadas hoje e com qual médico",
+      "Listar quem passou do prazo do retorno e quantos já foram avisados",
+      "Somar o que se perdeu ontem: faltas, horários vazios, guias negadas",
+      "Mandar tudo numa página só"
+    ],
+    "stats": [
+      { "value": "42", "label": "Marcados hoje", "sub": "3 médicos, a primeira às 7h30" },
+      { "value": "11", "label": "Atrasados", "sub": "retorno com exame vencido, 7 já avisados" },
+      { "value": "R$ 1.750", "label": "Perdido", "sub": "5 faltas de consulta particular" }
+    ]
+  }
+}

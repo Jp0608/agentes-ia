@@ -1,0 +1,334 @@
+{
+  "id": "contabilidade",
+  "label": "Escritório de contabilidade",
+  "group": "servicos",
+  "icon": "calculate",
+  "title": "do escritório de contabilidade",
+  "owner": "Patrícia",
+  "intro": "Todo agente de IA que um escritório de contabilidade precisa, numa página. Cada cartão é um agente com o fluxo escrito.",
+  "sectors": [
+    {
+      "name": "Atendimento",
+      "icon": "forum",
+      "line": "Responde o cliente no WhatsApp até as 9 da noite, resolve o pedido simples e leva o resto para o contador certo.",
+      "agents": [
+        {
+          "name": "Atendente do WhatsApp",
+          "when": "Chega mensagem de cliente ou de quem quer contratar o escritório.",
+          "uses": ["WhatsApp", "Cadastro de clientes"],
+          "flow": [
+            "Reconhecer a empresa pelo número e chamar pelo nome",
+            "Entender o pedido: guia, documento, folha, dúvida ou contratação",
+            "Resolver na hora o que é pedido simples",
+            "Passar o resto para o setor certo com o resumo da conversa"
+          ],
+          "human": "Pergunta sobre imposto, regime ou se pode fazer tal coisa: vai para o contador da empresa.",
+          "example": { "from": "Carla Menezes", "in": "Posso emitir nota para um cliente de outro estado?", "out": "Boa pergunta, Carla. Vou passar para o Eduardo, seu contador, e ele te responde ainda hoje." }
+        },
+        {
+          "name": "Pedidos do dia a dia",
+          "when": "O cliente pede segunda via de guia, certidão, holerite ou declaração.",
+          "uses": ["Sistema contábil", "WhatsApp"],
+          "flow": [
+            "Conferir se quem pede está autorizado pela empresa",
+            "Buscar o documento no sistema",
+            "Mandar o arquivo em PDF",
+            "Registrar o pedido no histórico do cliente"
+          ],
+          "human": "Documento que precisa ser feito do zero, como declaração de faturamento: vai para o contador assinar.",
+          "example": { "from": "Carla Menezes", "in": "Me manda a guia do DAS de novo?", "out": "Aqui está, Carla. DAS de novembro: R$ 1.842,30, vence dia 20." }
+        },
+        {
+          "name": "Fora do horário",
+          "when": "Chega mensagem depois das 18h, em fim de semana ou feriado.",
+          "uses": ["WhatsApp", "Sistema contábil"],
+          "flow": [
+            "Responder na hora, sem esperar o escritório abrir",
+            "Mandar guias e documentos que já estão prontos no sistema",
+            "Se for urgente, como guia que vence amanhã, avisar o contador de plantão",
+            "Deixar o resumo para a equipe ler às 8h"
+          ],
+          "human": "Cliente com fiscalização ou notificação de órgão público: o contador liga no primeiro horário.",
+          "example": { "from": "Diego Fontes", "in": "Recebi uma carta da prefeitura, é grave?", "out": "Recebi, Diego. Manda uma foto da carta que o contador te liga amanhã às 8h." }
+        }
+      ]
+    },
+    {
+      "name": "Coleta de documentos do mês",
+      "icon": "folder_open",
+      "line": "Pede os documentos no começo do mês, cobra quem esqueceu e confere antes de o contador abrir.",
+      "agents": [
+        {
+          "name": "Lista do mês",
+          "when": "Todo dia 1.",
+          "uses": ["Sistema contábil", "WhatsApp"],
+          "flow": [
+            "Montar a lista de cada empresa: extratos, notas de entrada, notas de serviço tomado",
+            "Mandar a lista com a data limite, dia 5",
+            "Mandar o link da pasta para enviar os arquivos",
+            "Marcar quem já mandou tudo"
+          ],
+          "human": "Empresa que mudou de banco ou abriu filial: avisar o contador para ajustar a lista.",
+          "example": { "from": "Carla Menezes", "in": "", "out": "Oi, Carla. Para fechar outubro precisamos do extrato do banco e das notas de compra até dia 5." }
+        },
+        {
+          "name": "Cobrança dos documentos",
+          "when": "Dia 4 e dia 6, para quem não mandou tudo.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Dizer exatamente o que falta",
+            "No dia 6, explicar que sem o documento a guia pode sair errada",
+            "No dia 8, avisar o contador da empresa",
+            "Parar quando chegar tudo"
+          ],
+          "human": "Cliente que atrasa 3 meses seguidos: a Patrícia conversa com ele.",
+          "example": { "from": "Diego Fontes", "in": "", "out": "Diego, falta só o extrato do banco de outubro. Consegue mandar hoje?" }
+        },
+        {
+          "name": "Conferidor dos documentos",
+          "when": "O cliente manda os arquivos.",
+          "uses": ["Pasta do cliente", "Sistema contábil"],
+          "flow": [
+            "Conferir se o extrato pega o mês inteiro, do dia 1 ao último dia",
+            "Comparar as notas emitidas no mês com o que o cliente mandou",
+            "Apontar nota faltando, arquivo ilegível ou mês errado",
+            "Liberar a empresa para o contador quando estiver completa"
+          ],
+          "human": "Movimento no extrato sem nota nenhuma: o contador pergunta ao cliente.",
+          "example": { "from": "Sistema", "in": "", "out": "Fontes Reformas: extrato ok, 14 notas emitidas, 2 notas de compra faltando." }
+        }
+      ]
+    },
+    {
+      "name": "Guias e impostos",
+      "icon": "receipt_long",
+      "line": "Manda a guia com 5 dias de folga, confirma o pagamento e avisa antes de virar multa.",
+      "agents": [
+        {
+          "name": "Envio das guias",
+          "when": "O contador libera as guias do mês.",
+          "uses": ["Sistema contábil", "WhatsApp", "E-mail"],
+          "flow": [
+            "Juntar as guias de cada empresa: DAS, FGTS, INSS, ISS",
+            "Mandar com valor e vencimento de cada uma, pelo menos 5 dias antes",
+            "Explicar em uma linha o que é cada guia",
+            "Lembrar 1 dia antes do vencimento"
+          ],
+          "human": "Imposto que subiu mais de 30% em relação ao mês anterior: o contador explica ao cliente antes do envio.",
+          "example": { "from": "Carla Menezes", "in": "", "out": "Carla, suas guias de novembro: DAS R$ 1.842,30 e FGTS R$ 512,00. As duas vencem dia 20." }
+        },
+        {
+          "name": "Confirmação de pagamento",
+          "when": "No dia seguinte a cada vencimento.",
+          "uses": ["Sistema contábil", "WhatsApp"],
+          "flow": [
+            "Pedir o comprovante de quem não mandou",
+            "Conferir o pagamento no extrato do mês seguinte",
+            "Se não pagou, mandar a guia atualizada com juros",
+            "Registrar no histórico da empresa"
+          ],
+          "human": "Empresa com 2 guias em atraso: o contador avisa o cliente do risco.",
+          "example": { "from": "Diego Fontes", "in": "Esqueci de pagar o DAS.", "out": "Sem problema, Diego. Mandei a guia atualizada: R$ 1.931,80, pode pagar até sexta." }
+        },
+        {
+          "name": "Certidões e pendências",
+          "when": "Todo dia 15.",
+          "uses": ["Portais do governo", "Planilha de certidões"],
+          "flow": [
+            "Tirar as certidões negativas de cada empresa",
+            "Comparar com o mês anterior",
+            "Apontar empresa que ficou com pendência",
+            "Mandar a lista para o contador responsável"
+          ],
+          "human": "Pendência nova em órgão público: o contador analisa e fala com o cliente.",
+          "example": { "from": "Sistema", "in": "", "out": "112 empresas conferidas. 3 com pendência nova, 1 com certidão vencendo em 10 dias." }
+        }
+      ]
+    },
+    {
+      "name": "Folha de pagamento",
+      "icon": "badge",
+      "line": "Coleta horas e faltas no dia 25, deixa a folha pronta antes do 5º dia útil e não esquece férias nem admissão.",
+      "agents": [
+        {
+          "name": "Coleta das variáveis",
+          "when": "Todo dia 25.",
+          "uses": ["WhatsApp", "Planilha da folha"],
+          "flow": [
+            "Mandar a cada empresa a planilha com os funcionários do mês",
+            "Pedir horas extras, faltas, atestados, comissões e adiantamentos",
+            "Lembrar no dia 27 quem não mandou",
+            "Passar para o departamento pessoal no dia 28"
+          ],
+          "human": "Empresa que não mandou até o dia 28: o departamento pessoal liga.",
+          "example": { "from": "Rogério Tavares", "in": "O Lucas teve 2 faltas e a Bia fez 6 horas extras.", "out": "Anotado, Rogério. Mais alguma coisa da equipe neste mês?" }
+        },
+        {
+          "name": "Admissão de funcionário",
+          "when": "O cliente avisa que vai contratar alguém.",
+          "uses": ["WhatsApp", "Sistema da folha", "eSocial"],
+          "flow": [
+            "Mandar a lista de documentos do novo funcionário",
+            "Pedir cargo, salário, horário e data de início",
+            "Lembrar que o exame admissional vem antes do primeiro dia",
+            "Deixar o registro pronto para o departamento pessoal enviar"
+          ],
+          "human": "Dúvida sobre tipo de contrato ou piso da categoria: o departamento pessoal responde.",
+          "example": { "from": "Rogério Tavares", "in": "Vou contratar uma vendedora segunda.", "out": "Ótimo, Rogério. Me passa o nome, salário e horário dela? Já mando a lista de documentos." }
+        },
+        {
+          "name": "Férias e rescisões",
+          "when": "Toda segunda às 8h.",
+          "uses": ["Sistema da folha", "WhatsApp"],
+          "flow": [
+            "Listar funcionários com férias vencendo nos próximos 60 dias",
+            "Avisar a empresa para marcar as datas",
+            "Quando o cliente avisa uma demissão, pedir data e tipo de saída",
+            "Passar ao departamento pessoal com o prazo de pagamento da rescisão"
+          ],
+          "human": "Demissão de qualquer tipo: o departamento pessoal confere os cálculos e orienta o cliente.",
+          "example": { "from": "Sistema", "in": "", "out": "7 funcionários com férias vencendo até janeiro, em 4 empresas. 2 empresas já avisadas." }
+        }
+      ]
+    },
+    {
+      "name": "Abertura de empresa",
+      "icon": "storefront",
+      "line": "Junta os dados de quem quer abrir empresa, acompanha cada órgão e avisa quando o CNPJ sair.",
+      "agents": [
+        {
+          "name": "Coleta para abertura",
+          "when": "Alguém diz que quer abrir uma empresa.",
+          "uses": ["WhatsApp", "Formulário de abertura"],
+          "flow": [
+            "Perguntar o que a empresa vai fazer, a cidade e quantos sócios",
+            "Pedir documentos dos sócios e o endereço da sede",
+            "Marcar uma conversa de 30 minutos com o contador",
+            "Mandar a proposta de abertura depois da conversa"
+          ],
+          "human": "Escolha do tipo de empresa e do regime de imposto: o contador decide junto com o cliente.",
+          "example": { "from": "Larissa Moura", "in": "Quero abrir um estúdio de pilates.", "out": "Que legal, Larissa! Vai ser só você de sócia? Posso marcar 30 minutos com o contador amanhã às 15h." }
+        },
+        {
+          "name": "Acompanhamento da abertura",
+          "when": "Toda manhã, enquanto a abertura está em andamento.",
+          "uses": ["Portais do governo", "WhatsApp"],
+          "flow": [
+            "Conferir em que etapa está: nome, Junta Comercial, CNPJ, prefeitura, alvará",
+            "Avisar o cliente a cada etapa concluída",
+            "Apontar exigência feita por algum órgão",
+            "Avisar quando o CNPJ e a inscrição municipal saírem"
+          ],
+          "human": "Exigência de um órgão: o contador responde.",
+          "example": { "from": "Larissa Moura", "in": "", "out": "Larissa, a Junta aprovou o contrato. Agora falta a prefeitura, leva uns 7 dias úteis." }
+        },
+        {
+          "name": "Primeiros passos do cliente novo",
+          "when": "O CNPJ sai ou uma empresa troca de contador e chega ao escritório.",
+          "uses": ["WhatsApp", "Sistema contábil"],
+          "flow": [
+            "Mandar o resumo do que o escritório faz e o que o cliente precisa mandar todo mês",
+            "Explicar como emitir a primeira nota",
+            "Cadastrar a empresa na lista do mês e nas guias",
+            "Marcar um retorno do contador em 30 dias"
+          ],
+          "human": "Empresa que veio de outro escritório com pendências: o contador avalia antes de tudo.",
+          "example": { "from": "Larissa Moura", "in": "", "out": "Bem-vinda, Larissa! Todo dia 5 a gente pede o extrato e as notas. Aqui está o passo a passo da primeira nota." }
+        }
+      ]
+    },
+    {
+      "name": "Cobrança de honorários",
+      "icon": "payments",
+      "line": "Manda o boleto da mensalidade, cobra o atraso com educação e lembra o reajuste com antecedência.",
+      "agents": [
+        {
+          "name": "Boleto da mensalidade",
+          "when": "Todo dia 1.",
+          "uses": ["Sistema financeiro", "WhatsApp", "E-mail"],
+          "flow": [
+            "Gerar o boleto de cada cliente com o valor do contrato",
+            "Somar os serviços extras do mês, como alteração de contrato",
+            "Mandar com vencimento dia 10",
+            "Dar baixa quando o pagamento cair"
+          ],
+          "human": "Cliente contesta um serviço extra: a Patrícia explica.",
+          "example": { "from": "Rogério Tavares", "in": "", "out": "Oi, Rogério. Honorários de novembro: R$ 890 (mensalidade R$ 750 e 2 admissões). Vence dia 10." }
+        },
+        {
+          "name": "Cobrança do atraso",
+          "when": "No dia seguinte ao vencimento, sem pagamento.",
+          "uses": ["WhatsApp", "Sistema financeiro"],
+          "flow": [
+            "Mandar uma mensagem educada com o boleto",
+            "Repetir no 7º dia",
+            "No 15º dia, avisar a Patrícia",
+            "Registrar cada contato no histórico"
+          ],
+          "human": "Atraso de 2 meses ou pedido de desconto: a Patrícia decide.",
+          "example": { "from": "Diego Fontes", "in": "Esse mês ficou apertado, posso pagar dia 20?", "out": "Vou passar para a Patrícia e te respondo hoje à tarde, Diego." }
+        },
+        {
+          "name": "Reajuste anual",
+          "when": "60 dias antes do aniversário de cada contrato.",
+          "uses": ["Planilha de contratos", "E-mail"],
+          "flow": [
+            "Calcular o reajuste pelo índice do contrato",
+            "Conferir se a empresa cresceu: mais funcionários ou mais notas",
+            "Mandar a sugestão de novo valor para a Patrícia aprovar",
+            "Avisar o cliente com 30 dias de antecedência"
+          ],
+          "human": "Cliente grande ou que pede para renegociar: a Patrícia conversa.",
+          "example": { "from": "Sistema", "in": "", "out": "Em janeiro, 9 contratos fazem aniversário. 3 empresas passaram de 10 funcionários." }
+        }
+      ]
+    },
+    {
+      "name": "Satisfação do cliente",
+      "icon": "star",
+      "line": "Pergunta como está o serviço a cada trimestre e, se a resposta for ruim, avisa a dona primeiro.",
+      "agents": [
+        {
+          "name": "Pesquisa do trimestre",
+          "when": "Em janeiro, abril, julho e outubro, no dia 20.",
+          "uses": ["WhatsApp", "Google"],
+          "flow": [
+            "Perguntar a nota de 1 a 5 para o atendimento do escritório",
+            "Perguntar o que poderia ser mais fácil",
+            "Se for 5, mandar o link de avaliação no Google",
+            "Se for 3 ou menos, passar para o Alerta à dona"
+          ],
+          "human": "Cliente diz que vai trocar de contador: alerta direto para a Patrícia.",
+          "example": { "from": "Larissa Moura", "in": "5! Vocês respondem muito rápido.", "out": "Obrigada, Larissa! Se puder deixar isso no Google, ajuda muito o escritório." }
+        },
+        {
+          "name": "Alerta à dona",
+          "when": "Chega uma nota baixa ou uma reclamação.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Mandar à Patrícia o nome da empresa, a nota e o que o cliente escreveu",
+            "Juntar o contador responsável e os últimos pedidos do cliente",
+            "Responder ao cliente que a Patrícia vai entrar em contato",
+            "Cobrar a Patrícia se ninguém respondeu em 2 horas"
+          ],
+          "human": "Sempre: quem resolve é a Patrícia.",
+          "example": { "from": "Marcos Teixeira", "in": "Paguei multa porque a guia chegou no dia do vencimento.", "out": "Aviso enviado à Patrícia com o histórico das guias da empresa." }
+        }
+      ]
+    }
+  ],
+  "morning": {
+    "when": "Todo dia útil às 7h30, no WhatsApp da dona.",
+    "flow": [
+      "Contar as guias que vencem hoje e nos próximos 5 dias, e quantas já foram pagas",
+      "Listar as empresas com documentos do mês faltando e folhas atrasadas",
+      "Somar o que se perdeu: multas que clientes pagaram, honorários em atraso, clientes que pediram para sair",
+      "Mandar tudo numa página só"
+    ],
+    "stats": [
+      { "value": "46", "label": "Guias vencendo em 5 dias", "sub": "112 empresas, 31 guias já pagas" },
+      { "value": "9", "label": "Documentos atrasados", "sub": "empresas sem extrato de outubro, 6 já cobradas" },
+      { "value": "R$ 3.640", "label": "Perdido", "sub": "honorários de 4 clientes com mais de 30 dias de atraso" }
+    ]
+  }
+}

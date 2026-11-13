@@ -1,0 +1,348 @@
+{
+  "id": "imobiliaria",
+  "label": "Imobiliária",
+  "group": "servicos",
+  "icon": "real_estate_agent",
+  "title": "da imobiliária",
+  "owner": "Renata",
+  "intro": "Todo agente de IA que uma imobiliária precisa, numa página. Cada cartão é um agente com o fluxo escrito.",
+  "sectors": [
+    {
+      "name": "Leads dos portais",
+      "icon": "person_search",
+      "line": "Responde o lead do portal em 5 minutos, descobre o que a pessoa procura e entrega para o corretor certo.",
+      "agents": [
+        {
+          "name": "Primeira resposta ao lead",
+          "when": "Chega um contato pelo portal imobiliário, pelo site ou pelo WhatsApp.",
+          "uses": ["Portais imobiliários", "WhatsApp", "CRM"],
+          "flow": [
+            "Responder em até 5 minutos, citando o imóvel que a pessoa viu",
+            "Mandar as fotos, o valor com condomínio e IPTU e o bairro",
+            "Perguntar se é para comprar ou alugar e quando pretende mudar",
+            "Registrar o lead no CRM com a origem do portal"
+          ],
+          "human": "Lead pede para falar com uma pessoa: passa para o corretor de plantão na hora.",
+          "example": { "from": "Juliana Prado", "in": "Esse apartamento da Rua das Acácias ainda está disponível?", "out": "Está sim, Juliana! 2 quartos, 68 m², R$ 2.300 com condomínio. Quer marcar uma visita?" }
+        },
+        {
+          "name": "Qualificador do lead",
+          "when": "O lead respondeu a primeira mensagem.",
+          "uses": ["WhatsApp", "CRM"],
+          "flow": [
+            "Perguntar faixa de valor, bairros, quartos e vaga de garagem",
+            "Na compra, perguntar se vai financiar, usar FGTS ou pagar à vista",
+            "Na locação, perguntar qual garantia pretende usar",
+            "Separar até 3 imóveis da carteira que encaixam no perfil",
+            "Passar para o corretor da região com o resumo pronto"
+          ],
+          "human": "Compra acima de R$ 1 milhão: vai direto para a Renata escolher o corretor.",
+          "example": { "from": "Juliana Prado", "in": "Até 2.500, perto do metrô, com vaga.", "out": "Separei 3 opções a até 10 minutos do metrô, todas com vaga. Te mando agora." }
+        },
+        {
+          "name": "Fora do horário",
+          "when": "Chega lead depois das 19h, em domingo ou feriado.",
+          "uses": ["WhatsApp", "Agenda dos corretores"],
+          "flow": [
+            "Responder na hora com as informações do imóvel",
+            "Oferecer horários de visita na agenda do corretor da região",
+            "Marcar a visita direto, até as 22h",
+            "Deixar o resumo da conversa para o corretor ler às 8h"
+          ],
+          "human": "Lead diz que tem outra proposta no mesmo imóvel: avisar o corretor na mesma noite.",
+          "example": { "from": "Leandro Couto", "in": "Dá pra ver a casa amanhã cedo?", "out": "Dá sim, Leandro. Tenho 9h ou 10h30 com o corretor Fábio. Qual prefere?" }
+        }
+      ]
+    },
+    {
+      "name": "Visitas",
+      "icon": "event",
+      "line": "Marca a visita, confirma na véspera e volta no dia seguinte para saber o que a pessoa achou.",
+      "agents": [
+        {
+          "name": "Agendador de visitas",
+          "when": "O lead aceita visitar um imóvel.",
+          "uses": ["Agenda dos corretores", "WhatsApp"],
+          "flow": [
+            "Conferir se o imóvel está livre para visita e onde está a chave",
+            "Propor dois horários na agenda do corretor da região",
+            "Juntar visitas do mesmo bairro em sequência, de 40 em 40 minutos",
+            "Mandar a confirmação com endereço, nome e foto do corretor"
+          ],
+          "human": "Imóvel ocupado pelo inquilino: o corretor combina o horário com ele.",
+          "example": { "from": "Juliana Prado", "in": "Sábado de manhã.", "out": "Marcado: sábado, 10h, Rua das Acácias, 210. O corretor Fábio te encontra na portaria." }
+        },
+        {
+          "name": "Confirmação da véspera",
+          "when": "Na véspera da visita, às 18h.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Mandar lembrete com hora e endereço",
+            "Pedir para confirmar com um sim",
+            "Se não confirmar até as 20h, avisar o corretor",
+            "Se desmarcar, oferecer outro horário e liberar a agenda"
+          ],
+          "human": "Visita desmarcada duas vezes: o corretor liga para entender o que mudou.",
+          "example": { "from": "Juliana Prado", "in": "", "out": "Oi, Juliana. Amanhã às 10h é a visita na Rua das Acácias. Confirma?" }
+        },
+        {
+          "name": "Retorno pós-visita",
+          "when": "No dia seguinte à visita, às 10h.",
+          "uses": ["WhatsApp", "CRM"],
+          "flow": [
+            "Perguntar o que a pessoa achou do imóvel",
+            "Se gostou, explicar como fazer a proposta",
+            "Se não gostou, perguntar o motivo e mandar 2 opções parecidas sem aquele problema",
+            "Anotar a resposta no CRM"
+          ],
+          "human": "A pessoa quer negociar o valor: passa para o corretor montar a proposta.",
+          "example": { "from": "Juliana Prado", "in": "Gostei, mas a cozinha é pequena.", "out": "Entendi. Tenho um no mesmo prédio com cozinha americana, R$ 2.450. Quer ver?" }
+        }
+      ]
+    },
+    {
+      "name": "Propostas",
+      "icon": "request_quote",
+      "line": "Registra a proposta, leva ao proprietário no mesmo dia e não deixa ninguém esperando resposta.",
+      "agents": [
+        {
+          "name": "Registro da proposta",
+          "when": "O cliente diz que quer fazer proposta.",
+          "uses": ["WhatsApp", "Modelo de proposta"],
+          "flow": [
+            "Perguntar valor, forma de pagamento e prazo para assinar",
+            "Preencher o modelo de proposta da imobiliária",
+            "Mandar para o corretor revisar",
+            "Depois de revisada, mandar para o cliente assinar"
+          ],
+          "human": "Proposta com permuta ou pagamento em parcelas diretas: o corretor monta junto com a Renata.",
+          "example": { "from": "Marcelo Antunes", "in": "Quero oferecer 480 mil à vista.", "out": "Proposta pronta: R$ 480.000 à vista, assinatura em 30 dias. Enviei para o corretor revisar." }
+        },
+        {
+          "name": "Envio ao proprietário",
+          "when": "O cliente assina a proposta.",
+          "uses": ["WhatsApp", "E-mail"],
+          "flow": [
+            "Mandar a proposta ao proprietário no mesmo dia",
+            "Explicar a diferença para o valor pedido e a forma de pagamento",
+            "Pedir resposta em até 48 horas",
+            "Se não responder em 24 horas, lembrar uma vez e avisar o corretor"
+          ],
+          "human": "Proprietário faz contraproposta: o corretor negocia com os dois lados.",
+          "example": { "from": "Sistema", "in": "", "out": "Proposta enviada ao Sr. Osvaldo: R$ 480 mil à vista, 4% abaixo do pedido. Prazo: quinta, 18h." }
+        },
+        {
+          "name": "Proposta parada",
+          "when": "Todo dia às 9h.",
+          "uses": ["CRM", "WhatsApp"],
+          "flow": [
+            "Listar propostas sem resposta há mais de 2 dias",
+            "Mandar ao cliente uma atualização de onde está a negociação",
+            "Avisar o corretor responsável de cada proposta parada",
+            "Mandar a lista para a Renata"
+          ],
+          "human": "Proposta parada há mais de 5 dias: a Renata decide com o corretor.",
+          "example": { "from": "Sistema", "in": "", "out": "4 propostas esperando resposta. 1 parada há 6 dias, R$ 610 mil." }
+        }
+      ]
+    },
+    {
+      "name": "Contratos e documentos",
+      "icon": "description",
+      "line": "Pede os documentos certos, confere as certidões e deixa o contrato pronto antes da assinatura.",
+      "agents": [
+        {
+          "name": "Lista de documentos",
+          "when": "Uma proposta é aceita.",
+          "uses": ["WhatsApp", "Pasta do negócio"],
+          "flow": [
+            "Mandar a lista certa para cada lado: comprador, vendedor, inquilino ou fiador",
+            "Receber os arquivos pelo WhatsApp e salvar na pasta do negócio",
+            "Marcar o que chegou e o que falta",
+            "Lembrar quem está devendo documento a cada 2 dias"
+          ],
+          "human": "Documento ilegível ou em nome de outra pessoa: avisar o corretor.",
+          "example": { "from": "Marcelo Antunes", "in": "Mandei RG e comprovante.", "out": "Recebi os dois, Marcelo. Faltam certidão de casamento e os 3 últimos holerites." }
+        },
+        {
+          "name": "Conferidor de certidões",
+          "when": "Os documentos do vendedor e do imóvel chegam.",
+          "uses": ["Pasta do negócio", "Planilha de certidões"],
+          "flow": [
+            "Conferir a matrícula atualizada e se há ônus anotado",
+            "Conferir as certidões pessoais e a validade de cada uma",
+            "Conferir débitos de IPTU e condomínio",
+            "Apontar o que está vencido ou com pendência"
+          ],
+          "human": "Matrícula com penhora, inventário ou qualquer pendência: vai para o advogado parceiro.",
+          "example": { "from": "Sistema", "in": "", "out": "Imóvel 1182: 7 de 9 certidões ok. Matrícula com mais de 30 dias e IPTU de 2025 em aberto." }
+        },
+        {
+          "name": "Minuta do contrato",
+          "when": "Todos os documentos estão conferidos.",
+          "uses": ["Modelo de contrato", "Assinatura eletrônica"],
+          "flow": [
+            "Preencher o modelo com as partes, o imóvel e os valores da proposta",
+            "Mandar para o corretor e o jurídico revisarem",
+            "Mandar a versão aprovada para as partes lerem com 2 dias de antecedência",
+            "Marcar a assinatura e mandar o link de assinatura eletrônica"
+          ],
+          "human": "Cliente quer mudar cláusula: o jurídico responde.",
+          "example": { "from": "Sistema", "in": "", "out": "Contrato de compra e venda pronto para revisão. Assinatura marcada para terça, 15h." }
+        }
+      ]
+    },
+    {
+      "name": "Locação e aluguel",
+      "icon": "payments",
+      "line": "Manda o boleto, cobra o atraso no dia seguinte, repassa ao proprietário e abre o chamado de conserto.",
+      "agents": [
+        {
+          "name": "Boleto do aluguel",
+          "when": "Todo dia 1, para os aluguéis que vencem no mês.",
+          "uses": ["Sistema de locação", "WhatsApp", "E-mail"],
+          "flow": [
+            "Gerar o boleto com aluguel, condomínio e IPTU do mês",
+            "Mandar ao inquilino com 7 dias de antecedência",
+            "Lembrar 1 dia antes do vencimento",
+            "Dar baixa quando o pagamento cair"
+          ],
+          "human": "Inquilino diz que o valor está errado: o financeiro confere.",
+          "example": { "from": "Patrícia Gomes", "in": "", "out": "Oi, Patrícia. Seu aluguel de dezembro: R$ 2.870, vence dia 10. Boleto em anexo." }
+        },
+        {
+          "name": "Cobrança do atraso",
+          "when": "No dia seguinte ao vencimento, sem pagamento.",
+          "uses": ["WhatsApp", "Sistema de locação"],
+          "flow": [
+            "Mandar mensagem educada com o boleto atualizado",
+            "Perguntar se houve algum problema",
+            "Repetir no 5º dia com o valor da multa",
+            "No 10º dia, avisar o fiador ou a garantia contratada"
+          ],
+          "human": "Atraso de 30 dias ou pedido de parcelamento: a Renata decide.",
+          "example": { "from": "Patrícia Gomes", "in": "Recebo só dia 15, consigo pagar então?", "out": "Vou passar para a Renata ver o seu caso hoje e te respondo até as 17h." }
+        },
+        {
+          "name": "Repasse ao proprietário",
+          "when": "O aluguel do inquilino é pago.",
+          "uses": ["Sistema de locação", "E-mail"],
+          "flow": [
+            "Descontar a taxa de administração do mês",
+            "Programar o repasse em até 5 dias úteis",
+            "Mandar o extrato ao proprietário",
+            "Avisar se o inquilino pagou atrasado"
+          ],
+          "human": "Proprietário contesta o desconto de algum conserto: o financeiro explica.",
+          "example": { "from": "Sistema", "in": "", "out": "Repasse ao Sr. Osvaldo: R$ 2.116 (aluguel R$ 2.300, taxa 8%). Cai dia 15." }
+        },
+        {
+          "name": "Chamado de manutenção",
+          "when": "O inquilino avisa de um problema no imóvel.",
+          "uses": ["WhatsApp", "Planilha de chamados"],
+          "flow": [
+            "Pedir foto ou vídeo do problema",
+            "Separar o que é do inquilino e o que é do proprietário pelo contrato",
+            "Pedir orçamento a 2 prestadores cadastrados",
+            "Mandar o orçamento ao proprietário aprovar e marcar o conserto"
+          ],
+          "human": "Vazamento, falta de luz ou risco: o gerente de locação liga na hora.",
+          "example": { "from": "Rodrigo Pires", "in": "A pia da cozinha está vazando embaixo.", "out": "Obrigado pelo vídeo, Rodrigo. Já pedi orçamento ao encanador, ele te liga hoje." }
+        }
+      ]
+    },
+    {
+      "name": "Captação de imóveis",
+      "icon": "home_work",
+      "line": "Atende quem quer vender ou alugar, monta a ficha com fotos e avisa quando o imóvel parou de girar.",
+      "agents": [
+        {
+          "name": "Atendente do proprietário",
+          "when": "Alguém diz que quer anunciar um imóvel.",
+          "uses": ["WhatsApp", "Agenda dos corretores"],
+          "flow": [
+            "Perguntar endereço, tamanho, quartos e se é venda ou locação",
+            "Perguntar quanto a pessoa espera receber",
+            "Marcar a visita de avaliação com o captador da região",
+            "Mandar a lista de documentos do imóvel para ir separando"
+          ],
+          "human": "Imóvel fora da região da imobiliária: a Renata decide se pega.",
+          "example": { "from": "Sônia Ribeiro", "in": "Quero alugar meu apartamento no Jardim Europa.", "out": "Que bom, Sônia! Quantos quartos tem e está vazio? Posso marcar a avaliação para quinta." }
+        },
+        {
+          "name": "Ficha e anúncio",
+          "when": "O captador volta da avaliação com fotos e medidas.",
+          "uses": ["CRM", "Portais imobiliários"],
+          "flow": [
+            "Montar a ficha com medidas, vagas, condomínio e IPTU",
+            "Escrever o texto do anúncio em linguagem simples",
+            "Escolher as 15 melhores fotos e colocar a fachada por último",
+            "Mandar ao proprietário aprovar e publicar nos portais"
+          ],
+          "human": "Valor pedido muito acima dos vizinhos: o captador conversa com o proprietário.",
+          "example": { "from": "Sistema", "in": "", "out": "Anúncio pronto: 3 quartos, 92 m², 2 vagas, R$ 3.200. Esperando aprovação da Sônia." }
+        },
+        {
+          "name": "Imóvel parado",
+          "when": "Toda segunda às 8h.",
+          "uses": ["Portais imobiliários", "CRM", "WhatsApp"],
+          "flow": [
+            "Listar imóveis anunciados há mais de 45 dias sem proposta",
+            "Somar quantos contatos e visitas cada um teve",
+            "Montar o relatório para o proprietário com o que os visitantes disseram",
+            "Sugerir ao corretor rever valor ou fotos"
+          ],
+          "human": "Proposta de baixar o preço: o corretor conversa com o proprietário.",
+          "example": { "from": "Sistema", "in": "", "out": "9 imóveis parados há mais de 45 dias. O da Rua Ipê teve 31 contatos e 1 visita." }
+        }
+      ]
+    },
+    {
+      "name": "Avaliações",
+      "icon": "star",
+      "line": "Pede avaliação depois das chaves e, se a resposta for ruim, avisa a dona primeiro.",
+      "agents": [
+        {
+          "name": "Pedido de avaliação",
+          "when": "Uma semana depois da entrega das chaves.",
+          "uses": ["WhatsApp", "Google"],
+          "flow": [
+            "Perguntar como está o imóvel novo",
+            "Pedir uma nota de 1 a 5 para o atendimento",
+            "Se for 4 ou 5, mandar o link de avaliação no Google",
+            "Se for 3 ou menos, passar para o Alerta à dona e não mandar link"
+          ],
+          "human": "Cliente reclama do corretor pelo nome: a Renata fala com ele.",
+          "example": { "from": "Juliana Prado", "in": "Nota 5, o Fábio foi ótimo!", "out": "Que alegria, Juliana! Pode deixar essa avaliação no Google? Ajuda muito." }
+        },
+        {
+          "name": "Alerta à dona",
+          "when": "Chega uma nota ruim ou uma reclamação.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Mandar à Renata o nome, a nota e o que a pessoa escreveu",
+            "Juntar o histórico do negócio e o corretor que atendeu",
+            "Responder ao cliente que a Renata vai entrar em contato",
+            "Cobrar a Renata se ninguém respondeu em 2 horas"
+          ],
+          "human": "Sempre: quem resolve é a Renata.",
+          "example": { "from": "Cláudio Mendes", "in": "Ninguém me avisou que a chave atrasaria uma semana.", "out": "Aviso enviado à Renata com o histórico do contrato." }
+        }
+      ]
+    }
+  ],
+  "morning": {
+    "when": "Todo dia às 7h30, no WhatsApp da dona.",
+    "flow": [
+      "Contar as visitas marcadas hoje e os leads que chegaram desde ontem",
+      "Listar propostas sem resposta e aluguéis em atraso",
+      "Somar o que se perdeu: leads sem resposta, visitas que caíram, propostas recusadas",
+      "Mandar tudo numa página só"
+    ],
+    "stats": [
+      { "value": "14", "label": "Visitas hoje", "sub": "5 corretores, a primeira às 9h" },
+      { "value": "7", "label": "Aluguéis atrasados", "sub": "R$ 18.400 em aberto, 5 já cobrados" },
+      { "value": "R$ 12.600", "label": "Perdido", "sub": "comissão de 1 venda que foi para outra imobiliária" }
+    ]
+  }
+}

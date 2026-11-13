@@ -1,0 +1,347 @@
+{
+  "id": "pet",
+  "label": "Pet shop (banho e tosa)",
+  "group": "saude",
+  "icon": "pets",
+  "title": "do pet shop",
+  "owner": "Rodrigo",
+  "intro": "Todo agente de IA que um pet shop de banho e tosa precisa, numa página. Cada cartão é um agente com o fluxo escrito.",
+  "sectors": [
+    {
+      "name": "Recepção",
+      "icon": "forum",
+      "line": "Atende o WhatsApp até as 9 da noite, confere a agenda do banho e marca pelo porte do pet.",
+      "agents": [
+        {
+          "name": "Atendente do WhatsApp",
+          "when": "Chega mensagem de tutor no WhatsApp do pet shop.",
+          "uses": ["WhatsApp", "Cadastro de pets"],
+          "flow": [
+            "Cumprimentar pelo nome do tutor e do pet se o número já é cliente",
+            "Perguntar se é banho, banho e tosa ou tosa higiênica",
+            "Responder preço pelo porte, endereço e se tem leva e traz",
+            "Se for para marcar, passar para o Agente da agenda"
+          ],
+          "human": "Tutor conta que o pet está com ferida, coceira forte ou mancando: indicar o veterinário e avisar a recepção.",
+          "example": { "from": "Aline Barros", "in": "Quanto é banho e tosa num shih-tzu?", "out": "Oi, Aline! Banho e tosa para porte pequeno sai R$ 95. Quer marcar?" }
+        },
+        {
+          "name": "Agente da agenda",
+          "when": "O atendente pede um horário de banho ou tosa.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Ver o porte e a pelagem do pet na ficha",
+            "Reservar o tempo certo (pequeno 1h, médio 1h30, grande ou pelo longo 2h)",
+            "Propor dois horários livres e perguntar se quer leva e traz",
+            "Marcar e mandar a confirmação com hora de entrada e previsão de saída"
+          ],
+          "human": "Pet bravo ou que morde, segundo a ficha: marcar no primeiro horário com o tosador mais experiente.",
+          "example": { "from": "Aline Barros", "in": "Sábado de manhã dá?", "out": "Dá sim! Sábado às 8h ou às 10h. A Mel fica pronta umas 2 horas depois. Qual prefere?" }
+        },
+        {
+          "name": "Cadastro do pet",
+          "when": "Um pet novo marca pela primeira vez.",
+          "uses": ["WhatsApp", "Cadastro de pets"],
+          "flow": [
+            "Pedir nome, raça, idade e porte do pet",
+            "Pedir foto da carteira de vacinação em dia",
+            "Perguntar se tem alergia, medo de secador ou se já mordeu no banho",
+            "Salvar na ficha e avisar a equipe que é pet novo"
+          ],
+          "human": "Vacina vencida: a recepção explica a regra da casa antes do banho.",
+          "example": { "from": "Caio Mendes", "in": "É a primeira vez do Thor aí.", "out": "Seja bem-vindo, Thor! Me manda a raça, a idade e uma foto da carteira de vacina?" }
+        }
+      ]
+    },
+    {
+      "name": "Leva e traz",
+      "icon": "local_shipping",
+      "line": "Monta a rota da manhã, avisa quando o motorista está chegando e devolve o pet limpinho.",
+      "agents": [
+        {
+          "name": "Rota do dia",
+          "when": "Todo dia às 7h30.",
+          "uses": ["Agenda", "Mapa", "WhatsApp"],
+          "flow": [
+            "Listar os pets com leva e traz do dia",
+            "Montar a ordem das buscas pelo bairro e pelo horário do banho",
+            "Mandar a rota para o motorista",
+            "Avisar cada tutor a janela de busca (ex.: entre 8h e 8h30)"
+          ],
+          "human": "Mais de 8 buscas na mesma manhã: o Rodrigo decide se chama um segundo motorista.",
+          "example": { "from": "Sistema", "in": "", "out": "Rota de hoje: 7 buscas, começando no Jardim Europa às 8h. Volta às 9h20." }
+        },
+        {
+          "name": "Aviso de chegada",
+          "when": "O motorista sai para buscar ou entregar um pet.",
+          "uses": ["WhatsApp", "Mapa"],
+          "flow": [
+            "Avisar o tutor quando o motorista estiver a 10 minutos",
+            "Pedir para deixar a guia e a coleira prontas",
+            "Se o tutor não atender na porta em 5 minutos, mandar mensagem e passar para a próxima casa",
+            "Registrar a hora da busca"
+          ],
+          "human": "Tutor não está em casa nem responde: o motorista liga para a recepção decidir.",
+          "example": { "from": "Caio Mendes", "in": "", "out": "Oi, Caio! O motorista chega em 10 minutos para buscar o Thor." }
+        },
+        {
+          "name": "Entrega do pet",
+          "when": "O banho termina e o pet entra na rota da volta.",
+          "uses": ["WhatsApp", "Agenda"],
+          "flow": [
+            "Avisar o tutor a previsão de entrega",
+            "Avisar de novo quando o motorista estiver a 10 minutos",
+            "Confirmar a entrega com a foto do pet na porta",
+            "Mandar o link de pagamento se ainda não pagou"
+          ],
+          "human": "Ninguém em casa para receber: o pet volta para a loja e a recepção liga para o tutor.",
+          "example": { "from": "Caio Mendes", "in": "", "out": "O Thor está a caminho, chega em 10 minutos. Já está cheiroso!" }
+        }
+      ]
+    },
+    {
+      "name": "Banho e tosa",
+      "icon": "content_cut",
+      "line": "Passa o pedido do tutor para a mesa, avisa o que achou no banho e manda a foto do pet pronto.",
+      "agents": [
+        {
+          "name": "Ficha do dia",
+          "when": "O pet chega na loja.",
+          "uses": ["Cadastro de pets", "Planilha da mesa"],
+          "flow": [
+            "Puxar o pedido do tutor: tipo de tosa, comprimento, laço ou bandana",
+            "Puxar os avisos da ficha: alergia a shampoo, medo de secador, morde",
+            "Colocar na fila da mesa pela ordem de chegada e pelo porte",
+            "Mostrar a previsão de saída para o banhista"
+          ],
+          "human": "Pedido de tosa diferente do que o tutor fez da última vez: o tosador confirma com o tutor antes.",
+          "example": { "from": "Sistema", "in": "", "out": "Mel (shih-tzu): tosa bebê, sem perfume, tem medo do secador. Saída prevista 10h." }
+        },
+        {
+          "name": "Achado no banho",
+          "when": "O banhista marca na ficha algo diferente: pulga, carrapato, ferida, nó muito preso.",
+          "uses": ["WhatsApp", "Cadastro de pets"],
+          "flow": [
+            "Mandar ao tutor a foto do que o banhista viu",
+            "Dizer o que a loja pode fazer (banho antipulgas, desembolo, tosa curta) e o valor",
+            "Esperar o sim do tutor antes de fazer qualquer extra",
+            "Para ferida ou caroço, só recomendar levar ao veterinário"
+          ],
+          "human": "Pet passando mal no banho (tremendo muito, respirando com dificuldade): parar o banho, chamar o Rodrigo e ligar para o tutor.",
+          "example": { "from": "Aline Barros", "in": "", "out": "Aline, achamos alguns nós bem presos na Mel. Desembolar sai R$ 25 a mais. Podemos fazer?" }
+        },
+        {
+          "name": "Pet pronto",
+          "when": "O tosador marca o pet como pronto.",
+          "uses": ["WhatsApp", "Agenda"],
+          "flow": [
+            "Mandar a foto do pet pronto para o tutor",
+            "Avisar que já pode buscar ou que entra na rota da entrega",
+            "Mandar o valor final e a forma de pagamento",
+            "Se ninguém buscar em 1 hora, mandar mais um aviso"
+          ],
+          "human": "Pet ficou mais de 3 horas esperando busca: a recepção liga para o tutor.",
+          "example": { "from": "Aline Barros", "in": "", "out": "A Mel está prontinha! Olha a foto. Pode buscar quando quiser, total R$ 95." }
+        }
+      ]
+    },
+    {
+      "name": "Retornos",
+      "icon": "autorenew",
+      "line": "Chama quem está na hora do próximo banho e renova o pacote do mês.",
+      "agents": [
+        {
+          "name": "Lista de retornos",
+          "when": "Todo dia às 8h.",
+          "uses": ["Cadastro de pets", "Agenda"],
+          "flow": [
+            "Buscar pets que costumam vir a cada 15 dias e passaram de 18 dias",
+            "Buscar quem fez tosa há 45 dias",
+            "Tirar da lista quem pediu para não receber mensagem",
+            "Montar a lista do dia, no máximo 30 tutores"
+          ],
+          "human": "Cliente fiel que sumiu há mais de 60 dias: avisar o Rodrigo.",
+          "example": { "from": "Sistema", "in": "Lista de hoje", "out": "21 pets na hora do banho, 6 na hora da tosa." }
+        },
+        {
+          "name": "Mensagem de retorno",
+          "when": "A lista do dia fica pronta.",
+          "uses": ["WhatsApp", "Agenda"],
+          "flow": [
+            "Escrever pelo nome do pet, citando o último banho",
+            "Oferecer um horário concreto, com leva e traz se ele costuma usar",
+            "Mandar entre 9h e 11h",
+            "Se não responder em 3 dias, lembrar só mais uma vez"
+          ],
+          "human": "Tutor conta que o pet morreu: parar tudo, tirar da lista e avisar o Rodrigo.",
+          "example": { "from": "Caio Mendes", "in": "", "out": "Oi, Caio! Já faz 20 dias do banho do Thor. Busco ele quinta às 8h?" }
+        },
+        {
+          "name": "Pacote do mês",
+          "when": "O cliente de pacote usa o último banho do mês.",
+          "uses": ["WhatsApp", "Planilha de pacotes"],
+          "flow": [
+            "Avisar que o pacote de 4 banhos acabou",
+            "Mandar o valor do próximo mês (4 banhos, R$ 220)",
+            "Oferecer manter os mesmos dias e horários",
+            "Se aceitar, reservar a agenda do mês inteiro"
+          ],
+          "human": "Cliente pede desconto no pacote: o Rodrigo decide.",
+          "example": { "from": "Aline Barros", "in": "", "out": "Aline, a Mel usou o último banho do pacote. Renovo para dezembro, sábados às 8h?" }
+        }
+      ]
+    },
+    {
+      "name": "Faltas",
+      "icon": "event_busy",
+      "line": "Confirma na véspera, cobra na hora e oferece a vaga para a lista de espera.",
+      "agents": [
+        {
+          "name": "Confirmação na véspera",
+          "when": "Todo dia às 17h, para os horários do dia seguinte.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Mandar o horário e o serviço de cada pet de amanhã",
+            "Pedir 1 para confirmar ou 2 para remarcar",
+            "Quem pediu para remarcar recebe dois horários novos",
+            "Quem não respondeu até as 20h recebe mais uma mensagem"
+          ],
+          "human": "Mais de 4 sem resposta: a recepção liga às 7h30.",
+          "example": { "from": "Caio Mendes", "in": "", "out": "Oi, Caio! Amanhã às 8h, banho do Thor com leva e traz. Responda 1 para confirmar." }
+        },
+        {
+          "name": "Aviso de falta",
+          "when": "O pet não chega 20 minutos depois do horário.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Mandar mensagem perguntando se está a caminho",
+            "Se não responder em 10 minutos, marcar como falta",
+            "Oferecer remarcar com dois horários",
+            "Registrar a falta na ficha do pet"
+          ],
+          "human": "Terceira falta do mesmo tutor: a recepção pede pagamento antecipado na próxima.",
+          "example": { "from": "Renato Dias", "in": "", "out": "Oi, Renato. O banho da Pipoca era às 10h. Está a caminho?" }
+        },
+        {
+          "name": "Lista de espera",
+          "when": "Abre uma vaga por falta ou cancelamento.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Buscar quem pediu horário no mesmo dia para pet do mesmo porte",
+            "Oferecer a vaga ao primeiro da lista",
+            "Se não responder em 15 minutos, passar para o próximo",
+            "Quando alguém aceitar, marcar e avisar a mesa"
+          ],
+          "human": "Vaga para pet grande com menos de 1 hora: só oferecer se o tosador concordar.",
+          "example": { "from": "Juliana Reis", "in": "", "out": "Oi, Juliana! Vagou um horário hoje às 10h. Quer trazer o Bob?" }
+        }
+      ]
+    },
+    {
+      "name": "Avaliações",
+      "icon": "star",
+      "line": "Pede avaliação no dia seguinte e, se a resposta for ruim, avisa o dono primeiro.",
+      "agents": [
+        {
+          "name": "Pedido de avaliação",
+          "when": "No dia seguinte ao banho, às 10h.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Agradecer pelo nome do tutor e do pet",
+            "Perguntar como ficou, com nota de 1 a 5",
+            "Esperar a resposta antes de mandar qualquer link",
+            "Passar a resposta para o Leitor da resposta"
+          ],
+          "human": "Pet que teve achado no banho (ferida, pulga): o Rodrigo decide se manda.",
+          "example": { "from": "Aline Barros", "in": "", "out": "Oi, Aline! Como a Mel ficou depois do banho? Dá uma nota de 1 a 5?" }
+        },
+        {
+          "name": "Leitor da resposta",
+          "when": "O tutor responde o pedido de avaliação.",
+          "uses": ["WhatsApp", "Google"],
+          "flow": [
+            "Ler se a resposta é boa, neutra ou ruim",
+            "Se for 4 ou 5, mandar o link de avaliação no Google e pedir uma foto do pet",
+            "Se for 3, perguntar o que poderia ser melhor",
+            "Se for 1 ou 2, passar para o Alerta ao dono e não mandar link"
+          ],
+          "human": "Tutor fala que o pet voltou machucado: alerta direto para o Rodrigo.",
+          "example": { "from": "Aline Barros", "in": "5! Ficou linda.", "out": "Que bom! Pode deixar uma avaliação no Google com a foto dela?" }
+        },
+        {
+          "name": "Alerta ao dono",
+          "when": "Chega uma resposta ruim.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Mandar para o Rodrigo o nome, a nota e o que o tutor escreveu",
+            "Juntar quem deu o banho, quem tosou e a foto de saída",
+            "Responder ao tutor que o Rodrigo vai entrar em contato",
+            "Cobrar o Rodrigo se ninguém respondeu em 2 horas"
+          ],
+          "human": "Sempre: quem resolve é o Rodrigo.",
+          "example": { "from": "Renato Dias", "in": "A tosa ficou torta.", "out": "Aviso enviado ao Rodrigo." }
+        }
+      ]
+    },
+    {
+      "name": "Operação",
+      "icon": "inventory_2",
+      "line": "Cuida do estoque, da ração dos clientes e da escala da equipe.",
+      "agents": [
+        {
+          "name": "Controle de estoque",
+          "when": "Toda sexta às 16h.",
+          "uses": ["Planilha de estoque", "WhatsApp"],
+          "flow": [
+            "Somar o que foi usado na semana pela quantidade de banhos",
+            "Comparar com o estoque mínimo (shampoo, condicionador, perfume, laços, lâminas)",
+            "Montar o pedido do que está abaixo do mínimo",
+            "Mandar o pedido para o Rodrigo aprovar"
+          ],
+          "human": "Shampoo hipoalergênico abaixo de 10%: avisar no mesmo dia.",
+          "example": { "from": "Sistema", "in": "", "out": "Shampoo neutro em 14%. Perfume 60%, laços 35%, lâmina 10 com 2 unidades." }
+        },
+        {
+          "name": "Reposição de ração",
+          "when": "Todo dia às 10h.",
+          "uses": ["Planilha de vendas", "WhatsApp"],
+          "flow": [
+            "Buscar quem comprou ração e quando deve acabar pelo tamanho do saco",
+            "Mandar mensagem 5 dias antes de acabar",
+            "Oferecer mandar junto no próximo leva e traz",
+            "Separar o saco quando o tutor confirmar"
+          ],
+          "human": "Tutor pergunta se deve trocar de ração: indicar o veterinário.",
+          "example": { "from": "Caio Mendes", "in": "", "out": "Oi, Caio! A ração do Thor deve acabar semana que vem. Mando junto quinta?" }
+        },
+        {
+          "name": "Escala da equipe",
+          "when": "Toda quinta, para a semana seguinte.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Ver quantos banhos e tosas estão marcados por dia",
+            "Montar quem fica no banho, na tosa, na recepção e no carro",
+            "Cobrir folgas, com reforço no sábado",
+            "Mandar a escala para cada pessoa no WhatsApp"
+          ],
+          "human": "Sábado sem tosador: o Rodrigo decide.",
+          "example": { "from": "Sistema", "in": "", "out": "Semana: 2 banhistas, 1 tosador, motorista de terça a sábado. Sábado com 24 pets." }
+        }
+      ]
+    }
+  ],
+  "morning": {
+    "when": "Todo dia às 7h, no WhatsApp do Rodrigo.",
+    "flow": [
+      "Contar quantos pets estão marcados hoje e quantos têm leva e traz",
+      "Listar quem passou da hora do banho e quantos já foram avisados",
+      "Somar o que se perdeu ontem: faltas, vagas vazias, pacotes não renovados",
+      "Mandar tudo numa página só"
+    ],
+    "stats": [
+      { "value": "18", "label": "Pets hoje", "sub": "11 com leva e traz, a primeira busca às 8h" },
+      { "value": "9", "label": "Atrasados", "sub": "banho passou de 18 dias, 6 já avisados" },
+      { "value": "R$ 380", "label": "Perdido", "sub": "4 faltas de banho e tosa" }
+    ]
+  }
+}

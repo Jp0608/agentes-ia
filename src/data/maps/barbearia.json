@@ -1,0 +1,322 @@
+{
+  "id": "barbearia",
+  "label": "Barbearia",
+  "group": "beleza",
+  "icon": "content_cut",
+  "title": "da barbearia",
+  "owner": "Diego",
+  "intro": "Todo agente de IA que uma barbearia precisa, numa página. Cada cartão é um agente com o fluxo escrito.",
+  "sectors": [
+    {
+      "name": "Recepção",
+      "icon": "forum",
+      "line": "Atende o WhatsApp até as 9 da noite, confere a cadeira de cada barbeiro e marca o horário.",
+      "agents": [
+        {
+          "name": "Atendente do WhatsApp",
+          "when": "Chega mensagem de cliente no WhatsApp da barbearia.",
+          "uses": ["WhatsApp", "Cadastro de clientes"],
+          "flow": [
+            "Cumprimentar pelo nome se o número já é cliente",
+            "Perguntar se é corte, barba, corte e barba ou pezinho",
+            "Responder preço, endereço e se tem estacionamento perto",
+            "Se for para marcar, passar para o Agente da agenda com o serviço e o barbeiro que o cliente prefere"
+          ],
+          "human": "Reclamação de corte ou cliente pedindo para falar com o dono: chamar o Diego.",
+          "example": { "from": "Lucas Ferreira", "in": "Tem horário pra corte e barba hoje?", "out": "Fala, Lucas! Tem sim. Vai querer com o Márcio de novo?" }
+        },
+        {
+          "name": "Agente da agenda",
+          "when": "O atendente pede um horário para um serviço.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Conferir a agenda do barbeiro que o cliente pediu",
+            "Reservar o tempo do serviço (corte 40 min, barba 30 min, corte e barba 1h)",
+            "Se o barbeiro estiver cheio, oferecer outro barbeiro no mesmo horário",
+            "Propor dois horários livres e marcar o escolhido",
+            "Mandar a confirmação com hora, barbeiro e endereço"
+          ],
+          "human": "Cliente quer horário antes de abrir ou depois de fechar: o barbeiro decide se atende.",
+          "example": { "from": "Lucas Ferreira", "in": "Depois das 18h.", "out": "Com o Márcio tenho 18h20 ou 19h. Qual fica melhor?" }
+        },
+        {
+          "name": "Fora do horário",
+          "when": "Chega mensagem depois que a barbearia fecha, no domingo ou em feriado.",
+          "uses": ["WhatsApp", "Agenda"],
+          "flow": [
+            "Responder na hora, sem esperar a barbearia abrir",
+            "Marcar direto na agenda até as 21h",
+            "Avisar o horário de abertura do dia seguinte",
+            "Deixar o resumo da conversa para o Diego ler de manhã"
+          ],
+          "human": "Pedido de horário para muita gente junto (time, formatura): passar para o Diego.",
+          "example": { "from": "Gustavo Ramos", "in": "Amanhã cedo tem vaga?", "out": "Abrimos às 9h. Tenho 9h e 9h40 com o Jonas. Reservo uma?" }
+        }
+      ]
+    },
+    {
+      "name": "Retornos",
+      "icon": "autorenew",
+      "line": "Chama quem está na hora de cortar de novo e marca pela resposta.",
+      "agents": [
+        {
+          "name": "Lista de retornos",
+          "when": "Todo dia às 8h.",
+          "uses": ["Cadastro de clientes", "Agenda"],
+          "flow": [
+            "Buscar quem cortou há mais tempo do que costuma voltar (a maioria volta em 3 ou 4 semanas)",
+            "Buscar quem faz só a barba e passou de 2 semanas",
+            "Tirar quem já tem horário marcado ou pediu para não receber mensagem",
+            "Montar a lista do dia, no máximo 25 clientes"
+          ],
+          "human": "Cliente fiel que sumiu há mais de 2 meses: avisar o barbeiro dele.",
+          "example": { "from": "Sistema", "in": "Lista de hoje", "out": "19 clientes na hora do corte, 4 na hora da barba." }
+        },
+        {
+          "name": "Mensagem de retorno",
+          "when": "A lista do dia fica pronta.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Escrever pelo nome, citando o barbeiro e o último corte",
+            "Oferecer um horário certo na agenda do mesmo barbeiro",
+            "Mandar entre 10h e 12h",
+            "Se não responder em 3 dias, lembrar só mais uma vez"
+          ],
+          "human": "Resposta irritada: parar a sequência e avisar o Diego.",
+          "example": { "from": "Rafael Souza", "in": "", "out": "Fala, Rafael. Faz 4 semanas do degradê com o Márcio. Quinta às 19h te serve?" }
+        },
+        {
+          "name": "Marcação pela resposta",
+          "when": "O cliente responde a mensagem de retorno.",
+          "uses": ["WhatsApp", "Agenda"],
+          "flow": [
+            "Entender se é sim, não ou outro horário",
+            "Se sim, marcar e confirmar",
+            "Se outro horário, propor dois horários livres",
+            "Se não, perguntar se pode lembrar daqui a duas semanas"
+          ],
+          "human": "Cliente diz que mudou de barbearia: avisar o Diego.",
+          "example": { "from": "Rafael Souza", "in": "Fechado.", "out": "Marcado: quinta, 19h, com o Márcio. Te lembro no dia." }
+        }
+      ]
+    },
+    {
+      "name": "Faltas",
+      "icon": "event_busy",
+      "line": "Cobra na hora e oferece a cadeira vaga para a lista de espera.",
+      "agents": [
+        {
+          "name": "Aviso de falta",
+          "when": "O cliente não chega 10 minutos depois do horário.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Mandar mensagem perguntando se está a caminho",
+            "Se não responder em 5 minutos, marcar como falta",
+            "Oferecer remarcar com dois horários",
+            "Registrar a falta na ficha do cliente"
+          ],
+          "human": "Segunda falta do mesmo cliente no mês: avisar o Diego para pedir pagamento antecipado na próxima.",
+          "example": { "from": "Felipe Nunes", "in": "", "out": "Fala, Felipe. Teu corte era às 15h com o Jonas. Tá chegando?" }
+        },
+        {
+          "name": "Lista de espera",
+          "when": "Abre uma vaga por falta ou cancelamento.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Buscar quem pediu horário mais cedo com o mesmo barbeiro",
+            "Mandar a vaga para o primeiro da lista",
+            "Se não responder em 10 minutos, passar para o próximo",
+            "Quando alguém aceitar, marcar, tirar da lista e avisar o barbeiro"
+          ],
+          "human": "Vaga em menos de 30 minutos: oferecer só para quem está perto ou já está na barbearia.",
+          "example": { "from": "André Lima", "in": "", "out": "Fala, André. Vagou 15h com o Jonas hoje. Quer?" }
+        }
+      ]
+    },
+    {
+      "name": "Pacotes e eventos",
+      "icon": "celebration",
+      "line": "Manda o valor do dia do noivo e do plano mensal, explica sem enrolar e volta três dias depois.",
+      "agents": [
+        {
+          "name": "Orçamento do dia do noivo",
+          "when": "Alguém pede preço para noivo, padrinhos ou formatura.",
+          "uses": ["Tabela de preços", "Agenda", "WhatsApp"],
+          "flow": [
+            "Perguntar a data, quantas pessoas e se quer atendimento na barbearia ou no local",
+            "Montar o pacote (corte, barba, sobrancelha, bebida) com o valor por pessoa",
+            "Ver quantos barbeiros ficam livres na data",
+            "Mandar o valor total e o sinal para reservar a data"
+          ],
+          "human": "Grupo com mais de 6 pessoas ou atendimento fora da barbearia: o Diego fecha o preço.",
+          "example": { "from": "Thiago Moreira", "in": "Caso dia 14, eu e 4 padrinhos.", "out": "Parabéns, Thiago! Pacote noivo R$ 180 e padrinhos R$ 85 cada. Total R$ 520, sinal de R$ 150." }
+        },
+        {
+          "name": "Plano mensal",
+          "when": "Cliente corta mais de duas vezes por mês ou pergunta sobre assinatura.",
+          "uses": ["WhatsApp", "Cadastro de clientes"],
+          "flow": [
+            "Somar quanto o cliente gastou nos últimos dois meses",
+            "Mostrar quanto ficaria no plano (corte e barba à vontade por R$ 149)",
+            "Explicar a regra: dia de semana, com horário marcado",
+            "Se aceitar, mandar o link de pagamento e marcar como assinante"
+          ],
+          "human": "Cliente pede plano para dois ou mais da família: o Diego monta o valor.",
+          "example": { "from": "Bruno Carvalho", "in": "", "out": "Bruno, você gastou R$ 210 em outubro. No plano seria R$ 149 com corte e barba quando quiser." }
+        },
+        {
+          "name": "Retorno do terceiro dia",
+          "when": "Três dias depois de mandar um pacote, sem resposta.",
+          "uses": ["WhatsApp", "Agenda"],
+          "flow": [
+            "Perguntar se ficou alguma dúvida",
+            "Avisar se a data está ficando cheia",
+            "Oferecer reservar só com o sinal",
+            "Se não responder, tentar de novo em 7 dias e parar"
+          ],
+          "human": "Cliente pede desconto no pacote: passa para o Diego.",
+          "example": { "from": "Thiago Moreira", "in": "", "out": "Fala, Thiago. Ainda tenho os barbeiros livres dia 14 de manhã. Reservo com o sinal?" }
+        }
+      ]
+    },
+    {
+      "name": "Ficha do corte",
+      "icon": "assignment",
+      "line": "Deixa a ficha do corte pronta antes de o cliente sentar na cadeira.",
+      "agents": [
+        {
+          "name": "Ficha do cliente",
+          "when": "O barbeiro termina um atendimento.",
+          "uses": ["Cadastro de clientes", "WhatsApp"],
+          "flow": [
+            "Pedir ao barbeiro o que foi feito: máquina, pente, altura do degradê, risco, tesoura em cima",
+            "Guardar a foto do corte pronto, se o cliente deixar",
+            "Anotar a barba (formato, navalha, toalha quente) e o que o cliente não gosta",
+            "Salvar tudo na ficha com a data"
+          ],
+          "human": "Cliente comenta irritação na pele depois da navalha: anotar e avisar o barbeiro.",
+          "example": { "from": "Márcio", "in": "Lucas: degradê navalhado, pente 2 em cima, risco do lado esquerdo.", "out": "Salvo na ficha do Lucas, com a foto de hoje." }
+        },
+        {
+          "name": "Preparador do atendimento",
+          "when": "15 minutos antes de cada horário.",
+          "uses": ["Agenda", "Cadastro de clientes", "WhatsApp"],
+          "flow": [
+            "Buscar a ficha do cliente que vai sentar",
+            "Mandar para o barbeiro o resumo do último corte e a foto",
+            "Avisar se é a primeira vez ou se faz tempo que não vem",
+            "Lembrar o que o cliente costuma comprar (pomada, óleo de barba)"
+          ],
+          "human": "Cliente novo pedindo corte de outro barbeiro: o barbeiro conversa antes de começar.",
+          "example": { "from": "Sistema", "in": "", "out": "15h: Felipe. Último corte há 5 semanas, social com pente 4. Compra pomada matte." }
+        }
+      ]
+    },
+    {
+      "name": "Avaliações",
+      "icon": "star",
+      "line": "Pede avaliação no dia seguinte e, se a resposta for ruim, avisa o dono primeiro.",
+      "agents": [
+        {
+          "name": "Pedido de avaliação",
+          "when": "No dia seguinte ao corte, às 11h.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Agradecer pelo nome e citar o barbeiro",
+            "Perguntar como ficou o corte, com nota de 1 a 5",
+            "Esperar a resposta antes de mandar qualquer link",
+            "Passar a resposta para o Leitor da resposta"
+          ],
+          "human": "Cliente teve problema no atendimento de ontem: o Diego manda a mensagem.",
+          "example": { "from": "Lucas Ferreira", "in": "", "out": "Valeu pela visita ontem, Lucas. Como ficou o corte com o Márcio?" }
+        },
+        {
+          "name": "Leitor da resposta",
+          "when": "O cliente responde o pedido de avaliação.",
+          "uses": ["WhatsApp", "Google"],
+          "flow": [
+            "Ler se a resposta é boa, neutra ou ruim",
+            "Se for boa (4 ou 5), mandar o link de avaliação no Google",
+            "Se for neutra, perguntar o que podia ser melhor",
+            "Se for ruim, passar para o Alerta ao dono e não mandar link"
+          ],
+          "human": "Resposta com palavrão ou ameaça: alerta direto para o Diego.",
+          "example": { "from": "Lucas Ferreira", "in": "Ficou top, nota 5", "out": "Boa! Deixa uma avaliação no Google pra gente?" }
+        },
+        {
+          "name": "Alerta ao dono",
+          "when": "Chega uma resposta ruim.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Mandar para o Diego o nome, a nota e o que o cliente escreveu",
+            "Juntar a ficha do corte e quem atendeu",
+            "Responder ao cliente que o Diego vai falar com ele",
+            "Cobrar o Diego se ninguém respondeu em 2 horas"
+          ],
+          "human": "Sempre: quem resolve é o Diego.",
+          "example": { "from": "Caio Batista", "in": "Esperei 30 minutos mesmo com horário marcado.", "out": "Aviso enviado ao Diego." }
+        }
+      ]
+    },
+    {
+      "name": "Operação",
+      "icon": "inventory_2",
+      "line": "Cuida do estoque, da higiene das ferramentas e da escala dos barbeiros.",
+      "agents": [
+        {
+          "name": "Controle de estoque",
+          "when": "Toda segunda às 10h e quando alguém vende um produto.",
+          "uses": ["Planilha de estoque", "WhatsApp"],
+          "flow": [
+            "Somar lâminas, toalhas descartáveis e produtos usados na semana",
+            "Somar pomadas e óleos vendidos no balcão",
+            "Comparar com o estoque mínimo de cada item",
+            "Montar o pedido e mandar para o Diego aprovar"
+          ],
+          "human": "Lâmina de navalha abaixo de uma caixa: avisar no mesmo dia.",
+          "example": { "from": "Sistema", "in": "", "out": "Lâminas: 1 caixa. Pomada matte: 4 potes. Toalhas descartáveis: 60%." }
+        },
+        {
+          "name": "Higiene das ferramentas",
+          "when": "Ao abrir, ao fechar e entre um cliente e outro.",
+          "uses": ["Planilha de higiene", "WhatsApp"],
+          "flow": [
+            "Lembrar cada barbeiro de trocar a lâmina da navalha a cada cliente",
+            "Registrar a limpeza das máquinas e pentes no fim do dia",
+            "Registrar a esterilização das tesouras e a troca das capas",
+            "Guardar o registro para a vigilância sanitária"
+          ],
+          "human": "Registro do dia em branco no fechamento: avisar o Diego.",
+          "example": { "from": "Sistema", "in": "", "out": "Fechamento: 3 de 4 cadeiras com limpeza registrada. Falta a do Jonas." }
+        },
+        {
+          "name": "Escala dos barbeiros",
+          "when": "Toda quinta, para a semana seguinte.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Ver os dias e horários mais cheios (sexta à noite e sábado)",
+            "Montar quem fica em cada cadeira e quem folga",
+            "Cobrir folgas e férias",
+            "Mandar a escala para cada barbeiro no WhatsApp"
+          ],
+          "human": "Sábado sem barbeiro suficiente: o Diego decide se chama um freelancer.",
+          "example": { "from": "Sistema", "in": "", "out": "Sábado: Márcio, Jonas e Diego das 9h às 18h. Pedro folga." }
+        }
+      ]
+    }
+  ],
+  "morning": {
+    "when": "Todo dia às 8h30, no WhatsApp do Diego.",
+    "flow": [
+      "Contar quantos clientes estão marcados hoje em cada cadeira",
+      "Listar quem passou da hora de voltar e quantos já foram chamados",
+      "Somar o que se perdeu ontem: faltas, cadeira vazia, pacote sem resposta",
+      "Mandar tudo numa página só"
+    ],
+    "stats": [
+      { "value": "38", "label": "Marcados hoje", "sub": "4 cadeiras, o primeiro às 9h" },
+      { "value": "12", "label": "Atrasados", "sub": "passaram de 4 semanas, 9 já chamados" },
+      { "value": "R$ 270", "label": "Perdido", "sub": "3 faltas ontem, 2 vagas sem encaixe" }
+    ]
+  }
+}

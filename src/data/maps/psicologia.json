@@ -1,0 +1,341 @@
+{
+  "id": "psicologia",
+  "label": "Consultório de psicologia",
+  "group": "saude",
+  "icon": "psychology",
+  "title": "do consultório de psicologia",
+  "owner": "Dra. Marina",
+  "intro": "Todo agente de IA que um consultório de psicologia precisa, numa página. Cada cartão é um agente com o fluxo escrito.",
+  "sectors": [
+    {
+      "name": "Recepção",
+      "icon": "forum",
+      "line": "Atende o WhatsApp até as 9 da noite, explica como funciona e marca a primeira sessão.",
+      "agents": [
+        {
+          "name": "Atendente do WhatsApp",
+          "when": "Chega mensagem no WhatsApp do consultório.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Responder só assuntos de agenda, valor, endereço e se atende online",
+            "Explicar como funciona: sessão de 50 minutos, uma vez por semana",
+            "Nunca perguntar o motivo da procura por mensagem",
+            "Se a pessoa quiser começar, passar para a Primeira sessão"
+          ],
+          "human": "A pessoa começa a contar o que está passando: agradecer, dizer que a Dra. Marina vai ouvir com calma na sessão e avisar a Dra. Marina.",
+          "example": { "from": "Larissa Campos", "in": "Oi, vocês atendem online?", "out": "Oi, Larissa! Atendemos online e presencial. A sessão é de 50 minutos. Quer ver os horários?" }
+        },
+        {
+          "name": "Primeira sessão",
+          "when": "Uma pessoa nova quer começar.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Perguntar se prefere online ou presencial e qual período",
+            "Propor dois horários livres na agenda da Dra. Marina",
+            "Pedir nome completo, data de nascimento e CPF para o recibo",
+            "Mandar a confirmação com o endereço ou o aviso de que o link chega 30 minutos antes"
+          ],
+          "human": "Paciente menor de 18 anos: a Dra. Marina fala primeiro com o responsável.",
+          "example": { "from": "Larissa Campos", "in": "Online, à noite.", "out": "Tenho terça às 19h ou quinta às 20h. Qual fica melhor?" }
+        },
+        {
+          "name": "Fora do horário",
+          "when": "Chega mensagem depois das 19h, em fim de semana ou feriado.",
+          "uses": ["WhatsApp", "Agenda"],
+          "flow": [
+            "Responder na hora com os horários de atendimento",
+            "Marcar primeira sessão direto na agenda, até as 21h",
+            "Passar qualquer mensagem com sinal de risco para o Detector de risco",
+            "Deixar o resumo administrativo para a Dra. Marina ler de manhã"
+          ],
+          "human": "Qualquer sinal de risco: vai direto para a Dra. Marina, a qualquer hora.",
+          "example": { "from": "Felipe Arruda", "in": "Atende sábado?", "out": "Atendemos sábado das 9h às 13h, online. Quer que eu reserve um horário?" }
+        }
+      ]
+    },
+    {
+      "name": "Sessões fixas",
+      "icon": "event_repeat",
+      "line": "Segura o mesmo horário toda semana, lembra da sessão e remarca quando precisa.",
+      "agents": [
+        {
+          "name": "Horário fixo",
+          "when": "A Dra. Marina confirma que o paciente vai continuar depois da primeira sessão.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Reservar o mesmo dia e hora toda semana",
+            "Mandar ao paciente o horário fixo combinado",
+            "Bloquear o horário nas férias da Dra. Marina com 30 dias de aviso",
+            "Liberar o horário quando o paciente tiver alta ou parar"
+          ],
+          "human": "Paciente pede para mudar o horário fixo: a Dra. Marina aprova a troca.",
+          "example": { "from": "Larissa Campos", "in": "", "out": "Larissa, seu horário fixo fica toda terça às 19h, online." }
+        },
+        {
+          "name": "Lembrete da sessão",
+          "when": "No dia da sessão, às 9h, e 30 minutos antes nas sessões online.",
+          "uses": ["WhatsApp", "Agenda"],
+          "flow": [
+            "Mandar só o horário, sem falar de assunto nenhum",
+            "Nas sessões online, mandar o link da chamada 30 minutos antes",
+            "Nas presenciais, lembrar o endereço",
+            "Se a pessoa pedir para remarcar, passar para a Remarcação"
+          ],
+          "human": "Paciente avisa que está sem conexão ou na rua: avisar a Dra. Marina antes do horário.",
+          "example": { "from": "Larissa Campos", "in": "", "out": "Oi, Larissa. Hoje às 19h. Segue o link da chamada, a sala abre às 18h55." }
+        },
+        {
+          "name": "Remarcação",
+          "when": "O paciente pede para trocar o horário de uma sessão.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Conferir se o pedido chegou com mais de 24 horas de antecedência",
+            "Propor dois horários livres na mesma semana",
+            "Marcar o escolhido e manter o horário fixo das próximas semanas",
+            "Se chegou com menos de 24 horas, passar para a Regra das 24 horas"
+          ],
+          "human": "Paciente pede para remarcar várias semanas seguidas: avisar a Dra. Marina.",
+          "example": { "from": "Felipe Arruda", "in": "Não vou conseguir quinta.", "out": "Sem problema, Felipe. Tenho sexta às 8h ou às 18h. Qual fica melhor?" }
+        }
+      ]
+    },
+    {
+      "name": "Faltas",
+      "icon": "event_busy",
+      "line": "Aplica a regra das 24 horas com gentileza e passa o horário vago para a lista de espera.",
+      "agents": [
+        {
+          "name": "Regra das 24 horas",
+          "when": "O paciente desmarca com menos de 24 horas ou não aparece.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Esperar 15 minutos depois do horário antes de marcar falta",
+            "Mandar uma mensagem curta e gentil perguntando se está tudo bem",
+            "Lembrar que a sessão é cobrada, como está no contrato",
+            "Registrar na planilha do mês para o fechamento"
+          ],
+          "human": "Paciente que some sem aviso por 2 semanas: avisar a Dra. Marina, que decide como falar com ele.",
+          "example": { "from": "Felipe Arruda", "in": "", "out": "Oi, Felipe. Sentimos sua falta hoje às 18h. Está tudo bem? Te espero na próxima quinta." }
+        },
+        {
+          "name": "Lista de espera",
+          "when": "Um horário fixo fica livre.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Buscar quem está esperando vaga naquele turno",
+            "Oferecer o horário ao primeiro da lista",
+            "Se não responder em 24 horas, passar para o próximo",
+            "Quando alguém aceitar, passar para a Primeira sessão"
+          ],
+          "human": "Mais de 10 pessoas esperando: a Dra. Marina decide se abre horário novo ou indica colegas.",
+          "example": { "from": "Beatriz Lopes", "in": "", "out": "Oi, Beatriz. Abriu um horário fixo às quartas, 17h. Ainda tem interesse?" }
+        }
+      ]
+    },
+    {
+      "name": "Pagamento mensal",
+      "icon": "payments",
+      "line": "Fecha o mês, manda o valor no dia 1 e emite o recibo para o reembolso.",
+      "agents": [
+        {
+          "name": "Fechamento do mês",
+          "when": "Todo dia 1, às 9h.",
+          "uses": ["Agenda", "Planilha de pagamentos", "WhatsApp"],
+          "flow": [
+            "Contar as sessões feitas e as faltas cobradas de cada paciente",
+            "Calcular o valor do mês (4 sessões de R$ 200, R$ 800)",
+            "Mandar o valor com a chave Pix do consultório",
+            "Vencimento no dia 10"
+          ],
+          "human": "Paciente com valor social combinado: a Dra. Marina confere antes de mandar.",
+          "example": { "from": "Larissa Campos", "in": "", "out": "Oi, Larissa. Outubro: 4 sessões, R$ 800. Vence dia 10. A chave Pix está abaixo." }
+        },
+        {
+          "name": "Lembrete de pagamento",
+          "when": "No dia 10, para quem ainda não pagou.",
+          "uses": ["Planilha de pagamentos", "WhatsApp"],
+          "flow": [
+            "Conferir quem pagou na planilha",
+            "Mandar um lembrete curto e gentil para quem não pagou",
+            "Mandar mais um no dia 15",
+            "Depois disso, parar e avisar a Dra. Marina"
+          ],
+          "human": "Paciente diz que está sem dinheiro: a Dra. Marina conversa pessoalmente.",
+          "example": { "from": "Felipe Arruda", "in": "", "out": "Oi, Felipe. Passando para lembrar do valor de outubro, R$ 800. Qualquer coisa, me avise." }
+        },
+        {
+          "name": "Recibo para reembolso",
+          "when": "O pagamento entra ou o paciente pede recibo.",
+          "uses": ["Planilha de pagamentos", "WhatsApp"],
+          "flow": [
+            "Montar o recibo com nome, CPF, datas das sessões e valor",
+            "Colocar o nome, o CRP e o CPF da Dra. Marina",
+            "Mandar em PDF para a Dra. Marina assinar",
+            "Mandar o recibo assinado ao paciente"
+          ],
+          "human": "Plano de saúde pede relatório para o reembolso: a Dra. Marina decide o que escrever.",
+          "example": { "from": "Larissa Campos", "in": "Preciso do recibo para o reembolso.", "out": "Claro, Larissa. O recibo de outubro sai hoje à tarde, já assinado." }
+        }
+      ]
+    },
+    {
+      "name": "Sigilo",
+      "icon": "lock",
+      "line": "Confere toda mensagem que sai e não conta nada de ninguém para ninguém.",
+      "agents": [
+        {
+          "name": "Conferência das mensagens",
+          "when": "Antes de qualquer mensagem automática sair.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Conferir se a mensagem fala só de horário, valor ou recibo",
+            "Tirar qualquer menção a assunto de sessão, sintoma ou diagnóstico",
+            "Conferir se o número é mesmo do paciente cadastrado",
+            "Só então liberar o envio"
+          ],
+          "human": "Mensagem com conteúdo de sessão para mandar: a Dra. Marina escreve e envia ela mesma.",
+          "example": { "from": "Sistema", "in": "", "out": "12 mensagens liberadas hoje. 1 segurada: número diferente do cadastro." }
+        },
+        {
+          "name": "Contato de terceiros",
+          "when": "Alguém pergunta por um paciente (familiar, empresa, escola).",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Não confirmar se a pessoa é ou não paciente",
+            "Responder que o consultório não passa informação sobre ninguém",
+            "Oferecer marcar um horário para a própria pessoa, se quiser",
+            "Avisar a Dra. Marina do contato"
+          ],
+          "human": "Pedido de juiz, escola ou empresa: só a Dra. Marina responde.",
+          "example": { "from": "Sérgio Campos", "in": "Minha filha está indo nas sessões?", "out": "Oi, Sérgio. Por sigilo, o consultório não passa informação sobre ninguém. Posso te ajudar com outra coisa?" }
+        },
+        {
+          "name": "Pedido de documento",
+          "when": "Paciente pede declaração, atestado ou relatório.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Anotar qual documento e para quando precisa",
+            "Explicar que quem faz é a Dra. Marina",
+            "Passar o pedido para a Dra. Marina",
+            "Avisar o paciente quando estiver pronto para buscar ou receber"
+          ],
+          "human": "Sempre: o documento é escrito e assinado pela Dra. Marina.",
+          "example": { "from": "Felipe Arruda", "in": "Preciso de uma declaração de comparecimento.", "out": "Anotei, Felipe. Passei para a Dra. Marina e te aviso quando estiver pronta." }
+        }
+      ]
+    },
+    {
+      "name": "Situação de risco",
+      "icon": "emergency",
+      "line": "Qualquer sinal de risco vai direto para a psicóloga, na hora, com os telefones de emergência para o paciente.",
+      "agents": [
+        {
+          "name": "Detector de risco",
+          "when": "Chega mensagem que fala em se machucar, não querer viver, violência ou crise.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Parar todas as respostas automáticas para esse número",
+            "Responder uma vez, com acolhimento, que a Dra. Marina foi avisada agora",
+            "Mandar os contatos de emergência: CVV (188) e SAMU (192)",
+            "Passar para o Aviso à psicóloga"
+          ],
+          "human": "Sempre e na hora: quem cuida é a Dra. Marina.",
+          "example": { "from": "Paciente", "in": "Não aguento mais, não sei o que fazer.", "out": "Estou aqui com você. Já avisei a Dra. Marina agora. Se precisar falar com alguém já, ligue 188 (CVV) ou 192 (SAMU)." }
+        },
+        {
+          "name": "Aviso à psicóloga",
+          "when": "O Detector de risco dispara.",
+          "uses": ["WhatsApp", "Telefone"],
+          "flow": [
+            "Mandar para a Dra. Marina o nome do paciente e a mensagem que ele escreveu",
+            "Ligar para o celular dela se não visualizar em 5 minutos",
+            "Ligar de novo a cada 5 minutos até ela responder",
+            "Registrar a hora do aviso e a hora da resposta"
+          ],
+          "human": "Dra. Marina sem responder em 15 minutos: chamar o contato de apoio que ela deixou cadastrado.",
+          "example": { "from": "Sistema", "in": "", "out": "Alerta de risco enviado à Dra. Marina às 22h14. Ligação feita às 22h19." }
+        }
+      ]
+    },
+    {
+      "name": "Pausas e retomadas",
+      "icon": "autorenew",
+      "line": "Lembra de quem parou e deixa a porta aberta, sem insistir.",
+      "agents": [
+        {
+          "name": "Quem pausou",
+          "when": "Paciente sem sessão há 30 dias sem ter recebido alta.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Mostrar a lista para a Dra. Marina aprovar antes",
+            "Mandar uma única mensagem curta dizendo que o horário pode ser retomado",
+            "Se a pessoa quiser voltar, propor dois horários",
+            "Se não responder, não mandar mais nada"
+          ],
+          "human": "A Dra. Marina decide quem recebe a mensagem.",
+          "example": { "from": "Beatriz Lopes", "in": "", "out": "Oi, Beatriz. Se quiser retomar, tenho horários às quartas. É só me chamar." }
+        },
+        {
+          "name": "Prontuário em dia",
+          "when": "Todo dia às 21h.",
+          "uses": ["Agenda", "Sistema de prontuário"],
+          "flow": [
+            "Listar as sessões feitas no dia",
+            "Ver quais estão sem registro no prontuário",
+            "Mandar só a lista de horários pendentes para a Dra. Marina",
+            "Nunca abrir nem ler o que está escrito no prontuário"
+          ],
+          "human": "Registro pendente há mais de 3 dias: lembrar a Dra. Marina de novo de manhã.",
+          "example": { "from": "Sistema", "in": "", "out": "Faltam 2 registros de hoje: sessões das 18h e das 20h." }
+        }
+      ]
+    },
+    {
+      "name": "Operação",
+      "icon": "inventory_2",
+      "line": "Cuida da sala, dos links das sessões online e da agenda da semana.",
+      "agents": [
+        {
+          "name": "Sala e link",
+          "when": "Toda sexta, para a semana seguinte.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Reservar a sala do consultório compartilhado para as sessões presenciais",
+            "Criar um link de chamada por paciente online",
+            "Conferir se não tem dois pacientes no mesmo horário",
+            "Mandar a agenda da semana para a Dra. Marina"
+          ],
+          "human": "Sala ocupada no horário de um paciente: a Dra. Marina decide se passa para online.",
+          "example": { "from": "Sistema", "in": "", "out": "Semana: 22 sessões, 14 online e 8 presenciais. Sala reservada terça e quinta." }
+        },
+        {
+          "name": "Bloqueio de agenda",
+          "when": "A Dra. Marina marca férias, curso ou supervisão.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Bloquear os dias na agenda",
+            "Avisar os pacientes afetados com 30 dias de antecedência",
+            "Oferecer outro horário na mesma semana quando der",
+            "Lembrar os pacientes uma semana antes"
+          ],
+          "human": "Paciente que fica mais de 2 semanas sem sessão: a Dra. Marina decide se oferece um encaixe.",
+          "example": { "from": "Larissa Campos", "in": "", "out": "Oi, Larissa. A Dra. Marina estará de férias de 6 a 17 de janeiro. Voltamos dia 20, no seu horário." }
+        }
+      ]
+    }
+  ],
+  "morning": {
+    "when": "Todo dia às 7h30, no WhatsApp da Dra. Marina.",
+    "flow": [
+      "Contar as sessões de hoje, online e presenciais",
+      "Listar pagamentos atrasados e registros de prontuário pendentes",
+      "Somar o que se perdeu ontem: horários vazios e faltas sem cobrança",
+      "Mandar tudo numa página só, só com horários e números"
+    ],
+    "stats": [
+      { "value": "8", "label": "Sessões hoje", "sub": "5 online, 3 presenciais, a primeira às 8h" },
+      { "value": "3", "label": "Atrasados", "sub": "pagamento de outubro, 2 já lembrados" },
+      { "value": "R$ 600", "label": "Perdido", "sub": "3 horários vazios na semana" }
+    ]
+  }
+}

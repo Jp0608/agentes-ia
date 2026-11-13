@@ -1,0 +1,363 @@
+{
+  "id": "estetica",
+  "label": "Clínica de estética",
+  "group": "beleza",
+  "icon": "spa",
+  "title": "da clínica de estética",
+  "owner": "Fernanda",
+  "intro": "Todo agente de IA que uma clínica de estética precisa, numa página. Cada cartão é um agente com o fluxo escrito.",
+  "sectors": [
+    {
+      "name": "Recepção",
+      "icon": "forum",
+      "line": "Atende o WhatsApp até as 9 da noite, confere a sala e o aparelho e marca a avaliação.",
+      "agents": [
+        {
+          "name": "Atendente do WhatsApp",
+          "when": "Chega mensagem de cliente no WhatsApp da clínica.",
+          "uses": ["WhatsApp", "Cadastro de clientes"],
+          "flow": [
+            "Cumprimentar pelo nome se o número já é cliente",
+            "Perguntar o que a pessoa quer tratar ou qual procedimento viu",
+            "Responder preço de tabela, endereço e formas de pagamento",
+            "Para procedimento novo, oferecer a avaliação antes",
+            "Se for para marcar, passar para o Agente da agenda"
+          ],
+          "human": "Cliente conta que teve reação, mancha ou dor depois de uma sessão: avisar a Fernanda na hora.",
+          "example": { "from": "Débora Martins", "in": "Quanto custa a limpeza de pele?", "out": "Oi, Débora! A limpeza de pele sai R$ 160 e leva 1h15. Quer marcar?" }
+        },
+        {
+          "name": "Agente da agenda",
+          "when": "O atendente pede um horário de avaliação ou sessão.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Ver qual sala e qual aparelho o procedimento usa",
+            "Reservar o tempo certo (avaliação 30 min, limpeza 1h15, drenagem 1h)",
+            "Conferir se a esteticista e o aparelho estão livres no mesmo horário",
+            "Propor dois horários livres e marcar o escolhido",
+            "Mandar a confirmação com data, hora e endereço"
+          ],
+          "human": "Procedimento que só a Fernanda faz: marcar na agenda dela e avisar.",
+          "example": { "from": "Débora Martins", "in": "Terça à tarde.", "out": "Tenho terça às 14h ou 16h30 com a Priscila. Qual fica melhor?" }
+        },
+        {
+          "name": "Cadastro da cliente nova",
+          "when": "Um número que não está no cadastro marca pela primeira vez.",
+          "uses": ["WhatsApp", "Cadastro de clientes"],
+          "flow": [
+            "Pedir nome completo, data de nascimento e CPF",
+            "Mandar o link da anamnese para preencher antes da avaliação",
+            "Perguntar como conheceu a clínica",
+            "Salvar tudo na ficha e avisar a recepção que é cliente nova"
+          ],
+          "human": "Cliente menor de idade: pedir os dados do responsável.",
+          "example": { "from": "Sabrina Lopes", "in": "Primeira vez aí.", "out": "Seja bem-vinda, Sabrina! Me passa seu nome completo e data de nascimento?" }
+        }
+      ]
+    },
+    {
+      "name": "Retornos",
+      "icon": "autorenew",
+      "line": "Chama quem tem sessão do pacote para marcar e quem está na hora da manutenção.",
+      "agents": [
+        {
+          "name": "Sessões do pacote",
+          "when": "Todo dia às 8h.",
+          "uses": ["Cadastro de clientes", "Agenda", "WhatsApp"],
+          "flow": [
+            "Buscar quem tem pacote com sessões sobrando e nada marcado",
+            "Ver o intervalo certo entre sessões que a esteticista anotou",
+            "Mandar mensagem com o horário da próxima sessão",
+            "Avisar quando o pacote estiver perto de vencer"
+          ],
+          "human": "Pacote parado há mais de 30 dias: avisar a esteticista responsável.",
+          "example": { "from": "Cláudia Reis", "in": "", "out": "Oi, Cláudia. Faltam 4 sessões da drenagem. Quinta às 18h fica bom para a próxima?" }
+        },
+        {
+          "name": "Manutenção",
+          "when": "Toda segunda às 9h.",
+          "uses": ["Cadastro de clientes", "WhatsApp"],
+          "flow": [
+            "Buscar quem fez limpeza de pele há mais de 40 dias",
+            "Buscar quem terminou um pacote há mais de 2 meses",
+            "Tirar quem pediu para não receber mensagem",
+            "Mandar mensagem pelo nome, citando o último procedimento e um horário livre"
+          ],
+          "human": "Resposta irritada: parar a sequência e avisar a Fernanda.",
+          "example": { "from": "Débora Martins", "in": "", "out": "Oi, Débora. Faz 6 semanas da sua limpeza de pele. Posso marcar sábado às 10h?" }
+        },
+        {
+          "name": "Marcação pela resposta",
+          "when": "A cliente responde a mensagem de retorno.",
+          "uses": ["WhatsApp", "Agenda"],
+          "flow": [
+            "Entender se é sim, não ou outro horário",
+            "Se sim, marcar e confirmar",
+            "Se outro horário, propor dois horários livres",
+            "Se não, perguntar se pode lembrar daqui a um mês"
+          ],
+          "human": "Cliente quer cancelar o pacote: passa para a Fernanda.",
+          "example": { "from": "Cláudia Reis", "in": "Pode ser.", "out": "Marcado: quinta, 18h. Te lembro na véspera." }
+        }
+      ]
+    },
+    {
+      "name": "Faltas",
+      "icon": "event_busy",
+      "line": "Confirma na véspera, cobra na hora da falta e oferece a vaga para a lista de espera.",
+      "agents": [
+        {
+          "name": "Confirmação na véspera",
+          "when": "Todo dia às 17h, para os horários do dia seguinte.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Mandar a confirmação com hora, procedimento e endereço",
+            "Lembrar o que a esteticista pediu para a sessão (vir sem maquiagem, roupa confortável)",
+            "Pedir para responder sim ou remarcar",
+            "Quem não responder até as 20h recebe mais uma mensagem"
+          ],
+          "human": "Sessão com aparelho alugado sem confirmação: a recepção liga de manhã.",
+          "example": { "from": "Sabrina Lopes", "in": "", "out": "Oi, Sabrina. Amanhã às 14h é sua limpeza de pele. Venha sem maquiagem. Confirma?" }
+        },
+        {
+          "name": "Aviso de falta",
+          "when": "A cliente não chega 15 minutos depois do horário.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Mandar mensagem perguntando se está a caminho",
+            "Se não responder em 10 minutos, marcar como falta",
+            "Se for sessão de pacote, avisar que a sessão é descontada pela regra do contrato",
+            "Oferecer remarcar e registrar a falta na ficha"
+          ],
+          "human": "Cliente contesta o desconto da sessão: a Fernanda decide.",
+          "example": { "from": "Cláudia Reis", "in": "", "out": "Oi, Cláudia. Sua drenagem era às 18h. Está a caminho?" }
+        },
+        {
+          "name": "Lista de espera",
+          "when": "Abre uma vaga por falta ou cancelamento.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Buscar quem pediu horário mais cedo para o mesmo procedimento",
+            "Mandar a vaga para a primeira da lista",
+            "Se não responder em 15 minutos, passar para a próxima",
+            "Quando alguém aceitar, marcar e avisar a esteticista"
+          ],
+          "human": "Vaga com aparelho alugado só naquele dia: a Fernanda escolhe quem chamar.",
+          "example": { "from": "Mônica Prado", "in": "", "out": "Oi, Mônica. Vagou hoje às 16h para a sua drenagem. Quer?" }
+        }
+      ]
+    },
+    {
+      "name": "Orçamentos",
+      "icon": "request_quote",
+      "line": "Manda o valor do pacote, explica em palavras simples e volta três dias depois.",
+      "agents": [
+        {
+          "name": "Montador do pacote",
+          "when": "A esteticista fecha o plano depois da avaliação.",
+          "uses": ["Tabela de preços", "WhatsApp"],
+          "flow": [
+            "Pegar os procedimentos e o número de sessões que a esteticista anotou",
+            "Aplicar a tabela e o desconto de pacote",
+            "Montar as formas de pagamento (à vista, parcelado)",
+            "Mandar para a Fernanda aprovar antes de enviar"
+          ],
+          "human": "Pacote acima de R$ 4 mil: a Fernanda conversa com a cliente.",
+          "example": { "from": "Mônica Prado", "in": "", "out": "Drenagem, 10 sessões: R$ 1.200. Radiofrequência, 6 sessões: R$ 1.080. Total R$ 2.280." }
+        },
+        {
+          "name": "Explicador em palavras simples",
+          "when": "O pacote é aprovado.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Trocar os nomes técnicos por palavras do dia a dia",
+            "Dizer quantas sessões, de quanto em quanto tempo e quanto dura cada uma",
+            "Dizer quando costuma aparecer a diferença, como a esteticista explicou",
+            "Mandar junto com o orçamento"
+          ],
+          "human": "Cliente pergunta sobre risco ou contraindicação: a esteticista responde.",
+          "example": { "from": "Mônica Prado", "in": "", "out": "São 2 sessões por semana, de 1 hora. A drenagem ajuda a desinchar e o aparelho trabalha a firmeza da pele." }
+        },
+        {
+          "name": "Retorno do terceiro dia",
+          "when": "Três dias depois de mandar o orçamento, sem resposta.",
+          "uses": ["WhatsApp", "Agenda"],
+          "flow": [
+            "Perguntar se ficou alguma dúvida",
+            "Oferecer reservar a primeira sessão",
+            "Se disser que está caro, oferecer o parcelamento ou um pacote menor",
+            "Se não responder, tentar de novo em 10 dias e parar"
+          ],
+          "human": "Cliente pede desconto maior: passa para a Fernanda.",
+          "example": { "from": "Mônica Prado", "in": "", "out": "Oi, Mônica. Ficou alguma dúvida sobre o plano? Posso reservar a primeira sessão." }
+        }
+      ]
+    },
+    {
+      "name": "Anamnese e termos",
+      "icon": "assignment",
+      "line": "Deixa a anamnese, o termo e as fotos prontos antes de a cliente deitar na maca.",
+      "agents": [
+        {
+          "name": "Anamnese antes da avaliação",
+          "when": "A cliente nova marca a avaliação.",
+          "uses": ["WhatsApp", "Ficha da cliente"],
+          "flow": [
+            "Mandar o formulário de anamnese no dia em que marca",
+            "Lembrar na véspera se ainda não preencheu",
+            "Marcar na ficha o que a cliente respondeu sim (gestação, alergia, medicamento, doença de pele)",
+            "Mandar o resumo para a esteticista antes da avaliação"
+          ],
+          "human": "Qualquer resposta marcada sim: a esteticista lê antes e decide o procedimento.",
+          "example": { "from": "Sabrina Lopes", "in": "", "out": "Sabrina, antes da avaliação preciso que você preencha esta ficha. Leva uns 5 minutos." }
+        },
+        {
+          "name": "Termo de consentimento",
+          "when": "A cliente fecha um procedimento com aparelho ou peeling.",
+          "uses": ["Ficha da cliente", "Assinatura digital"],
+          "flow": [
+            "Montar o termo com o nome do procedimento e o número de sessões",
+            "Mandar para assinar pelo celular",
+            "Conferir se está assinado antes da primeira sessão",
+            "Guardar o termo na ficha"
+          ],
+          "human": "Termo sem assinatura no dia da sessão: a recepção resolve antes de começar.",
+          "example": { "from": "Sistema", "in": "", "out": "Mônica: termo da radiofrequência assinado às 10h12. Ficha completa." }
+        },
+        {
+          "name": "Fotos de evolução",
+          "when": "Na primeira sessão e a cada 4 sessões do pacote.",
+          "uses": ["Ficha da cliente", "WhatsApp"],
+          "flow": [
+            "Lembrar a esteticista de tirar as fotos na mesma posição e luz",
+            "Guardar as fotos na ficha com a data",
+            "Montar o antes e depois para a esteticista mostrar à cliente",
+            "Usar em divulgação só com autorização escrita"
+          ],
+          "human": "Cliente pede para apagar as fotos: a Fernanda confirma e apaga.",
+          "example": { "from": "Sistema", "in": "", "out": "Cláudia: fotos da sessão 1 e 4 prontas para comparar." }
+        }
+      ]
+    },
+    {
+      "name": "Avaliações",
+      "icon": "star",
+      "line": "Pede avaliação no dia seguinte e, se a resposta for ruim, avisa a dona primeiro.",
+      "agents": [
+        {
+          "name": "Pedido de avaliação",
+          "when": "No dia seguinte à sessão, às 10h.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Agradecer pela visita pelo nome",
+            "Perguntar como foi o atendimento, com nota de 1 a 5",
+            "Esperar a resposta antes de mandar qualquer link",
+            "Passar a resposta para o Leitor da resposta"
+          ],
+          "human": "Cliente teve qualquer reação na sessão: a esteticista liga, sem pedido de avaliação.",
+          "example": { "from": "Débora Martins", "in": "", "out": "Obrigada pela visita ontem, Débora. Como foi a limpeza de pele?" }
+        },
+        {
+          "name": "Leitor da resposta",
+          "when": "A cliente responde o pedido de avaliação.",
+          "uses": ["WhatsApp", "Google"],
+          "flow": [
+            "Ler se a resposta é boa, neutra ou ruim",
+            "Se for boa (4 ou 5), mandar o link de avaliação no Google",
+            "Se for neutra, perguntar o que poderia ser melhor",
+            "Se falar de vermelhidão, ardência ou mancha, avisar a esteticista na hora",
+            "Se for ruim, passar para o Alerta à dona e não mandar link"
+          ],
+          "human": "Resposta com palavrão ou ameaça: alerta direto para a Fernanda.",
+          "example": { "from": "Débora Martins", "in": "Amei, pele ótima! 5", "out": "Que bom! Pode deixar uma avaliação no Google?" }
+        },
+        {
+          "name": "Alerta à dona",
+          "when": "Chega uma resposta ruim.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Mandar para a Fernanda o nome, a nota e o que a cliente escreveu",
+            "Juntar a ficha, o procedimento e quem atendeu",
+            "Responder à cliente que a Fernanda vai entrar em contato",
+            "Cobrar a Fernanda se ninguém respondeu em 2 horas"
+          ],
+          "human": "Sempre: quem resolve é a Fernanda.",
+          "example": { "from": "Elaine Souza", "in": "A sala estava fria e atrasaram 20 minutos.", "out": "Aviso enviado à Fernanda." }
+        }
+      ]
+    },
+    {
+      "name": "Operação",
+      "icon": "inventory_2",
+      "line": "Cuida do estoque, da higiene das salas, dos aparelhos e da escala.",
+      "agents": [
+        {
+          "name": "Controle de estoque",
+          "when": "Toda sexta às 16h e quando alguém dá baixa de material.",
+          "uses": ["Planilha de estoque", "WhatsApp"],
+          "flow": [
+            "Somar o que foi usado na semana pela agenda (ácidos, máscaras, gel, lençol descartável)",
+            "Conferir a validade dos produtos abertos",
+            "Montar o pedido do que está abaixo do mínimo",
+            "Mandar o pedido para a Fernanda aprovar"
+          ],
+          "human": "Produto vencido ou perto de vencer: separar e avisar a Fernanda.",
+          "example": { "from": "Sistema", "in": "", "out": "Gel condutor: 1 frasco. Lençol descartável: 2 rolos. Máscara de argila: 35%." }
+        },
+        {
+          "name": "Higiene e esterilização",
+          "when": "Entre uma cliente e outra e no fechamento.",
+          "uses": ["Planilha de higiene"],
+          "flow": [
+            "Registrar a troca do lençol e a limpeza da maca a cada cliente",
+            "Registrar cada ciclo da autoclave das extratoras e pinças",
+            "Registrar o descarte de agulhas e lancetas na caixa certa",
+            "Guardar o registro para a vigilância sanitária"
+          ],
+          "human": "Indicador da autoclave reprovado: parar o uso do material e avisar a Fernanda.",
+          "example": { "from": "Sistema", "in": "", "out": "Autoclave: ciclo 2 aprovado, 13h, operado por Priscila. Sala 1 e 2 ok." }
+        },
+        {
+          "name": "Cuidado dos aparelhos",
+          "when": "Toda segunda às 8h.",
+          "uses": ["Planilha de aparelhos", "Agenda"],
+          "flow": [
+            "Contar quantas sessões cada aparelho fez na semana",
+            "Avisar quando a ponteira ou o cabeçote passar do número de usos",
+            "Lembrar a data da revisão de cada aparelho",
+            "Bloquear a agenda do aparelho no dia da revisão"
+          ],
+          "human": "Aparelho com erro ou esquentando: parar o uso e avisar a Fernanda.",
+          "example": { "from": "Sistema", "in": "", "out": "Radiofrequência: 41 sessões no mês. Revisão vence dia 28." }
+        },
+        {
+          "name": "Escala da equipe",
+          "when": "Toda quinta, para a semana seguinte.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Ver quantas sessões estão marcadas por dia e em qual sala",
+            "Montar quem fica em cada sala e na recepção",
+            "Cobrir folgas e férias",
+            "Mandar a escala para cada pessoa no WhatsApp"
+          ],
+          "human": "Dia sem esteticista para cobrir: a Fernanda decide.",
+          "example": { "from": "Sistema", "in": "", "out": "Semana: Fernanda 36h, Priscila 40h, Jéssica 30h, recepção com a Rita." }
+        }
+      ]
+    }
+  ],
+  "morning": {
+    "when": "Todo dia às 7h30, no WhatsApp da Fernanda.",
+    "flow": [
+      "Contar quantas clientes estão marcadas hoje e em quais salas",
+      "Listar os pacotes parados e as clientes que passaram da manutenção",
+      "Somar o que se perdeu ontem: faltas, salas vazias, orçamentos parados",
+      "Mandar tudo numa página só"
+    ],
+    "stats": [
+      { "value": "22", "label": "Marcadas hoje", "sub": "2 salas, a primeira às 8h" },
+      { "value": "8", "label": "Atrasadas", "sub": "pacote parado, 5 já chamadas" },
+      { "value": "R$ 2.280", "label": "Perdido", "sub": "1 pacote que ninguém respondeu" }
+    ]
+  }
+}

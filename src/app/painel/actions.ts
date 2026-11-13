@@ -1,0 +1,227 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { AGENTS, type AgentKey } from "@/lib/agents";
+import { checkPassword, createSession, endSession, requireLogin } from "@/lib/auth";
+import { book, BookingError, getAppointment, normalizePhone, setStatus, upsertClient } from "@/lib/booking";
+import { q } from "@/lib/db";
+import { clearDemo, seedDemo } from "@/lib/demo";
+import { markNoShow, offerFreedSlot, runAgents } from "@/lib/jobs";
+import { findNiche } from "@/lib/niches";
+import { createQuote, sendQuote } from "@/lib/quotes";
+import { defaultSettings, getSettings, saveSettings, type DayHours, type Service } from "@/lib/settings";
+import { zoned } from "@/lib/time";
+import { connectWhatsApp, disconnectWhatsApp, logActivity, webhookKey } from "@/lib/whatsapp";
+
+export type ActionState = { ok?: string; error?: string } | null;
+
+const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
+
+/* ---------- Login ---------- */
+
+export async function login(_: ActionState, f: FormData): Promise<ActionState> {
+  if (!checkPassword(str(f, "senha"))) return { error: "Senha errada." };
+  await createSession();
+  redirect("/painel");
+}
+
+export async function logout() {
+  await endSession();
+  redirect("/entrar");
+}
+
+/* ---------- Configuração ---------- */
+
+function parseServices(text: string): Service[] {
+  return text
+    .split("\n")
+    .map((l) => l.split("|").map((x) => x.trim()))
+    .filter((p) => p[0])
+    .map(([name, minutes, price]) => ({
+      name: name.slice(0, 60),
+      minutes: Math.max(5, Math.min(600, Number(minutes) || 30)),
+      price: Math.max(0, Number(String(price ?? "0").replace(/[^\d,.]/g, "").replace(",", ".")) || 0),
+    }));
+}
+
+export async function saveConfig(_: ActionState, f: FormData): Promise<ActionState> {
+  await requireLogin();
+  const cur = await getSettings();
+  const niche = findNiche(str(f, "niche"));
+  const nicheChanged = niche.id !== cur.niche;
+  const hours: DayHours[] = Array.from({ length: 7 }, (_, i) => {
+    if (f.get(`open-${i}`) !== "on") return null;
+    const open = str(f, `from-${i}`) || "09:00";
+    const close = str(f, `to-${i}`) || "18:00";
+    return open < close ? { open, close } : null;
+  });
+  const services = parseServices(str(f, "services"));
+  const resources = str(f, "resources").split("\n").map((r) => r.trim()).filter(Boolean).slice(0, 20);
+  const base = nicheChanged && f.get("useNicheServices") === "on" ? defaultSettings(niche.id) : null;
+  const businessName = str(f, "businessName");
+  if (!businessName) return { error: "Coloque o nome do negócio." };
+  await saveSettings({
+    configured: true,
+    niche: niche.id,
+    businessName,
+    ownerName: str(f, "ownerName"),
+    ownerPhone: str(f, "ownerPhone") ? normalizePhone(str(f, "ownerPhone")) : "",
+    address: str(f, "address"),
+    about: str(f, "about").slice(0, 4000),
+    googleReviewUrl: str(f, "googleReviewUrl"),
+    hours,
+    services: base ? base.services : services.length ? services : cur.services,
+    resources: base ? base.resources : resources.length ? resources : cur.resources,
+    returnDays: base ? base.returnDays : Math.max(1, Number(str(f, "returnDays")) || cur.returnDays),
+    slotMinutes: [15, 20, 30, 60].includes(Number(str(f, "slotMinutes"))) ? Number(str(f, "slotMinutes")) : cur.slotMinutes,
+    cancelHours: Math.max(0, Number(str(f, "cancelHours")) || 0),
+  });
+  revalidatePath("/painel", "layout");
+  if (!cur.configured) redirect("/painel");
+  return { ok: "Salvo." };
+}
+
+/* ---------- Agentes ---------- */
+
+export async function toggleAgent(key: AgentKey, enabled: boolean) {
+  await requireLogin();
+  const s = await getSettings();
+  await saveSettings({ agents: { ...s.agents, [key]: { ...s.agents[key], enabled } } });
+  await logActivity("sistema", `${AGENTS.find((a) => a.key === key)?.name} ${enabled ? "ligado" : "desligado"}`);
+  revalidatePath("/painel", "layout");
+}
+
+export async function saveFlow(key: AgentKey, flow: string) {
+  await requireLogin();
+  const s = await getSettings();
+  const def = AGENTS.find((a) => a.key === key);
+  const text = flow.trim() || def?.flow.join("\n") || "";
+  await saveSettings({ agents: { ...s.agents, [key]: { ...s.agents[key], flow: text.slice(0, 4000) } } });
+  revalidatePath("/painel/agentes");
+  return { ok: "Fluxo salvo." };
+}
+
+export async function runNow(force: boolean) {
+  await requireLogin();
+  const s = await getSettings();
+  const report = await runAgents(s, { force });
+  revalidatePath("/painel", "layout");
+  return report;
+}
+
+/* ---------- Agenda ---------- */
+
+export async function newAppointment(_: ActionState, f: FormData): Promise<ActionState> {
+  await requireLogin();
+  const s = await getSettings();
+  const phone = normalizePhone(str(f, "phone"));
+  if (phone.length < 12) return { error: "Coloque o WhatsApp com DDD." };
+  const day = str(f, "day");
+  const time = str(f, "time");
+  if (!day || !time) return { error: "Escolha o dia e a hora." };
+  const c = await upsertClient(phone, str(f, "name"));
+  try {
+    const a = await book(s, { clientId: c.id, service: str(f, "service"), start: zoned(day, time, s.timezone), resource: str(f, "resource") || undefined, source: "painel" });
+    await logActivity("sistema", `Horário marcado no painel: ${a.service} para ${c.name || c.phone}`, c.phone);
+  } catch (e) {
+    if (e instanceof BookingError) return { error: e.message };
+    throw e;
+  }
+  revalidatePath("/painel", "layout");
+  return { ok: "Marcado." };
+}
+
+export async function setAppointment(id: number, status: "concluido" | "faltou" | "cancelado" | "confirmado") {
+  await requireLogin();
+  const s = await getSettings();
+  if (status === "faltou") {
+    await markNoShow(s, id);
+  } else {
+    const a = await getAppointment(id);
+    await setStatus(id, status);
+    if (status === "cancelado" && a) await offerFreedSlot(s, a);
+  }
+  revalidatePath("/painel", "layout");
+}
+
+/* ---------- Clientes ---------- */
+
+export async function newClient(_: ActionState, f: FormData): Promise<ActionState> {
+  await requireLogin();
+  const phone = normalizePhone(str(f, "phone"));
+  if (phone.length < 12) return { error: "Coloque o WhatsApp com DDD." };
+  await upsertClient(phone, str(f, "name"));
+  revalidatePath("/painel/clientes");
+  return { ok: "Cliente salvo." };
+}
+
+export async function saveNotes(id: number, notes: string) {
+  await requireLogin();
+  await q("update clients set notes = $2 where id = $1", [id, notes.slice(0, 2000)]);
+  revalidatePath("/painel/clientes");
+}
+
+/* ---------- Orçamentos ---------- */
+
+export async function newQuote(_: ActionState, f: FormData): Promise<ActionState> {
+  await requireLogin();
+  const phone = normalizePhone(str(f, "phone"));
+  if (phone.length < 12) return { error: "Coloque o WhatsApp com DDD." };
+  const items = str(f, "items")
+    .split("\n")
+    .map((l) => l.split("|").map((x) => x.trim()))
+    .filter((p) => p[0])
+    .map(([name, price]) => ({ name: name.slice(0, 120), price: Number(String(price ?? "0").replace(/[^\d,.]/g, "").replace(/\.(?=\d{3})/g, "").replace(",", ".")) || 0 }));
+  if (!items.length) return { error: "Coloque pelo menos um item." };
+  const title = str(f, "title") || items[0].name;
+  const c = await upsertClient(phone, str(f, "name"));
+  const id = await createQuote(c.id, title, items);
+  if (f.get("sendNow") === "on") await sendQuote(await getSettings(), id);
+  revalidatePath("/painel/orcamentos");
+  return { ok: f.get("sendNow") === "on" ? "Orçamento enviado." : "Orçamento salvo." };
+}
+
+export async function sendQuoteNow(id: number) {
+  await requireLogin();
+  await sendQuote(await getSettings(), id);
+  revalidatePath("/painel/orcamentos");
+}
+
+/* ---------- Demonstração ---------- */
+
+export async function demoSeed() {
+  await requireLogin();
+  await seedDemo(await getSettings());
+  revalidatePath("/painel", "layout");
+}
+
+export async function demoClear() {
+  await requireLogin();
+  await clearDemo();
+  revalidatePath("/painel", "layout");
+}
+
+/* ---------- WhatsApp ---------- */
+
+async function origin() {
+  if (process.env.APP_URL) return process.env.APP_URL.replace(/\/$/, "");
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host");
+  return `${h.get("x-forwarded-proto") ?? "https"}://${host}`;
+}
+
+export async function whatsappConnect() {
+  await requireLogin();
+  const url = `${await origin()}/api/whatsapp/webhook?key=${webhookKey()}`;
+  const r = await connectWhatsApp(url);
+  if (!r.ok) return { error: r.error };
+  return { qr: r.data.qr, state: r.data.state };
+}
+
+export async function whatsappDisconnect() {
+  await requireLogin();
+  await disconnectWhatsApp();
+  revalidatePath("/painel/whatsapp");
+}

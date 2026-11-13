@@ -1,0 +1,368 @@
+{
+  "id": "tatuagem",
+  "label": "Estúdio de tatuagem",
+  "group": "beleza",
+  "icon": "draw",
+  "title": "do estúdio de tatuagem",
+  "owner": "Léo",
+  "intro": "Todo agente de IA que um estúdio de tatuagem precisa, numa página. Cada cartão é um agente com o fluxo escrito.",
+  "sectors": [
+    {
+      "name": "Recepção",
+      "icon": "forum",
+      "line": "Atende o WhatsApp até as 9 da noite, entende a ideia e manda para o tatuador certo.",
+      "agents": [
+        {
+          "name": "Atendente do WhatsApp",
+          "when": "Chega mensagem no WhatsApp do estúdio.",
+          "uses": ["WhatsApp", "Cadastro de clientes"],
+          "flow": [
+            "Cumprimentar pelo nome se o número já é cliente",
+            "Perguntar a ideia, o local do corpo e o tamanho aproximado em centímetros",
+            "Pedir foto de referência e foto do local",
+            "Perguntar se é tatuagem nova, cobertura ou retoque",
+            "Passar para o Orçamento pela ideia"
+          ],
+          "human": "Pessoa pergunta sobre tatuagem inflamada ou que não cicatrizou: avisar o tatuador que fez.",
+          "example": { "from": "Gabriel Santos", "in": "Quero fazer um leão no antebraço.", "out": "Fala, Gabriel! Me manda uma referência e o tamanho que você imagina? Uns 15 cm?" }
+        },
+        {
+          "name": "Escolha do tatuador",
+          "when": "A ideia e as fotos chegam.",
+          "uses": ["Cadastro de tatuadores", "Agenda"],
+          "flow": [
+            "Ver o estilo da ideia (fineline, realismo, old school, blackwork)",
+            "Indicar o tatuador do estúdio que trabalha nesse estilo",
+            "Mandar 3 trabalhos dele parecidos com a ideia",
+            "Mostrar quando abre a próxima data na agenda dele"
+          ],
+          "human": "Estilo que ninguém do estúdio faz: o Léo responde com sinceridade.",
+          "example": { "from": "Gabriel Santos", "in": "", "out": "Leão em realismo é com o Rafa. Olha 3 trabalhos dele. A próxima data livre é dia 2." }
+        },
+        {
+          "name": "Cadastro do cliente",
+          "when": "O cliente fecha a primeira tatuagem no estúdio.",
+          "uses": ["WhatsApp", "Cadastro de clientes"],
+          "flow": [
+            "Pedir nome completo, data de nascimento e CPF",
+            "Conferir se tem 18 anos ou mais",
+            "Pedir foto do documento",
+            "Salvar tudo na ficha e avisar o tatuador"
+          ],
+          "human": "Menor de 18 anos: o estúdio não tatua, o Léo responde.",
+          "example": { "from": "Isabela Cruz", "in": "Primeira tattoo!", "out": "Que legal, Isabela! Me passa seu nome completo e data de nascimento?" }
+        }
+      ]
+    },
+    {
+      "name": "Orçamentos",
+      "icon": "request_quote",
+      "line": "Manda o valor pela ideia, explica como funciona a sessão e volta três dias depois.",
+      "agents": [
+        {
+          "name": "Orçamento pela ideia",
+          "when": "O tatuador olha a referência e passa o valor.",
+          "uses": ["WhatsApp", "Tabela de preços"],
+          "flow": [
+            "Pegar o valor e o número de sessões que o tatuador passou",
+            "Montar o orçamento com tamanho, local, valor e sessões",
+            "Colocar o valor do sinal para reservar a data",
+            "Mandar para o cliente com as datas livres do tatuador"
+          ],
+          "human": "Projeto fechado de braço ou costas: o tatuador conversa direto com o cliente.",
+          "example": { "from": "Gabriel Santos", "in": "", "out": "Leão em realismo, 15 cm, antebraço: R$ 1.200, 1 sessão de umas 5 horas. Sinal de R$ 300." }
+        },
+        {
+          "name": "Explicador da sessão",
+          "when": "O orçamento é enviado.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Explicar como funciona: sinal, arte, ajustes e dia da sessão",
+            "Dizer quanto tempo a sessão leva",
+            "Explicar que o sinal desconta do valor final",
+            "Explicar a regra de remarcação"
+          ],
+          "human": "Cliente pergunta se pode tatuar com alguma condição de saúde: o tatuador responde.",
+          "example": { "from": "Gabriel Santos", "in": "", "out": "O sinal reserva a data e sai do total. O Rafa manda a arte uns dias antes e você pode pedir até 2 ajustes." }
+        },
+        {
+          "name": "Retorno do terceiro dia",
+          "when": "Três dias depois de mandar o orçamento, sem resposta.",
+          "uses": ["WhatsApp", "Agenda"],
+          "flow": [
+            "Perguntar se ficou alguma dúvida",
+            "Avisar se a data do tatuador está ficando cheia",
+            "Se disser que está caro, oferecer um tamanho menor ou dividir em sessões",
+            "Se não responder, tentar de novo em 10 dias e parar"
+          ],
+          "human": "Cliente pede desconto: passa para o tatuador.",
+          "example": { "from": "Gabriel Santos", "in": "", "out": "Fala, Gabriel. O Rafa ainda tem o dia 2 livre. Quer reservar com o sinal?" }
+        }
+      ]
+    },
+    {
+      "name": "Arte e aprovação",
+      "icon": "brush",
+      "line": "Junta o que o cliente quer, entrega a arte antes e fecha a aprovação na véspera.",
+      "agents": [
+        {
+          "name": "Briefing para o tatuador",
+          "when": "O sinal cai.",
+          "uses": ["WhatsApp", "Ficha do cliente"],
+          "flow": [
+            "Juntar referências, local, tamanho e o que o cliente não quer",
+            "Perguntar se tem tatuagem ou cicatriz perto do local",
+            "Mandar o resumo para o tatuador com as fotos",
+            "Combinar a data de entrega da arte"
+          ],
+          "human": "Ideia que copia trabalho de outro artista: o tatuador conversa sobre criar uma versão própria.",
+          "example": { "from": "Sistema", "in": "", "out": "Rafa: leão realista, antebraço interno, 15 cm, sem juba muito escura. Arte até dia 28." }
+        },
+        {
+          "name": "Envio da arte e ajustes",
+          "when": "O tatuador termina a arte.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Mandar a arte para o cliente",
+            "Anotar os ajustes que o cliente pedir",
+            "Contar os ajustes: até 2 estão no preço",
+            "Mandar a nova versão e pedir o ok"
+          ],
+          "human": "Cliente pede o terceiro ajuste ou quer mudar a ideia toda: o tatuador decide se cobra.",
+          "example": { "from": "Gabriel Santos", "in": "Dá pra deixar o olhar mais bravo?", "out": "Anotado! O Rafa ajusta e te manda amanhã." }
+        },
+        {
+          "name": "Aprovação final",
+          "when": "Na véspera da sessão, às 16h.",
+          "uses": ["WhatsApp", "Agenda"],
+          "flow": [
+            "Mandar a versão final da arte",
+            "Pedir o ok por escrito",
+            "Confirmar o tamanho e o local mais uma vez",
+            "Avisar o tatuador que a arte está aprovada"
+          ],
+          "human": "Cliente sem aprovar até as 20h: o tatuador liga.",
+          "example": { "from": "Gabriel Santos", "in": "", "out": "Gabriel, esta é a arte final para amanhã às 13h. Aprovada?" }
+        }
+      ]
+    },
+    {
+      "name": "Termo e sinal",
+      "icon": "assignment",
+      "line": "Deixa o sinal pago, a ficha e o termo assinados antes de o cliente deitar na maca.",
+      "agents": [
+        {
+          "name": "Cobrança do sinal",
+          "when": "O cliente aceita o orçamento.",
+          "uses": ["WhatsApp", "Link de pagamento", "Agenda"],
+          "flow": [
+            "Mandar o link do sinal com a data reservada",
+            "Segurar a data por 24 horas",
+            "Se o sinal cair, confirmar a data e passar para o briefing",
+            "Se não cair, liberar a data e avisar o cliente"
+          ],
+          "human": "Cliente pede para pagar o sinal depois: o tatuador decide.",
+          "example": { "from": "Gabriel Santos", "in": "", "out": "Gabriel, o dia 2 às 13h fica seu com o sinal de R$ 300. Segue o link, vale por 24 horas." }
+        },
+        {
+          "name": "Ficha e termo de consentimento",
+          "when": "Dois dias antes da sessão.",
+          "uses": ["Ficha do cliente", "Assinatura digital"],
+          "flow": [
+            "Mandar a ficha de saúde do estúdio para preencher",
+            "Mandar o termo para assinar pelo celular",
+            "Marcar na ficha qualquer resposta sim e avisar o tatuador",
+            "Conferir se está tudo assinado antes da sessão"
+          ],
+          "human": "Qualquer resposta sim na ficha de saúde: o tatuador lê e decide antes da sessão.",
+          "example": { "from": "Sistema", "in": "", "out": "Gabriel: ficha preenchida, termo assinado às 21h04. Tudo certo para dia 2." }
+        },
+        {
+          "name": "Lembrete da véspera",
+          "when": "Na véspera da sessão, às 18h.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Confirmar hora, tatuador e endereço",
+            "Lembrar de trazer documento com foto",
+            "Lembrar de vir com roupa que deixe o local livre",
+            "Pedir para responder sim ou avisar se precisa remarcar"
+          ],
+          "human": "Cliente quer remarcar na véspera: o tatuador decide sobre o sinal.",
+          "example": { "from": "Gabriel Santos", "in": "", "out": "Amanhã às 13h com o Rafa. Traz documento e vem de manga curta. Confirma?" }
+        }
+      ]
+    },
+    {
+      "name": "Faltas",
+      "icon": "event_busy",
+      "line": "Cobra na hora e oferece a maca vaga para quem quer um flash.",
+      "agents": [
+        {
+          "name": "Aviso de falta",
+          "when": "O cliente não chega 20 minutos depois do horário.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Mandar mensagem perguntando se está a caminho",
+            "Se não responder em 15 minutos, marcar como falta",
+            "Avisar que o sinal fica retido pela regra que ele aceitou",
+            "Registrar a falta na ficha do cliente"
+          ],
+          "human": "Cliente diz que teve emergência: o tatuador decide se o sinal vale para outra data.",
+          "example": { "from": "Diego Araújo", "in": "", "out": "Fala, Diego. Sua sessão com o Rafa era às 13h. Tá chegando?" }
+        },
+        {
+          "name": "Lista de espera e flash",
+          "when": "Abre uma vaga por falta ou cancelamento.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Buscar quem pediu data mais cedo com o mesmo tatuador",
+            "Se não tiver ninguém, oferecer os flashes do tatuador com preço fechado",
+            "Mandar a vaga e esperar 20 minutos por resposta",
+            "Quando alguém aceitar, cobrar o sinal e avisar o tatuador"
+          ],
+          "human": "Vaga com menos de 2 horas: o tatuador escolhe quem chamar.",
+          "example": { "from": "Letícia Moura", "in": "", "out": "Oi, Letícia! Vagou hoje às 15h com a Nina. O flash da andorinha sai R$ 350. Quer?" }
+        }
+      ]
+    },
+    {
+      "name": "Retornos",
+      "icon": "autorenew",
+      "line": "Chama para o retoque e para a próxima sessão do projeto.",
+      "agents": [
+        {
+          "name": "Retoque",
+          "when": "30 dias depois da sessão.",
+          "uses": ["Cadastro de clientes", "WhatsApp", "Agenda"],
+          "flow": [
+            "Pedir uma foto da tatuagem cicatrizada",
+            "Mandar a foto para o tatuador ver se precisa de retoque",
+            "Se precisar, marcar o retoque sem custo dentro de 60 dias",
+            "Se não precisar, pedir uma foto boa para o portfólio"
+          ],
+          "human": "Cliente fala de vermelhidão, pus ou dor que não passa: o tatuador fala com ele na hora.",
+          "example": { "from": "Gabriel Santos", "in": "", "out": "Fala, Gabriel! Faz 30 dias do leão. Manda uma foto pro Rafa ver como cicatrizou?" }
+        },
+        {
+          "name": "Próxima sessão do projeto",
+          "when": "Toda segunda às 9h.",
+          "uses": ["Cadastro de clientes", "Agenda", "WhatsApp"],
+          "flow": [
+            "Buscar projetos grandes com sessões faltando e nada marcado",
+            "Ver o intervalo que o tatuador pediu entre sessões",
+            "Mandar mensagem com duas datas livres",
+            "Se não responder em 5 dias, lembrar só mais uma vez"
+          ],
+          "human": "Projeto parado há mais de 3 meses: avisar o tatuador.",
+          "example": { "from": "Rodrigo Pires", "in": "", "out": "Fala, Rodrigo. Falta a 3ª sessão do braço. O Rafa tem dia 9 ou dia 16. Qual vai?" }
+        }
+      ]
+    },
+    {
+      "name": "Avaliações",
+      "icon": "star",
+      "line": "Pede avaliação no dia seguinte e, se a resposta for ruim, avisa o dono primeiro.",
+      "agents": [
+        {
+          "name": "Pedido de avaliação",
+          "when": "No dia seguinte à sessão, às 11h.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Agradecer pelo nome e citar o tatuador",
+            "Perguntar como foi a experiência, com nota de 1 a 5",
+            "Esperar a resposta antes de mandar qualquer link",
+            "Passar a resposta para o Leitor da resposta"
+          ],
+          "human": "Sessão que terminou com problema: o tatuador manda a mensagem.",
+          "example": { "from": "Gabriel Santos", "in": "", "out": "Valeu por ontem, Gabriel! Como foi a sessão com o Rafa?" }
+        },
+        {
+          "name": "Leitor da resposta",
+          "when": "O cliente responde o pedido de avaliação.",
+          "uses": ["WhatsApp", "Google"],
+          "flow": [
+            "Ler se a resposta é boa, neutra ou ruim",
+            "Se for boa (4 ou 5), mandar o link de avaliação no Google",
+            "Se for neutra, perguntar o que poderia ser melhor",
+            "Se for ruim, passar para o Alerta ao dono e não mandar link"
+          ],
+          "human": "Resposta com palavrão ou ameaça: alerta direto para o Léo.",
+          "example": { "from": "Gabriel Santos", "in": "Ficou insano, 5!", "out": "Demais! Deixa uma avaliação no Google pra gente?" }
+        },
+        {
+          "name": "Alerta ao dono",
+          "when": "Chega uma resposta ruim.",
+          "uses": ["WhatsApp"],
+          "flow": [
+            "Mandar para o Léo o nome, a nota e o que o cliente escreveu",
+            "Juntar a arte aprovada, a foto final e quem tatuou",
+            "Responder ao cliente que o Léo vai entrar em contato",
+            "Cobrar o Léo se ninguém respondeu em 2 horas"
+          ],
+          "human": "Sempre: quem resolve é o Léo.",
+          "example": { "from": "Vinícius Prado", "in": "A linha ficou torta no final.", "out": "Aviso enviado ao Léo." }
+        }
+      ]
+    },
+    {
+      "name": "Operação",
+      "icon": "inventory_2",
+      "line": "Cuida do estoque de agulha e tinta, da esterilização e da escala das macas.",
+      "agents": [
+        {
+          "name": "Controle de estoque",
+          "when": "Toda segunda às 10h.",
+          "uses": ["Planilha de estoque", "Agenda", "WhatsApp"],
+          "flow": [
+            "Somar cartuchos, tintas, filme e luvas usados na semana",
+            "Olhar as sessões da próxima semana e o que cada uma vai usar",
+            "Conferir a validade e o lote das tintas abertas",
+            "Montar o pedido e mandar para o Léo aprovar"
+          ],
+          "human": "Tinta vencida ou sem lote: separar e avisar o Léo.",
+          "example": { "from": "Sistema", "in": "", "out": "Cartucho 9RL: 1 caixa. Preto de linha: 2 frascos. Filme: 40%." }
+        },
+        {
+          "name": "Higiene e esterilização",
+          "when": "Antes e depois de cada sessão e no fechamento.",
+          "uses": ["Planilha de esterilização"],
+          "flow": [
+            "Registrar que a agulha e o cartucho foram abertos na frente do cliente",
+            "Registrar a limpeza da maca e a troca das barreiras",
+            "Registrar o descarte na caixa de perfurocortantes",
+            "Registrar os ciclos da autoclave e guardar para a vigilância sanitária"
+          ],
+          "human": "Caixa de perfurocortantes cheia ou autoclave com falha: avisar o Léo no mesmo dia.",
+          "example": { "from": "Sistema", "in": "", "out": "Maca 2: 3 sessões hoje, barreiras trocadas, descarte registrado." }
+        },
+        {
+          "name": "Escala das macas",
+          "when": "Toda quinta, para a semana seguinte.",
+          "uses": ["Agenda", "WhatsApp"],
+          "flow": [
+            "Ver as sessões marcadas de cada tatuador",
+            "Distribuir as macas por dia e horário",
+            "Encaixar os tatuadores convidados nas macas livres",
+            "Mandar a escala para cada tatuador no WhatsApp"
+          ],
+          "human": "Duas sessões longas na mesma maca e horário: o Léo decide.",
+          "example": { "from": "Sistema", "in": "", "out": "Semana: Rafa 4 sessões, Nina 6, Léo 3. Convidado na maca 3 sexta e sábado." }
+        }
+      ]
+    }
+  ],
+  "morning": {
+    "when": "Todo dia às 9h, no WhatsApp do Léo.",
+    "flow": [
+      "Contar as sessões de hoje por maca e quais artes ainda não foram aprovadas",
+      "Listar retoques e projetos parados e quantos já foram chamados",
+      "Somar o que se perdeu ontem: faltas, maca vazia, orçamentos sem resposta",
+      "Mandar tudo numa página só"
+    ],
+    "stats": [
+      { "value": "7", "label": "Sessões hoje", "sub": "3 macas, 1 arte sem aprovar" },
+      { "value": "5", "label": "Atrasados", "sub": "projeto parado, 3 já chamados" },
+      { "value": "R$ 1.200", "label": "Perdido", "sub": "1 orçamento de realismo sem resposta" }
+    ]
+  }
+}
