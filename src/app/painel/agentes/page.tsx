@@ -1,5 +1,4 @@
 import { PageHead } from "@/components/ui";
-import { RunAgents } from "@/components/RunAgents";
 import { AGENTS } from "@/lib/agents";
 import { getSettings } from "@/lib/settings";
 import { AgentCard } from "./AgentCard";
@@ -16,7 +15,7 @@ export default async function Page() {
         Cada cartão é um agente com o fluxo escrito. Ligue ou desligue e ajuste o texto: a recepção segue o fluxo como instrução, palavra por
         palavra.
       </p>
-      <div className="mb-6"><RunAgents /></div>
+      <p className="mb-6 text-[13.5px] text-soft">Os agentes ligados abaixo ficam ativos 24 horas e rodam sozinhos. Não precisa reativar.</p>
       <div className="space-y-8">
         {sectors.map((sec) => (
           <section key={sec}>
