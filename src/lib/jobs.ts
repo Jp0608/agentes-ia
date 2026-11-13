@@ -3,6 +3,7 @@ import { q } from "./db";
 import { fixAppt, getAppointment, nextFreeSlots, setStatus, type Appointment, type AppointmentWithClient, type Client } from "./booking";
 import { findNiche } from "./niches";
 import { agentOn, type Settings } from "./settings";
+import { tenantId } from "./tenant";
 import { addDays, brl, dayKey, hourLabel, parts, shortName, whenLabel, zoned } from "./time";
 import { logActivity, send, sendOwner } from "./whatsapp";
 
@@ -10,12 +11,13 @@ import { logActivity, send, sendOwner } from "./whatsapp";
  * Agentes que trabalham sozinhos, chamados pelo /api/cron a cada 10 minutos (e pelo botão
  * "Rodar agora" do painel). Cada um olha o banco, decide o que está na hora e manda as mensagens.
  * Com force, ignora a janela de horário (útil na demonstração).
+ * Tudo aqui roda no tenant atual (sessão do painel, ou withTenant no cron e no webhook).
  */
 const first = (name: string) => shortName(name);
 const hi = (name: string) => (name ? `Oi, ${first(name)}!` : "Oi!");
 
 async function once(key: string) {
-  const rows = await q("insert into job_runs (key) values ($1) on conflict (key) do nothing returning key", [key]);
+  const rows = await q("insert into job_runs (tenant_id, key) values ($1, $2) on conflict (tenant_id, key) do nothing returning key", [await tenantId(), key]);
   return rows.length > 0;
 }
 
@@ -33,8 +35,8 @@ async function reminders({ s, now, force }: Ctx) {
     await q<AppointmentWithClient>(
       `select a.*, c.name as client_name, c.phone as client_phone, c.simulated as client_simulated
        from appointments a join clients c on c.id = a.client_id
-       where a.status = 'marcado' and a.reminder_sent_at is null and a.starts_at > $1 and a.starts_at < $2`,
-      [new Date(now.getTime() + 60 * 60000), new Date(now.getTime() + 36 * 3600_000)],
+       where a.tenant_id = $3 and a.status = 'marcado' and a.reminder_sent_at is null and a.starts_at > $1 and a.starts_at < $2`,
+      [new Date(now.getTime() + 60 * 60000), new Date(now.getTime() + 36 * 3600_000), await tenantId()],
     )
   ).map(fixAppt);
   let n = 0;
@@ -48,7 +50,7 @@ async function reminders({ s, now, force }: Ctx) {
     if (!due) continue;
     const text = `${hi(a.client_name)} Passando para lembrar: ${a.service} ${whenLabel(a.starts_at, tz, now)}${s.address ? `, na ${s.address}` : ""}.\nResponde 1 para confirmar ou 2 para cancelar.`;
     await send(a.client_phone, text, "lembretes", { simulated: a.client_simulated });
-    await q("update appointments set reminder_sent_at = now() where id = $1", [a.id]);
+    await q("update appointments set reminder_sent_at = now() where id = $1 and tenant_id = $2", [a.id, await tenantId()]);
     await logActivity("lembretes", `Lembrete para ${a.client_name || a.client_phone}: ${a.service} ${whenLabel(a.starts_at, tz, now)}`, a.client_phone);
     n++;
   }
@@ -63,9 +65,9 @@ export async function handleReminderReply(s: Settings, c: Client, text: string, 
   if (!yes && !no) return false;
   const rows = (
     await q<Appointment>(
-      `select * from appointments where client_id = $1 and status = 'marcado' and reminder_sent_at > $2 and starts_at > $3
+      `select * from appointments where tenant_id = $4 and client_id = $1 and status = 'marcado' and reminder_sent_at > $2 and starts_at > $3
        order by starts_at limit 1`,
-      [c.id, new Date(now.getTime() - 36 * 3600_000), now],
+      [c.id, new Date(now.getTime() - 36 * 3600_000), now, await tenantId()],
     )
   ).map(fixAppt);
   const a = rows[0];
@@ -96,21 +98,23 @@ export async function handleReminderReply(s: Settings, c: Client, text: string, 
 export async function offerFreedSlot(s: Settings, a: Pick<Appointment, "service" | "starts_at" | "resource">, now = new Date()) {
   if (!agentOn(s, "espera")) return false;
   if (a.starts_at.getTime() - now.getTime() < 60 * 60000) return false;
+  const t = await tenantId();
   const rows = await q<{ id: number; client_id: number; name: string; phone: string; simulated: boolean; service: string }>(
     `select w.id, w.client_id, c.name, c.phone, c.simulated, w.service from waitlist w join clients c on c.id = w.client_id
-     where w.status = 'esperando' and lower(w.service) = lower($1) order by w.created_at limit 1`,
-    [a.service],
+     where w.tenant_id = $2 and w.status = 'esperando' and lower(w.service) = lower($1) order by w.created_at limit 1`,
+    [a.service, t],
   );
   const w = rows[0] ?? (
     await q<{ id: number; client_id: number; name: string; phone: string; simulated: boolean; service: string }>(
       `select w.id, w.client_id, c.name, c.phone, c.simulated, w.service from waitlist w join clients c on c.id = w.client_id
-       where w.status = 'esperando' order by w.created_at limit 1`,
+       where w.tenant_id = $1 and w.status = 'esperando' order by w.created_at limit 1`,
+      [t],
     )
   )[0];
   if (!w) return false;
   const when = whenLabel(a.starts_at, s.timezone, now);
   await send(w.phone, `${hi(w.name)} Abriu uma vaga ${when} para ${a.service}. Quer? Responde aqui que eu já marco.`, "espera", { simulated: w.simulated });
-  await q("update waitlist set status = 'oferecido', offered_at = now() where id = $1", [w.id]);
+  await q("update waitlist set status = 'oferecido', offered_at = now() where id = $1 and tenant_id = $2", [w.id, t]);
   await logActivity("espera", `Vaga de ${when} (${a.service}) oferecida para ${w.name || w.phone}`, w.phone);
   return true;
 }
@@ -132,7 +136,10 @@ export async function markNoShow(s: Settings, id: number, now = new Date()) {
     "faltas",
     { simulated: a.client_simulated },
   );
-  const count = await q<{ n: string }>("select count(*) as n from appointments where client_id = $1 and status = 'faltou'", [a.client_id]);
+  const count = await q<{ n: string }>("select count(*) as n from appointments where tenant_id = $2 and client_id = $1 and status = 'faltou'", [
+    a.client_id,
+    await tenantId(),
+  ]);
   if (Number(count[0]?.n) >= 3) {
     await sendOwner(s.ownerPhone, `⚠️ ${a.client_name || a.client_phone} faltou pela ${count[0].n}ª vez. Vale pedir sinal na próxima.`, "faltas");
   }
@@ -141,8 +148,9 @@ export async function markNoShow(s: Settings, id: number, now = new Date()) {
 /* ---------- Concluir atendimentos que já passaram ---------- */
 
 async function autoComplete({ now }: Ctx) {
-  const rows = await q("update appointments set status = 'concluido' where status in ('marcado','confirmado') and ends_at < $1 returning id", [
+  const rows = await q("update appointments set status = 'concluido' where tenant_id = $2 and status in ('marcado','confirmado') and ends_at < $1 returning id", [
     new Date(now.getTime() - 30 * 60000),
+    await tenantId(),
   ]);
   return rows.length;
 }
@@ -157,9 +165,9 @@ async function reviews({ s, now, force }: Ctx) {
     await q<AppointmentWithClient>(
       `select a.*, c.name as client_name, c.phone as client_phone, c.simulated as client_simulated
        from appointments a join clients c on c.id = a.client_id
-       where a.status = 'concluido' and a.review_asked_at is null and a.ends_at > $1 and a.ends_at < $2
-       and not exists (select 1 from appointments b where b.client_id = a.client_id and b.review_asked_at > $3)`,
-      [new Date(now.getTime() - 4 * 86400_000), force ? now : todayStart, new Date(now.getTime() - 20 * 86400_000)],
+       where a.tenant_id = $4 and a.status = 'concluido' and a.review_asked_at is null and a.ends_at > $1 and a.ends_at < $2
+       and not exists (select 1 from appointments b where b.tenant_id = a.tenant_id and b.client_id = a.client_id and b.review_asked_at > $3)`,
+      [new Date(now.getTime() - 4 * 86400_000), force ? now : todayStart, new Date(now.getTime() - 20 * 86400_000), await tenantId()],
     )
   ).map(fixAppt);
   let n = 0;
@@ -174,7 +182,7 @@ async function reviews({ s, now, force }: Ctx) {
       "avaliacoes",
       { simulated: a.client_simulated },
     );
-    await q("update appointments set review_asked_at = now() where id = $1", [a.id]);
+    await q("update appointments set review_asked_at = now() where id = $1 and tenant_id = $2", [a.id, await tenantId()]);
     await logActivity("avaliacoes", `Pediu nota a ${a.client_name || a.client_phone} (${a.service})`, a.client_phone);
     n++;
   }
@@ -184,8 +192,8 @@ async function reviews({ s, now, force }: Ctx) {
 /** Nota pendente: resposta curta só com o número vai direto, sem passar pela IA. */
 export async function pendingReview(c: Client, now = new Date()) {
   const rows = await q<{ id: number }>(
-    "select id from appointments where client_id = $1 and review_asked_at > $2 and review_score is null limit 1",
-    [c.id, new Date(now.getTime() - 3 * 86400_000)],
+    "select id from appointments where tenant_id = $3 and client_id = $1 and review_asked_at > $2 and review_score is null limit 1",
+    [c.id, new Date(now.getTime() - 3 * 86400_000), await tenantId()],
   );
   return rows.length > 0;
 }
@@ -198,11 +206,11 @@ export async function overdueClients(s: Settings, now = new Date()) {
   const rows = await q<Due>(
     `select c.id, c.name, c.phone, c.simulated, c.last_return_at, last.service, last.ends_at as last_end
      from clients c
-     join lateral (select service, ends_at from appointments where client_id = c.id and status = 'concluido' order by ends_at desc limit 1) last on true
-     where c.opt_out = false and last.ends_at < $1
-       and not exists (select 1 from appointments f where f.client_id = c.id and f.starts_at > $2 and f.status in ('marcado','confirmado'))
+     join lateral (select service, ends_at from appointments where tenant_id = c.tenant_id and client_id = c.id and status = 'concluido' order by ends_at desc limit 1) last on true
+     where c.tenant_id = $3 and c.opt_out = false and last.ends_at < $1
+       and not exists (select 1 from appointments f where f.tenant_id = c.tenant_id and f.client_id = c.id and f.starts_at > $2 and f.status in ('marcado','confirmado'))
      order by last.ends_at`,
-    [new Date(now.getTime() - s.returnDays * 86400_000), now],
+    [new Date(now.getTime() - s.returnDays * 86400_000), now, await tenantId()],
   );
   return rows.map((r) => ({ ...r, id: Number(r.id), last_end: new Date(r.last_end), last_return_at: r.last_return_at ? new Date(r.last_return_at) : null }));
 }
@@ -219,7 +227,7 @@ async function returns({ s, now, force }: Ctx) {
     const offer = slot ? ` Tenho ${whenLabel(slot.start, tz, now)}, posso marcar?` : " Quer que eu veja um horário?";
     const since = days >= 150 ? `${Math.round(days / 30)} meses` : `${days} dias`;
     await send(c.phone, `${hi(c.name)} Já faz ${since} do seu ${c.service.toLowerCase()}.${offer}`, "retornos", { simulated: c.simulated });
-    await q("update clients set last_return_at = now() where id = $1", [c.id]);
+    await q("update clients set last_return_at = now() where id = $1 and tenant_id = $2", [c.id, await tenantId()]);
     await logActivity("retornos", `Chamou ${c.name || c.phone} de volta (${c.service}, ${since})`, c.phone);
     n++;
   }
@@ -234,8 +242,8 @@ async function quoteFollowups({ s, now, force }: Ctx) {
   const rows = await q<{ id: number; title: string; total: string; followups: number; sent_at: Date; name: string; phone: string; simulated: boolean }>(
     `select qt.id, qt.title, qt.total, qt.followups, qt.sent_at, c.name, c.phone, c.simulated
      from quotes qt join clients c on c.id = qt.client_id
-     where qt.status = 'enviado' and ((qt.followups = 0 and qt.sent_at < $1) or (qt.followups = 1 and qt.sent_at < $2))`,
-    [new Date(now.getTime() - (force ? 0 : 3 * 86400_000)), new Date(now.getTime() - (force ? 0 : 10 * 86400_000))],
+     where qt.tenant_id = $3 and qt.status = 'enviado' and ((qt.followups = 0 and qt.sent_at < $1) or (qt.followups = 1 and qt.sent_at < $2))`,
+    [new Date(now.getTime() - (force ? 0 : 3 * 86400_000)), new Date(now.getTime() - (force ? 0 : 10 * 86400_000)), await tenantId()],
   );
   let n = 0;
   for (const r of rows) {
@@ -244,7 +252,7 @@ async function quoteFollowups({ s, now, force }: Ctx) {
         ? `${hi(r.name)} Ficou alguma dúvida sobre o orçamento de ${r.title}? Se quiser, já reservo o primeiro horário para você.`
         : `${hi(r.name)} Passando uma última vez sobre o orçamento de ${r.title}. Se mudar de ideia, é só me chamar aqui.`;
     await send(r.phone, text, "orcamentos", { simulated: r.simulated });
-    await q("update quotes set followups = followups + 1, last_followup_at = now() where id = $1", [r.id]);
+    await q("update quotes set followups = followups + 1, last_followup_at = now() where id = $1 and tenant_id = $2", [r.id, await tenantId()]);
     await logActivity("orcamentos", `${r.followups === 0 ? "Retorno do 3º dia" : "Último retorno"} do orçamento "${r.title}" para ${r.name || r.phone}`, r.phone);
     n++;
   }
@@ -259,19 +267,23 @@ export async function morningStats(s: Settings, now = new Date()) {
   const start = zoned(today, "00:00", tz);
   const end = zoned(addDays(today, 1), "00:00", tz);
   const yStart = zoned(addDays(today, -1), "00:00", tz);
+  const t = await tenantId();
   const todayRows = (
-    await q<Appointment>("select * from appointments where starts_at >= $1 and starts_at < $2 and status in ('marcado','confirmado','concluido') order by starts_at", [start, end])
+    await q<Appointment>(
+      "select * from appointments where tenant_id = $3 and starts_at >= $1 and starts_at < $2 and status in ('marcado','confirmado','concluido') order by starts_at",
+      [start, end, t],
+    )
   ).map(fixAppt);
   const lost = await q<{ status: string; n: string; total: string }>(
     `select status, count(*) as n, coalesce(sum(price), 0) as total from appointments
-     where starts_at >= $1 and starts_at < $2 and status in ('faltou','cancelado')
-       and not exists (select 1 from appointments r where r.status in ('marcado','confirmado','concluido') and r.starts_at = appointments.starts_at and r.resource = appointments.resource)
+     where tenant_id = $3 and starts_at >= $1 and starts_at < $2 and status in ('faltou','cancelado')
+       and not exists (select 1 from appointments r where r.tenant_id = appointments.tenant_id and r.status in ('marcado','confirmado','concluido') and r.starts_at = appointments.starts_at and r.resource = appointments.resource)
      group by status`,
-    [yStart, start],
+    [yStart, start, t],
   );
   const overdue = await overdueClients(s, now);
   const called = overdue.filter((c) => c.last_return_at && c.last_return_at.getTime() > now.getTime() - 30 * 86400_000).length;
-  const quotes = await q<{ n: string; total: string }>("select count(*) as n, coalesce(sum(total), 0) as total from quotes where status = 'enviado'");
+  const quotes = await q<{ n: string; total: string }>("select count(*) as n, coalesce(sum(total), 0) as total from quotes where tenant_id = $1 and status = 'enviado'", [t]);
   const sum = (st: string) => lost.find((l) => l.status === st);
   return {
     booked: todayRows.length,
@@ -331,9 +343,10 @@ export async function runAgents(s: Settings, opts: { now?: Date; force?: boolean
 export async function maybeRunAgents(s: Settings) {
   if (!s.configured) return null;
   const rows = await q(
-    `insert into job_runs (key, ran_at) values ('tick', now())
-     on conflict (key) do update set ran_at = now() where job_runs.ran_at < now() - interval '10 minutes'
+    `insert into job_runs (tenant_id, key, ran_at) values ($1, 'tick', now())
+     on conflict (tenant_id, key) do update set ran_at = now() where job_runs.ran_at < now() - interval '10 minutes'
      returning key`,
+    [await tenantId()],
   );
   return rows.length ? runAgents(s) : null;
 }

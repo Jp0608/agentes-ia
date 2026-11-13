@@ -1,5 +1,5 @@
 import "server-only";
-import { evoServer, fetchMediaBase64, instanceName, type EvoServer } from "./whatsapp";
+import { fetchMediaBase64, type EvoServer } from "./whatsapp";
 
 /**
  * Áudios do WhatsApp (mensagem de voz e arquivo de áudio) viram texto pelo Vercel AI Gateway.
@@ -169,11 +169,11 @@ export const audioOf = (message: unknown): AudioInfo | null => {
 /**
  * Áudio que chegou pelo webhook → texto para o histórico. Usa o base64 do próprio webhook
  * (quando a instância manda "webhook base64") ou baixa pela Evolution API.
- * Servidor e instância vêm explícitos em `evo`; sem isso, usa os do ambiente (EVOLUTION_*).
+ * Servidor e instância vêm explícitos em `evo` (cada negócio tem a própria instância).
  */
 export async function voiceNoteText(
   m: { key?: unknown; message?: unknown },
-  evo: { server: EvoServer | null; instance: string } = { server: evoServer(), instance: instanceName() },
+  evo: { server: EvoServer | null; instance: string },
   opts: Parameters<typeof transcribeAudio>[2] = {},
 ): Promise<string> {
   const info = audioOf(m.message);

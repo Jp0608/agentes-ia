@@ -16,6 +16,7 @@ import { findNiche } from "./niches";
 import { personaInstructions } from "./persona";
 import { offerFreedSlot } from "./jobs";
 import type { Settings } from "./settings";
+import { tenantId } from "./tenant";
 import { addDays, brl, dayKey, hourLabel, parts, shortDate, shortName, WEEKDAYS, whenLabel, zoned } from "./time";
 import { logActivity, send, sendOwner } from "./whatsapp";
 
@@ -230,8 +231,8 @@ async function contextBlock(s: Settings, c: Client, now: Date) {
   const upcoming = await upcomingOf(c.id, now);
   const past = (await historyOf(c.id, 3)).filter((a) => a.starts_at < now);
   const quotes = await q<{ id: number; title: string; total: string; status: string }>(
-    "select id, title, total, status from quotes where client_id = $1 and status = 'enviado' order by id desc limit 3",
-    [c.id],
+    "select id, title, total, status from quotes where tenant_id = $2 and client_id = $1 and status = 'enviado' order by id desc limit 3",
+    [c.id, await tenantId()],
   );
   const lines = [
     `Agora: ${WEEKDAYS[p.wd]}, ${dayKey(now, tz)}, ${hourLabel(now, tz)}. Amanhã é ${addDays(dayKey(now, tz), 1)}.`,
@@ -288,7 +289,7 @@ async function runTool(name: string, input: Record<string, unknown>, ctx: ToolCt
       try {
         const a = await book(s, { clientId: c.id, service: String(input.servico), start, source: "whatsapp" });
         await logActivity("recepcao", `Marcou ${a.service} para ${c.name || c.phone} ${whenLabel(a.starts_at, tz, now)}`, c.phone);
-        await q("update waitlist set status = 'atendido' where client_id = $1 and status <> 'atendido'", [c.id]);
+        await q("update waitlist set status = 'atendido' where tenant_id = $2 and client_id = $1 and status <> 'atendido'", [c.id, await tenantId()]);
         return `Marcado: #${a.id} ${a.service} ${whenLabel(a.starts_at, tz, now)}, ${a.resource}.`;
       } catch (e) {
         if (e instanceof BookingError) return `Não deu para marcar: ${e.message} Ofereça outro horário.`;
@@ -326,13 +327,18 @@ async function runTool(name: string, input: Record<string, unknown>, ctx: ToolCt
     }
     case "lista_de_espera": {
       const service = findService(s, String(input.servico ?? ""));
-      await q("insert into waitlist (client_id, service, wants) values ($1, $2, $3)", [c.id, service?.name ?? String(input.servico), String(input.preferencia ?? "")]);
+      await q("insert into waitlist (tenant_id, client_id, service, wants) values ($1, $2, $3, $4)", [
+        await tenantId(),
+        c.id,
+        service?.name ?? String(input.servico),
+        String(input.preferencia ?? ""),
+      ]);
       await logActivity("espera", `${c.name || c.phone} entrou na lista de espera (${service?.name ?? input.servico}, ${input.preferencia})`, c.phone);
       return "Na lista de espera. Diga que avisa assim que abrir uma vaga.";
     }
     case "salvar_nome": {
       const nome = String(input.nome ?? "").trim().slice(0, 80);
-      if (nome) await q("update clients set name = $2 where id = $1", [c.id, nome]);
+      if (nome) await q("update clients set name = $2 where id = $1 and tenant_id = $3", [c.id, nome, await tenantId()]);
       c.name = nome || c.name;
       return "Nome salvo.";
     }
@@ -340,8 +346,8 @@ async function runTool(name: string, input: Record<string, unknown>, ctx: ToolCt
       const id = Number(input.orcamento_id);
       const accepted = Boolean(input.aceitou);
       const rows = await q<{ title: string }>(
-        "update quotes set status = $3, answered_at = now() where id = $1 and client_id = $2 returning title",
-        [id, c.id, accepted ? "aceito" : "recusado"],
+        "update quotes set status = $3, answered_at = now() where id = $1 and client_id = $2 and tenant_id = $4 returning title",
+        [id, c.id, accepted ? "aceito" : "recusado", await tenantId()],
       );
       if (!rows.length) return "Orçamento não encontrado para esta pessoa.";
       await logActivity("orcamentos", `${c.name || c.phone} ${accepted ? "aceitou" : "recusou"} o orçamento "${rows[0].title}"`, c.phone);
@@ -363,7 +369,7 @@ async function runTool(name: string, input: Record<string, unknown>, ctx: ToolCt
       return "Dono avisado. Diga à pessoa que ele vai responder.";
     }
     case "parar_mensagens": {
-      await q("update clients set opt_out = true where id = $1", [c.id]);
+      await q("update clients set opt_out = true where id = $1 and tenant_id = $2", [c.id, await tenantId()]);
       await logActivity("retornos", `${c.name || c.phone} pediu para não receber mais mensagens`, c.phone);
       return "Feito. Confirme que ela não vai mais receber mensagens automáticas.";
     }
@@ -373,11 +379,12 @@ async function runTool(name: string, input: Record<string, unknown>, ctx: ToolCt
 
 /** Nota do último atendimento: boa vai para o Google, ruim vai primeiro para o dono. */
 export async function registerReview(s: Settings, c: Client, nota: number, comentario: string, now = new Date()) {
+  const t = await tenantId();
   const rows = await q<{ id: number; service: string }>(
     `update appointments set review_score = $2, review_text = $3
-     where id = (select id from appointments where client_id = $1 and status = 'concluido' order by starts_at desc limit 1)
+     where tenant_id = $4 and id = (select id from appointments where tenant_id = $4 and client_id = $1 and status = 'concluido' order by starts_at desc limit 1)
      returning id, service`,
-    [c.id, nota, comentario.slice(0, 500)],
+    [c.id, nota, comentario.slice(0, 500), t],
   );
   const service = rows[0]?.service ?? "atendimento";
   if (nota >= 4) {
@@ -418,9 +425,9 @@ export async function reply(s: Settings, c: Client, opts: { now?: Date } = {}): 
   const history = (
     await q<Msg>(
       `select direction, body from (
-         select direction, body, created_at from messages where phone = $1 and created_at > $2 order by created_at desc limit 30
+         select direction, body, created_at from messages where tenant_id = $3 and phone = $1 and created_at > $2 order by created_at desc limit 30
        ) t order by created_at`,
-      [c.phone, new Date(now.getTime() - 48 * 3600_000)],
+      [c.phone, new Date(now.getTime() - 48 * 3600_000), await tenantId()],
     )
   ).map((m) => ({ direction: m.direction, body: m.body }));
 

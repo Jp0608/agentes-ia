@@ -1,5 +1,6 @@
 import "server-only";
 import { q } from "./db";
+import { tenantId } from "./tenant";
 import { AGENTS, type AgentKey } from "./agents";
 import { findNiche } from "./niches";
 import { DEFAULT_TZ } from "./time";
@@ -100,7 +101,7 @@ function unwrap(data: unknown): Partial<Settings> {
 }
 
 export async function getSettings(): Promise<Settings> {
-  const rows = await q<{ data: unknown }>("select data::text as data from settings where id = 1");
+  const rows = await q<{ data: unknown }>("select data::text as data from settings where tenant_id = $1", [await tenantId()]);
   return merge(unwrap(rows[0]?.data));
 }
 
@@ -108,10 +109,17 @@ export async function saveSettings(patch: Partial<Settings>) {
   const cur = await getSettings();
   const next = merge({ ...cur, ...patch });
   await q(
-    "insert into settings (id, data, updated_at) values (1, ($1::text)::jsonb, now()) on conflict (id) do update set data = excluded.data, updated_at = now()",
-    [JSON.stringify(next)],
+    `insert into settings (tenant_id, data, updated_at) values ($1, ($2::text)::jsonb, now())
+     on conflict (tenant_id) do update set data = excluded.data, updated_at = now()`,
+    [await tenantId(), JSON.stringify(next)],
   );
   return next;
+}
+
+/** Todos os tenants com configuração salva (para o cron rodar os agentes de cada um). */
+export async function allTenantIds() {
+  const rows = await q<{ tenant_id: string }>("select tenant_id from settings order by tenant_id");
+  return rows.map((r) => Number(r.tenant_id));
 }
 
 export const agentOn = (s: Settings, key: AgentKey) => s.agents[key]?.enabled !== false;

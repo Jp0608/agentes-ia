@@ -1,11 +1,14 @@
 import "server-only";
-import { createHash } from "crypto";
+import { createHash, timingSafeEqual } from "crypto";
 import { q } from "./db";
 import type { AgentKey } from "./agents";
+import { tenantId } from "./tenant";
 
 /**
  * WhatsApp pela Evolution API (um servidor à parte, no Railway, que mantém a sessão aberta).
  * Variáveis: EVOLUTION_API_URL, EVOLUTION_API_KEY e, opcional, EVOLUTION_INSTANCE.
+ * Um servidor atende todos os negócios: cada tenant tem a própria instância. O tenant 1 (o de antes
+ * das contas) continua com EVOLUTION_INSTANCE; os outros usam "t<id>" (t2, t3, ...).
  * Clientes simulados (modo demonstração) nunca recebem nada de verdade: a mensagem só fica no histórico.
  */
 export const OWNER = "dono";
@@ -18,10 +21,49 @@ export function evoServer(): Server | null {
   return url && key ? { url: url.replace(/\/$/, ""), key } : null;
 }
 
-export const instanceName = () => process.env.EVOLUTION_INSTANCE?.trim() || "agentes-ia";
+const legacyInstance = () => process.env.EVOLUTION_INSTANCE?.trim() || "agentes-ia";
 
-/** Segredo do webhook: derivado do AUTH_SECRET para ninguém de fora mandar mensagens falsas. */
-export const webhookKey = () => createHash("sha256").update(`webhook:${process.env.AUTH_SECRET ?? "dev"}`).digest("hex").slice(0, 32);
+/** Instância da Evolution de um tenant. */
+export const instanceOf = (tenant: number) => (tenant === 1 ? legacyInstance() : `t${tenant}`);
+
+/** Instância da Evolution do tenant atual. */
+export async function instanceName(): Promise<string> {
+  return instanceOf(await tenantId());
+}
+
+/**
+ * Segredo do webhook: derivado do AUTH_SECRET para ninguém de fora mandar mensagens falsas.
+ * O tenant 1 mantém a chave antiga (sem número), para o webhook já cadastrado continuar valendo.
+ */
+export const webhookKey = (tenant = 1) =>
+  createHash("sha256")
+    .update(tenant === 1 ? `webhook:${process.env.AUTH_SECRET ?? "dev"}` : `webhook:${process.env.AUTH_SECRET ?? "dev"}:${tenant}`)
+    .digest("hex")
+    .slice(0, 32);
+
+/** Parâmetros do endereço do webhook de um tenant. */
+export const webhookQuery = (tenant: number) => (tenant === 1 ? `key=${webhookKey(1)}` : `t=${tenant}&key=${webhookKey(tenant)}`);
+
+const sameKey = (a: string, b: string) => {
+  const x = Buffer.from(a);
+  const y = Buffer.from(b);
+  return x.length === y.length && timingSafeEqual(x, y);
+};
+
+/**
+ * Descobre o tenant de uma chamada do webhook. Com ?t=, a chave tem que ser a daquele tenant e, se a
+ * Evolution mandou o nome da instância, ele tem que ser o daquele tenant. Com a chave antiga (sem ?t=)
+ * é o tenant 1. Devolve null quando a chamada não vale.
+ */
+export function webhookTenant(params: URLSearchParams, instance: string | undefined): number | null {
+  const key = params.get("key") ?? "";
+  const t = params.get("t");
+  if (t === null) return sameKey(key, webhookKey(1)) ? 1 : null;
+  const id = Number(t);
+  if (!Number.isInteger(id) || id < 2 || !sameKey(key, webhookKey(id))) return null;
+  if (instance && instance !== instanceOf(id)) return null;
+  return id;
+}
 
 type EvoResult<T> = { ok: true; data: T } | { ok: false; status: number; error: string };
 
@@ -54,7 +96,7 @@ async function evo<T = Record<string, unknown>>(method: "GET" | "POST" | "DELETE
 const EVENTS = ["MESSAGES_UPSERT", "CONNECTION_UPDATE"];
 
 export async function connectWhatsApp(webhookUrl: string) {
-  const name = instanceName();
+  const name = await instanceName();
   const state = await connectionState();
   if (state.ok && state.data === null) {
     const created = await evo<{ qrcode?: { base64?: string } }>(
@@ -88,20 +130,23 @@ export async function connectWhatsApp(webhookUrl: string) {
 
 /** "open", "connecting", "close" ou null quando a instância ainda não existe. */
 export async function connectionState(): Promise<EvoResult<string | null>> {
-  const r = await evo<{ instance?: { state?: string } }>("GET", `instance/connectionState/${encodeURIComponent(instanceName())}`);
+  const name = await instanceName();
+  const r = await evo<{ instance?: { state?: string } }>("GET", `instance/connectionState/${encodeURIComponent(name)}`);
   if (r.ok) return { ok: true, data: r.data.instance?.state ?? null };
   if (r.status === 404 || /not exist|não existe/i.test(r.error)) return { ok: true, data: null };
   return r;
 }
 
 export async function instanceInfo() {
-  const r = await evo<{ ownerJid?: string; profileName?: string }[]>("GET", `instance/fetchInstances?instanceName=${encodeURIComponent(instanceName())}`);
+  const name = await instanceName();
+  const r = await evo<{ ownerJid?: string; profileName?: string }[]>("GET", `instance/fetchInstances?instanceName=${encodeURIComponent(name)}`);
   return r.ok && Array.isArray(r.data) ? (r.data[0] ?? null) : null;
 }
 
 export async function disconnectWhatsApp() {
-  await evo("DELETE", `instance/logout/${encodeURIComponent(instanceName())}`);
-  return evo("DELETE", `instance/delete/${encodeURIComponent(instanceName())}`);
+  const name = await instanceName();
+  await evo("DELETE", `instance/logout/${encodeURIComponent(name)}`);
+  return evo("DELETE", `instance/delete/${encodeURIComponent(name)}`);
 }
 
 /** "5511999990000@s.whatsapp.net" → "5511999990000". */
@@ -109,14 +154,15 @@ export const jidDigits = (jid: string | null | undefined) => (jid ?? "").split("
 
 export async function logMessage(phone: string, direction: "in" | "out", body: string, agent?: AgentKey | "dono" | null, extId?: string) {
   const rows = await q<{ id: number }>(
-    "insert into messages (phone, direction, body, agent, ext_id) values ($1, $2, $3, $4, $5) on conflict (ext_id) do nothing returning id",
-    [phone, direction, body, agent ?? null, extId ?? null],
+    `insert into messages (tenant_id, phone, direction, body, agent, ext_id) values ($1, $2, $3, $4, $5, $6)
+     on conflict (tenant_id, ext_id) do nothing returning id`,
+    [await tenantId(), phone, direction, body, agent ?? null, extId ?? null],
   );
   return rows.length > 0;
 }
 
 export async function logActivity(agent: AgentKey | "sistema", summary: string, phone?: string | null) {
-  await q("insert into activity (agent, summary, phone) values ($1, $2, $3)", [agent, summary, phone ?? null]);
+  await q("insert into activity (tenant_id, agent, summary, phone) values ($1, $2, $3, $4)", [await tenantId(), agent, summary, phone ?? null]);
 }
 
 /**
@@ -126,9 +172,13 @@ export async function logActivity(agent: AgentKey | "sistema", summary: string, 
 export async function send(phone: string, text: string, agent: AgentKey, opts: { simulated?: boolean } = {}) {
   await logMessage(phone, "out", text, agent);
   if (opts.simulated || phone === OWNER || !evoServer()) return { sent: false };
+  const name = await instanceName();
   const delay = Math.min(2500, 600 + text.length * 12);
-  const r = await evo("POST", `message/sendText/${encodeURIComponent(instanceName())}`, { number: phone, text, delay, linkPreview: true }, 30_000);
-  if (!r.ok) await logActivity("sistema", `Não consegui mandar mensagem para ${phone}: ${r.error}`, phone);
+  const r = await evo("POST", `message/sendText/${encodeURIComponent(name)}`, { number: phone, text, delay, linkPreview: true }, 30_000);
+  if (!r.ok) {
+    const why = r.status === 404 ? "o WhatsApp deste negócio não está conectado" : r.error;
+    await logActivity("sistema", `Não consegui mandar mensagem para ${phone}: ${why}`, phone);
+  }
   return { sent: r.ok };
 }
 
@@ -139,7 +189,8 @@ export async function sendOwner(ownerPhone: string, text: string, agent: AgentKe
 }
 
 export async function markRead(remoteJid: string, id: string) {
-  return evo("POST", `chat/markMessageAsRead/${encodeURIComponent(instanceName())}`, { readMessages: [{ id, fromMe: false, remoteJid }] });
+  const name = await instanceName();
+  return evo("POST", `chat/markMessageAsRead/${encodeURIComponent(name)}`, { readMessages: [{ id, fromMe: false, remoteJid }] });
 }
 
 // ---- Áudios recebidos (ver lib/audio.ts) ----

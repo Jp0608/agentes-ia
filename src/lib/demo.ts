@@ -2,6 +2,7 @@ import "server-only";
 import { q } from "./db";
 import { book, upsertClient } from "./booking";
 import type { Settings } from "./settings";
+import { tenantId } from "./tenant";
 import { addDays, dayKey, minutesOf, weekdayOf, zoned } from "./time";
 import { logActivity } from "./whatsapp";
 
@@ -38,7 +39,7 @@ export async function seedDemo(s: Settings, now = new Date()) {
     const start = zoned(day, `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`, tz);
     try {
       const a = await book(s, { clientId: clients[ci].id, service: svc(si), start, source: "demo" });
-      if (status) await q("update appointments set status = $2 where id = $1", [a.id, status]);
+      if (status) await q("update appointments set status = $2 where id = $1 and tenant_id = $3", [a.id, status, await tenantId()]);
     } catch {
       /* horário ocupado: ignora */
     }
@@ -62,23 +63,25 @@ export async function seedDemo(s: Settings, now = new Date()) {
   // Hoje.
   await at(8, today, "16:00", 0);
   // Lista de espera.
-  await q("insert into waitlist (client_id, service, wants) values ($1, $2, 'qualquer horário de manhã')", [clients[9].id, svc(0)]);
+  const t = await tenantId();
+  await q("insert into waitlist (tenant_id, client_id, service, wants) values ($1, $2, $3, 'qualquer horário de manhã')", [t, clients[9].id, svc(0)]);
   // Orçamento esperando resposta, enviado há 4 dias.
   const total = s.services.slice(0, 2).reduce((a, x) => a + x.price, 0);
   await q(
-    `insert into quotes (client_id, title, items, total, explanation, status, sent_at)
-     values ($1, $2, $3, $4, '', 'enviado', $5)`,
-    [clients[1].id, s.services[0].name, JSON.stringify(s.services.slice(0, 2).map((x) => ({ name: x.name, price: x.price }))), total, new Date(now.getTime() - 4 * 86400_000)],
+    `insert into quotes (tenant_id, client_id, title, items, total, explanation, status, sent_at)
+     values ($6, $1, $2, ($3::text)::jsonb, $4, '', 'enviado', $5)`,
+    [clients[1].id, s.services[0].name, JSON.stringify(s.services.slice(0, 2).map((x) => ({ name: x.name, price: x.price }))), total, new Date(now.getTime() - 4 * 86400_000), t],
   );
   await logActivity("sistema", "Dados de demonstração criados: 10 clientes simulados");
 }
 
 export async function clearDemo() {
-  await q("delete from messages where phone in (select phone from clients where simulated)");
-  await q("delete from messages where phone = 'dono'");
-  await q("delete from clients where simulated");
-  await q("delete from activity");
-  await q("delete from job_runs");
+  const t = await tenantId();
+  await q("delete from messages where tenant_id = $1 and phone in (select phone from clients where tenant_id = $1 and simulated)", [t]);
+  await q("delete from messages where tenant_id = $1 and phone = 'dono'", [t]);
+  await q("delete from clients where tenant_id = $1 and simulated", [t]);
+  await q("delete from activity where tenant_id = $1", [t]);
+  await q("delete from job_runs where tenant_id = $1", [t]);
 }
 
 export const SIM_ME = "5500000009999";

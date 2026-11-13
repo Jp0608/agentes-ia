@@ -83,13 +83,13 @@ export function PageHead({ eyebrow, title, children }: { eyebrow?: string; title
 
 const STATUS: Record<string, { label: string; color: string }> = {
   marcado: { label: "Marcado", color: "#a9b3ae" },
-  confirmado: { label: "Confirmado", color: "#4ade80" },
+  confirmado: { label: "Confirmado", color: "#aee627" },
   concluido: { label: "Atendido", color: "#60a5fa" },
   faltou: { label: "Faltou", color: "#fb7185" },
   cancelado: { label: "Cancelado", color: "#6f7a75" },
   rascunho: { label: "Rascunho", color: "#a9b3ae" },
   enviado: { label: "Enviado", color: "#fbbf24" },
-  aceito: { label: "Aceito", color: "#4ade80" },
+  aceito: { label: "Aceito", color: "#aee627" },
   recusado: { label: "Recusado", color: "#fb7185" },
 };
 

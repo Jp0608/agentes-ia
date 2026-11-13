@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { AGENTS, type AgentKey } from "@/lib/agents";
-import { checkPassword, createSession, endSession, requireLogin } from "@/lib/auth";
+import { authenticate, createAccount, SignupError, updateAccountPassword, updateAccountProfile } from "@/lib/accounts";
+import { createSession, endSession, failDelay, requireLogin, requireSession } from "@/lib/auth";
 import { book, BookingError, getAppointment, normalizePhone, setStatus, upsertClient } from "@/lib/booking";
 import { q } from "@/lib/db";
 import { clearDemo, seedDemo } from "@/lib/demo";
@@ -12,24 +13,74 @@ import { markNoShow, offerFreedSlot, runAgents } from "@/lib/jobs";
 import { findNiche } from "@/lib/niches";
 import { createQuote, sendQuote } from "@/lib/quotes";
 import { defaultSettings, getSettings, saveSettings, TONES, type DayHours, type Persona, type Service, type Tone } from "@/lib/settings";
+import { tenantId } from "@/lib/tenant";
 import { zoned } from "@/lib/time";
-import { connectWhatsApp, disconnectWhatsApp, logActivity, webhookKey } from "@/lib/whatsapp";
+import { connectWhatsApp, disconnectWhatsApp, logActivity, webhookQuery } from "@/lib/whatsapp";
 
 export type ActionState = { ok?: string; error?: string } | null;
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
-/* ---------- Login ---------- */
+/* ---------- Login, cadastro e conta ---------- */
 
 export async function login(_: ActionState, f: FormData): Promise<ActionState> {
-  if (!checkPassword(str(f, "senha"))) return { error: "Senha errada." };
-  await createSession();
+  const a = await authenticate(str(f, "email"), String(f.get("senha") ?? ""));
+  if (!a) {
+    await failDelay();
+    return { error: "E-mail ou senha errados." };
+  }
+  await createSession({ tenantId: a.tenant_id, accountId: a.id });
   redirect("/painel");
+}
+
+export async function signup(_: ActionState, f: FormData): Promise<ActionState> {
+  const password = String(f.get("senha") ?? "");
+  if (password !== String(f.get("confirmar") ?? "")) return { error: "As senhas não são iguais." };
+  let account: Awaited<ReturnType<typeof createAccount>>;
+  try {
+    account = await createAccount({ name: str(f, "businessName"), email: str(f, "email"), password });
+  } catch (e) {
+    if (e instanceof SignupError) {
+      await failDelay();
+      return { error: e.message };
+    }
+    throw e;
+  }
+  await createSession({ tenantId: account.tenant_id, accountId: account.id });
+  redirect("/painel/configurar");
 }
 
 export async function logout() {
   await endSession();
   redirect("/entrar");
+}
+
+export async function saveAccount(_: ActionState, f: FormData): Promise<ActionState> {
+  const { accountId } = await requireSession();
+  try {
+    await updateAccountProfile(accountId, { name: str(f, "name"), email: str(f, "email") });
+  } catch (e) {
+    if (e instanceof SignupError) return { error: e.message };
+    throw e;
+  }
+  revalidatePath("/painel/conta");
+  return { ok: "Dados salvos." };
+}
+
+export async function changePassword(_: ActionState, f: FormData): Promise<ActionState> {
+  const { accountId } = await requireSession();
+  const next = String(f.get("nova") ?? "");
+  if (next !== String(f.get("confirmar") ?? "")) return { error: "As senhas novas não são iguais." };
+  try {
+    await updateAccountPassword(accountId, String(f.get("atual") ?? ""), next);
+  } catch (e) {
+    if (e instanceof SignupError) {
+      await failDelay();
+      return { error: e.message };
+    }
+    throw e;
+  }
+  return { ok: "Senha trocada." };
 }
 
 /* ---------- Configuração ---------- */
@@ -178,7 +229,7 @@ export async function newClient(_: ActionState, f: FormData): Promise<ActionStat
 
 export async function saveNotes(id: number, notes: string) {
   await requireLogin();
-  await q("update clients set notes = $2 where id = $1", [id, notes.slice(0, 2000)]);
+  await q("update clients set notes = $2 where id = $1 and tenant_id = $3", [id, notes.slice(0, 2000), await tenantId()]);
   revalidatePath("/painel/clientes");
 }
 
@@ -233,7 +284,7 @@ async function origin() {
 
 export async function whatsappConnect() {
   await requireLogin();
-  const url = `${await origin()}/api/whatsapp/webhook?key=${webhookKey()}`;
+  const url = `${await origin()}/api/whatsapp/webhook?${webhookQuery(await tenantId())}`;
   const r = await connectWhatsApp(url);
   if (!r.ok) return { error: r.error };
   return { qr: r.data.qr, state: r.data.state };

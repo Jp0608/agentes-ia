@@ -31,7 +31,7 @@ export default async function Page() {
               ))}
             </select>
             <label className="mt-2 flex items-center gap-2 text-[13px] text-soft">
-              <input type="checkbox" name="useNicheServices" defaultChecked={!s.configured} className="h-4 w-4 accent-[#4ade80]" />
+              <input type="checkbox" name="useNicheServices" defaultChecked={!s.configured} className="h-4 w-4 accent-[#aee627]" />
               Ao trocar o tipo, usar os serviços, os locais de atendimento e o tempo de retorno do novo nicho
             </label>
           </div>
@@ -62,7 +62,7 @@ export default async function Page() {
           <h2 className="text-[15px] font-semibold">Horário de funcionamento</h2>
           {WEEKDAYS.map((d, i) => (
             <div key={d} className="flex flex-wrap items-center gap-3">
-              <label className="flex w-28 items-center gap-2 text-[14px] capitalize"><input type="checkbox" name={`open-${i}`} defaultChecked={Boolean(s.hours[i])} className="h-4 w-4 accent-[#4ade80]" /> {d}</label>
+              <label className="flex w-28 items-center gap-2 text-[14px] capitalize"><input type="checkbox" name={`open-${i}`} defaultChecked={Boolean(s.hours[i])} className="h-4 w-4 accent-[#aee627]" /> {d}</label>
               <label className="sr-only" htmlFor={`from-${i}`}>Abre {d}</label>
               <input id={`from-${i}`} name={`from-${i}`} type="time" className="field w-32" defaultValue={s.hours[i]?.open ?? "09:00"} />
               <span className="text-faint">às</span>

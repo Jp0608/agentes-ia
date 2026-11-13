@@ -1,23 +1,24 @@
 @import "tailwindcss";
 
-/* Tela de operação: grafite com acentos por setor, como o mapa de agentes. */
+/* Visual do AgendaFlow: grafite, verde-limão, Outfit nos títulos e Hanken Grotesk no texto. */
 @theme {
-  --color-bg: #0a0d0c;
-  --color-panel: #0f1312;
-  --color-raise: #151a18;
-  --color-raise-2: #1c2220;
-  --color-line: #222a27;
-  --color-line-soft: #1a201e;
-  --color-ink: #e8ece9;
-  --color-soft: #a9b3ae;
-  --color-faint: #6f7a75;
-  --color-signal: #4ade80;
-  --color-on-signal: #06140b;
+  --color-bg: #121414;
+  --color-panel: #1a1c1c;
+  --color-raise: #1e2020;
+  --color-raise-2: #282a2a;
+  --color-line: #333535;
+  --color-line-soft: #262828;
+  --color-ink: #e2e2e2;
+  --color-soft: #c3c9af;
+  --color-faint: #8d9379;
+  --color-signal: #aee627;
+  --color-on-signal: #1f2d00;
   --color-warn: #fbbf24;
   --color-alert: #fb7185;
   --color-info: #60a5fa;
 
-  --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-hanken), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-outfit), var(--font-hanken), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
@@ -27,6 +28,7 @@ body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; -webk
 ::selection { background: color-mix(in oklab, var(--color-signal) 35%, transparent); }
 :focus-visible { outline: 2px solid var(--color-signal); outline-offset: 2px; }
 input, select, textarea { color-scheme: dark; }
+h1, h2, h3 { font-family: var(--font-display); }
 
 .ms {
   font-family: "Material Symbols Outlined";
