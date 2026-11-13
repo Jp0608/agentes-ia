@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { Icon } from "./Icon";
 
 export const NAV = [
-  { href: "/painel", label: "Hoje", icon: "wb_sunny" },
+  { href: "/painel", label: "Painel", icon: "dashboard" },
   { href: "/painel/agenda", label: "Agenda", icon: "calendar_month" },
   { href: "/painel/simulador", label: "Simulador", icon: "smartphone" },
   { href: "/painel/conversas", label: "Conversas", icon: "forum" },
@@ -15,6 +15,7 @@ export const NAV = [
   { href: "/painel/mapa", label: "Mapa", icon: "hub" },
   { href: "/painel/whatsapp", label: "WhatsApp", icon: "qr_code_2" },
   { href: "/painel/configurar", label: "Configurar", icon: "tune" },
+  { href: "/painel/conta", label: "Conta", icon: "account_circle" },
 ];
 
 export function Nav() {
