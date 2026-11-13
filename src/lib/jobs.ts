@@ -323,3 +323,17 @@ export async function runAgents(s: Settings, opts: { now?: Date; force?: boolean
   if (agentOn(s, "manha")) report.manha = await morning(ctx);
   return report;
 }
+
+/**
+ * Roda os agentes no máximo uma vez a cada 10 minutos, aproveitando visitas ao painel e mensagens
+ * que chegam. Garante que tudo anda mesmo sem o agendador externo (/api/cron).
+ */
+export async function maybeRunAgents(s: Settings) {
+  if (!s.configured) return null;
+  const rows = await q(
+    `insert into job_runs (key, ran_at) values ('tick', now())
+     on conflict (key) do update set ran_at = now() where job_runs.ran_at < now() - interval '10 minutes'
+     returning key`,
+  );
+  return rows.length ? runAgents(s) : null;
+}

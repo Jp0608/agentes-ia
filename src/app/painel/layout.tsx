@@ -1,7 +1,9 @@
+import { after } from "next/server";
 import { Icon } from "@/components/Icon";
 import { Nav } from "@/components/Nav";
 import { requireLogin } from "@/lib/auth";
 import { aiReady } from "@/lib/brain";
+import { maybeRunAgents } from "@/lib/jobs";
 import { findNiche } from "@/lib/niches";
 import { getSettings } from "@/lib/settings";
 import { evoServer } from "@/lib/whatsapp";
@@ -12,6 +14,7 @@ export const dynamic = "force-dynamic";
 export default async function PanelLayout({ children }: { children: React.ReactNode }) {
   await requireLogin();
   const s = await getSettings();
+  after(() => maybeRunAgents(s).catch(() => null));
   const n = findNiche(s.niche);
   return (
     <div className="mx-auto flex min-h-dvh max-w-7xl flex-col lg:flex-row">

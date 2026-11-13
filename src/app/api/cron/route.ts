@@ -1,3 +1,4 @@
+import { q } from "@/lib/db";
 import { runAgents } from "@/lib/jobs";
 import { getSettings } from "@/lib/settings";
 
@@ -14,5 +15,6 @@ export async function GET(req: Request) {
   if (!secret || given !== secret) return Response.json({ error: "não autorizado" }, { status: 401 });
   const s = await getSettings();
   if (!s.configured) return Response.json({ skipped: "não configurado" });
+  await q("insert into job_runs (key, ran_at) values ('tick', now()) on conflict (key) do update set ran_at = now()");
   return Response.json(await runAgents(s));
 }

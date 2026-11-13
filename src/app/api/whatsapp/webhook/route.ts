@@ -1,5 +1,7 @@
 import { after } from "next/server";
 import { handleInbound } from "@/lib/inbound";
+import { maybeRunAgents } from "@/lib/jobs";
+import { getSettings } from "@/lib/settings";
 import { jidDigits, logActivity, markRead, webhookKey } from "@/lib/whatsapp";
 
 export const dynamic = "force-dynamic";
@@ -62,6 +64,7 @@ export async function POST(req: Request) {
         await logActivity("sistema", `Erro ao responder ${phone}: ${(e as Error).message}`, phone);
       }
     }
+    await maybeRunAgents(await getSettings()).catch(() => null);
   });
   return new Response("ok");
 }
