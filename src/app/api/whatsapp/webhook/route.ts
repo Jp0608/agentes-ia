@@ -36,7 +36,7 @@ export async function POST(req: Request) {
   if (!payload) return new Response("ok");
   const event = (payload.event ?? "").toLowerCase().replace(/_/g, ".");
 
-  after(() => withTenant(tenant, async () => {
+  const run = () => withTenant(tenant, async () => {
     if (event === "connection.update") {
       const state = (payload.data as { state?: string })?.state;
       if (state === "open") await logActivity("sistema", "WhatsApp conectado");
@@ -69,10 +69,15 @@ export async function POST(req: Request) {
       try {
         await handleInbound({ phone, name: m.pushName, text: text.slice(0, 2000), extId: k.id });
       } catch (e) {
+        console.error("erro ao responder", phone, e);
         await logActivity("sistema", `Erro ao responder ${phone}: ${(e as Error).message}`, phone);
       }
     }
     await maybeRunAgents(await getSettings()).catch(() => null);
-  }));
+  });
+  // Na Vercel o trabalho segue depois da resposta. Em outras hospedagens (Netlify) a função é
+  // encerrada assim que responde, então a mensagem é atendida antes de responder ao webhook.
+  if (process.env.VERCEL) after(run);
+  else await run().catch((e) => console.error("webhook do WhatsApp:", e));
   return new Response("ok");
 }
