@@ -56,9 +56,29 @@ function gatewayToken(): string | undefined {
 }
 
 let client: Anthropic | null = null;
+// Prazo curto e uma repetição só: o padrão do SDK (10 min, 2 repetições) passa do limite da função
+// (60 s na Vercel, menos na Netlify) e o cliente ficaria sem resposta nenhuma.
+const LIMITS = { timeout: 25_000, maxRetries: 1 };
 const anthropic = () => {
-  if (useGateway()) return new Anthropic({ apiKey: gatewayToken() ?? "sem-token", baseURL: GATEWAY_URL });
-  return (client ??= new Anthropic());
+  if (useGateway()) return new Anthropic({ apiKey: gatewayToken() ?? "sem-token", baseURL: GATEWAY_URL, ...LIMITS });
+  return (client ??= new Anthropic(LIMITS));
+};
+
+/** Depois que o modelo recusou os campos beta uma vez, as próximas chamadas vão direto no básico. */
+let plainOnly = false;
+const plainParams = (params: AnyParams): AnyParams => {
+  const { fallbacks: _f, output_config: _o, tools, ...rest } = params;
+  void _f;
+  void _o;
+  const plain: AnyParams = { ...rest, model: MODEL() };
+  if (Array.isArray(tools)) {
+    plain.tools = tools.map((t: AnyParams) => {
+      const { strict: _s, ...tool } = t;
+      void _s;
+      return tool;
+    });
+  }
+  return plain;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -66,42 +86,21 @@ type AnyParams = Record<string, any>;
 
 /** Chama o modelo. No gateway vão só os campos padrão da API (sem betas da Anthropic). */
 async function createMessage(params: AnyParams): Promise<Anthropic.Beta.BetaMessage> {
-  if (useGateway()) {
-    const { fallbacks: _f, output_config: _o, tools, ...rest } = params;
-    void _f;
-    void _o;
-    const body: AnyParams = { ...rest, model: MODEL() };
-    if (Array.isArray(tools)) {
-      body.tools = tools.map((t: AnyParams) => {
-        const { strict: _s, ...tool } = t;
-        void _s;
-        return tool;
-      });
-    }
+  if (useGateway() || plainOnly) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return (await anthropic().messages.create(body as any)) as unknown as Anthropic.Beta.BetaMessage;
+    return (await anthropic().messages.create(plainParams(params) as any)) as unknown as Anthropic.Beta.BetaMessage;
   }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const body: any = { ...params, model: MODEL(), betas: ["server-side-fallback-2026-07-01"] };
   try {
     return (await anthropic().beta.messages.create(body)) as unknown as Anthropic.Beta.BetaMessage;
   } catch (e) {
-    // Modelos menores (Haiku) recusam os campos extras: repete só com o básico da API.
+    // Modelos menores (Haiku) recusam os campos extras: repete só com o básico da API (e lembra disso).
     const status = (e as { status?: number }).status;
     if (status !== 400 || !/effort|fallback|output_config|beta|strict/i.test((e as Error).message ?? "")) throw e;
-    const { fallbacks: _f, output_config: _o, tools, ...rest } = params;
-    void _f;
-    void _o;
-    const plain: AnyParams = { ...rest, model: MODEL() };
-    if (Array.isArray(tools)) {
-      plain.tools = tools.map((t: AnyParams) => {
-        const { strict: _s, ...tool } = t;
-        void _s;
-        return tool;
-      });
-    }
+    plainOnly = true;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return (await anthropic().messages.create(plain as any)) as unknown as Anthropic.Beta.BetaMessage;
+    return (await anthropic().messages.create(plainParams(params) as any)) as unknown as Anthropic.Beta.BetaMessage;
   }
 }
 
@@ -399,7 +398,8 @@ export async function registerReview(s: Settings, c: Client, nota: number, comen
   const t = await tenantId();
   const rows = await q<{ id: number; service: string }>(
     `update appointments set review_score = $2, review_text = $3
-     where tenant_id = $4 and id = (select id from appointments where tenant_id = $4 and client_id = $1 and status = 'concluido' order by starts_at desc limit 1)
+     where tenant_id = $4 and id = (select id from appointments where tenant_id = $4 and client_id = $1 and status = 'concluido'
+       order by (review_asked_at is not null and review_score is null) desc, starts_at desc limit 1)
      returning id, service`,
     [c.id, nota, comentario.slice(0, 500), t],
   );
@@ -439,14 +439,21 @@ export const aiReady = () => (useGateway() ? true : Boolean(process.env.ANTHROPI
 /** Responde a conversa do cliente. Devolve o texto enviado (ou null quando não precisa responder). */
 export async function reply(s: Settings, c: Client, opts: { now?: Date } = {}): Promise<string | null> {
   const now = opts.now ?? new Date();
-  const history = (
-    await q<Msg>(
-      `select direction, body from (
-         select direction, body, created_at from messages where tenant_id = $3 and phone = $1 and created_at > $2 order by created_at desc limit 30
-       ) t order by created_at`,
-      [c.phone, new Date(now.getTime() - 48 * 3600_000), await tenantId()],
-    )
-  ).map((m) => ({ direction: m.direction, body: m.body }));
+  const t = await tenantId();
+  const rows = await q<Msg & { id: number }>(
+    `select id, direction, body from (
+       select id, direction, body, created_at from messages where tenant_id = $3 and phone = $1 and created_at > $2 order by created_at desc, id desc limit 30
+     ) t order by created_at, id`,
+    [c.phone, new Date(now.getTime() - 48 * 3600_000), t],
+  );
+  const history = rows.map((m) => ({ direction: m.direction, body: m.body }));
+  const lastIn = Math.max(0, ...rows.filter((m) => m.direction === "in").map((m) => Number(m.id)));
+  /**
+   * Cliente que manda várias mensagens seguidas gera um atendimento para cada uma (rodam ao mesmo
+   * tempo). Só responde quem leu a última: se chegou outra depois, aquele atendimento responde tudo.
+   */
+  const newerArrived = async () =>
+    (await q("select 1 from messages where tenant_id = $1 and phone = $2 and direction = 'in' and id > $3 limit 1", [t, c.phone, lastIn])).length > 0;
 
   if (!aiReady()) {
     const text = `Oi${c.name ? `, ${shortName(c.name)}` : ""}! Recebi sua mensagem e já vou te responder.`;
@@ -461,43 +468,51 @@ export async function reply(s: Settings, c: Client, opts: { now?: Date } = {}): 
     { type: "text", text: await contextBlock(s, c, now) },
   ];
 
-  for (let i = 0; i < 8; i++) {
-    const res = await createMessage({
-      max_tokens: 4000,
-      fallbacks: "default",
-      output_config: { effort: "low" },
-      system,
-      tools: TOOLS,
-      messages,
-    });
-    if (res.stop_reason === "refusal") break;
-    messages.push({ role: "assistant", content: res.content });
-    const uses = res.content.filter((b): b is Anthropic.Beta.BetaToolUseBlock => b.type === "tool_use");
-    if (res.stop_reason === "tool_use" && uses.length) {
-      const results: Anthropic.Beta.BetaToolResultBlockParam[] = [];
-      for (const u of uses) {
-        try {
-          const out = await runTool(u.name, (u.input ?? {}) as Record<string, unknown>, { s, c, now });
-          results.push({ type: "tool_result", tool_use_id: u.id, content: out });
-        } catch (e) {
-          results.push({ type: "tool_result", tool_use_id: u.id, content: `Erro: ${(e as Error).message}`, is_error: true });
+  try {
+    for (let i = 0; i < 8; i++) {
+      const res = await createMessage({
+        max_tokens: 4000,
+        fallbacks: "default",
+        output_config: { effort: "low" },
+        system,
+        tools: TOOLS,
+        messages,
+      });
+      if (res.stop_reason === "refusal") break;
+      messages.push({ role: "assistant", content: res.content });
+      const uses = res.content.filter((b): b is Anthropic.Beta.BetaToolUseBlock => b.type === "tool_use");
+      if (res.stop_reason === "tool_use" && uses.length) {
+        const results: Anthropic.Beta.BetaToolResultBlockParam[] = [];
+        for (const u of uses) {
+          try {
+            const out = await runTool(u.name, (u.input ?? {}) as Record<string, unknown>, { s, c, now });
+            results.push({ type: "tool_result", tool_use_id: u.id, content: out });
+          } catch (e) {
+            results.push({ type: "tool_result", tool_use_id: u.id, content: `Erro: ${(e as Error).message}`, is_error: true });
+          }
         }
+        messages.push({ role: "user", content: results });
+        continue;
       }
-      messages.push({ role: "user", content: results });
-      continue;
+      const text = res.content
+        .filter((b): b is Anthropic.Beta.BetaTextBlock => b.type === "text")
+        .map((b) => b.text)
+        .join("\n")
+        .trim();
+      if (!text || text.includes("[sem resposta]")) return null;
+      if (await newerArrived()) return null;
+      await send(c.phone, text, "recepcao", { simulated: c.simulated });
+      return text;
     }
-    const text = res.content
-      .filter((b): b is Anthropic.Beta.BetaTextBlock => b.type === "text")
-      .map((b) => b.text)
-      .join("\n")
-      .trim();
-    if (!text || text.includes("[sem resposta]")) return null;
-    await send(c.phone, text, "recepcao", { simulated: c.simulated });
-    return text;
+  } catch (e) {
+    // Falha da IA (fora do ar, demora, chave): o cliente não fica no vácuo e o dono fica sabendo.
+    console.error("recepção:", e);
+    await logActivity("sistema", `Erro da IA ao responder ${c.name || c.phone}: ${(e as Error).message}`.slice(0, 500), c.phone);
   }
-  const fallback = "Desculpa, me enrolei aqui. Já te respondo!";
+  if (await newerArrived()) return null;
+  const fallback = "Desculpa, tive um probleminha aqui. Já já te respondo!";
   await send(c.phone, fallback, "recepcao", { simulated: c.simulated });
-  await sendOwner(s.ownerPhone, `🔔 A recepção não conseguiu responder ${c.name || c.phone}. Dá uma olhada na conversa.`, "recepcao");
+  await sendOwner(s.ownerPhone, `🔔 A recepção não conseguiu responder ${c.name || c.phone} (${c.phone}). Dá uma olhada na conversa.`, "recepcao");
   return fallback;
 }
 

@@ -70,7 +70,8 @@ export async function createSession(s: Session) {
 }
 
 export async function endSession() {
-  (await cookies()).delete(COOKIE);
+  // Mesmo caminho do cookie criado (path "/"), senão o navegador mantém a sessão.
+  (await cookies()).set(COOKIE, "", { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 0 });
 }
 
 /** Tokens já conferidos (a mesma página consulta o tenant muitas vezes). */

@@ -16,6 +16,22 @@ import { logActivity, send, sendOwner } from "./whatsapp";
 const first = (name: string) => shortName(name);
 const hi = (name: string) => (name ? `Oi, ${first(name)}!` : "Oi!");
 
+/** "Corte" → "corte", "RPG" fica como está. */
+const lower = (term: string) => {
+  const t = term.trim();
+  return /^.[A-ZÀ-Ú]/.test(t) ? t : t.charAt(0).toLowerCase() + t.slice(1);
+};
+const MASC_A = /^(dia|mapa|programa|sistema|problema|tema|clima|drama|idioma|pijama|cinema|check)$/;
+const MASC_AO = /^(botão|cartão|pão|feijão|cão|chão|balcão|sabão|mamão|algodão|bastão)$/;
+/** Gênero pela primeira palavra: "Limpeza de pele" e "Pé e mão" pedem "a" e "o", não pela última. */
+export function feminine(term: string) {
+  const w = lower(term).split(/[\s\-(]+/)[0].toLowerCase();
+  if (MASC_A.test(w) || MASC_AO.test(w)) return false;
+  return /(a|ã|ão|gem|dade|ise)$/.test(w);
+}
+/** "o seu corte", "a sua limpeza de pele". */
+const oSeu = (term: string) => `${feminine(term) ? "a sua" : "o seu"} ${lower(term)}`;
+
 async function once(key: string) {
   const rows = await q("insert into job_runs (tenant_id, key) values ($1, $2) on conflict (tenant_id, key) do nothing returning key", [await tenantId(), key]);
   return rows.length > 0;
@@ -48,9 +64,14 @@ async function reminders({ s, now, force }: Ctx) {
       (day === today && a.starts_at.getTime() - now.getTime() <= 3 * 3600_000) ||
       (day === today && a.created_at.getTime() < zoned(today, "00:00", tz).getTime());
     if (!due) continue;
-    const text = `${hi(a.client_name)} Passando para lembrar: ${a.service} ${whenLabel(a.starts_at, tz, now)}${s.address ? `, na ${s.address}` : ""}.\nResponde 1 para confirmar ou 2 para cancelar.`;
+    // Marca antes de mandar: duas rodadas ao mesmo tempo (cron e webhook) não mandam o lembrete duas vezes.
+    const claimed = await q("update appointments set reminder_sent_at = now() where id = $1 and tenant_id = $2 and reminder_sent_at is null returning id", [
+      a.id,
+      await tenantId(),
+    ]);
+    if (!claimed.length) continue;
+    const text = `${hi(a.client_name)} Passando para lembrar ${feminine(a.service) ? "da sua" : "do seu"} ${lower(a.service)} ${whenLabel(a.starts_at, tz, now)}.${s.address ? `\n📍 ${s.address}` : ""}\nResponde 1 para confirmar ou 2 para cancelar.`;
     await send(a.client_phone, text, "lembretes", { simulated: a.client_simulated });
-    await q("update appointments set reminder_sent_at = now() where id = $1 and tenant_id = $2", [a.id, await tenantId()]);
     await logActivity("lembretes", `Lembrete para ${a.client_name || a.client_phone}: ${a.service} ${whenLabel(a.starts_at, tz, now)}`, a.client_phone);
     n++;
   }
@@ -75,7 +96,7 @@ export async function handleReminderReply(s: Settings, c: Client, text: string, 
   const tz = s.timezone;
   if (yes) {
     await setStatus(a.id, "confirmado");
-    await send(c.phone, `Confirmado! Te espero ${whenLabel(a.starts_at, tz, now)}. 👍`, "lembretes", { simulated: c.simulated });
+    await send(c.phone, `Confirmado! Te esperamos ${whenLabel(a.starts_at, tz, now)}. 👍`, "lembretes", { simulated: c.simulated });
     await logActivity("lembretes", `${c.name || c.phone} confirmou ${a.service} ${whenLabel(a.starts_at, tz, now)}`, c.phone);
     return true;
   }
@@ -113,7 +134,7 @@ export async function offerFreedSlot(s: Settings, a: Pick<Appointment, "service"
   )[0];
   if (!w) return false;
   const when = whenLabel(a.starts_at, s.timezone, now);
-  await send(w.phone, `${hi(w.name)} Abriu uma vaga ${when} para ${a.service}. Quer? Responde aqui que eu já marco.`, "espera", { simulated: w.simulated });
+  await send(w.phone, `${hi(w.name)} Abriu uma vaga para ${lower(a.service)} ${when}. Quer? É só responder aqui que eu já marco.`, "espera", { simulated: w.simulated });
   await q("update waitlist set status = 'oferecido', offered_at = now() where id = $1 and tenant_id = $2", [w.id, t]);
   await logActivity("espera", `Vaga de ${when} (${a.service}) oferecida para ${w.name || w.phone}`, w.phone);
   return true;
@@ -132,7 +153,7 @@ export async function markNoShow(s: Settings, id: number, now = new Date()) {
   const next = await nextFreeSlots(s, a.service, { now, limit: 2 });
   await send(
     a.client_phone,
-    `${hi(a.client_name)} Senti sua falta hoje às ${hourLabel(a.starts_at, tz)}. Aconteceu alguma coisa? ${next.length ? `Se quiser remarcar, tenho ${next.map((x) => whenLabel(x.start, tz, now)).join(" ou ")}.` : "Quando quiser remarcar, é só me chamar."}`,
+    `${hi(a.client_name)} Sentimos sua falta ${whenLabel(a.starts_at, tz, now)}. Aconteceu alguma coisa? ${next.length ? `Se quiser remarcar, tenho ${next.map((x) => whenLabel(x.start, tz, now)).join(" ou ")}.` : "Quando quiser remarcar, é só me chamar."}`,
     "faltas",
     { simulated: a.client_simulated },
   );
@@ -175,14 +196,19 @@ async function reviews({ s, now, force }: Ctx) {
   for (const a of rows) {
     if (seen.has(a.client_id)) continue;
     seen.add(a.client_id);
-    const n2 = findNiche(s.niche);
+    const claimed = await q("update appointments set review_asked_at = now() where id = $1 and tenant_id = $2 and review_asked_at is null returning id", [
+      a.id,
+      await tenantId(),
+    ]);
+    if (!claimed.length) continue;
+    const visit = findNiche(s.niche).visit;
+    const yesterday = dayKey(a.starts_at, tz) === addDays(dayKey(now, tz), -1);
     await send(
       a.client_phone,
-      `${hi(a.client_name)} Obrigado pela visita ${dayKey(a.starts_at, tz) === addDays(dayKey(now, tz), -1) ? "ontem" : ""}. Como foi ${/(a|ão)$/.test(n2.visit) ? "a sua" : "o seu"} ${n2.visit}? Me dá uma nota de 1 a 5.`.replace("  ", " "),
+      `${hi(a.client_name)} Obrigado pela preferência! Como foi ${oSeu(visit)}${yesterday ? " de ontem" : ""}? Me dá uma nota de 1 a 5.`,
       "avaliacoes",
       { simulated: a.client_simulated },
     );
-    await q("update appointments set review_asked_at = now() where id = $1 and tenant_id = $2", [a.id, await tenantId()]);
     await logActivity("avaliacoes", `Pediu nota a ${a.client_name || a.client_phone} (${a.service})`, a.client_phone);
     n++;
   }
@@ -226,8 +252,13 @@ async function returns({ s, now, force }: Ctx) {
     const slot = (await nextFreeSlots(s, c.service, { now, limit: 1, fromDay: addDays(dayKey(now, tz), 1) }))[0];
     const offer = slot ? ` Tenho ${whenLabel(slot.start, tz, now)}, posso marcar?` : " Quer que eu veja um horário?";
     const since = days >= 150 ? `${Math.round(days / 30)} meses` : `${days} dias`;
-    await send(c.phone, `${hi(c.name)} Já faz ${since} ${/(a|ão)$/i.test(c.service.trim()) ? "da sua" : "do seu"} ${c.service.toLowerCase()}.${offer}`, "retornos", { simulated: c.simulated });
-    await q("update clients set last_return_at = now() where id = $1 and tenant_id = $2", [c.id, await tenantId()]);
+    const claimed = await q(
+      "update clients set last_return_at = now() where id = $1 and tenant_id = $2 and (last_return_at is null or last_return_at < $3) returning id",
+      [c.id, await tenantId(), new Date(now.getTime() - 30 * 86400_000)],
+    );
+    if (!claimed.length) continue;
+    const last = feminine(c.service) ? "a sua última" : "o seu último";
+    await send(c.phone, `${hi(c.name)} Já faz ${since} desde ${last} ${lower(c.service)}.${offer}`, "retornos", { simulated: c.simulated });
     await logActivity("retornos", `Chamou ${c.name || c.phone} de volta (${c.service}, ${since})`, c.phone);
     n++;
   }
@@ -251,8 +282,12 @@ async function quoteFollowups({ s, now, force }: Ctx) {
       r.followups === 0
         ? `${hi(r.name)} Ficou alguma dúvida sobre o orçamento de ${r.title}? Se quiser, já reservo o primeiro horário para você.`
         : `${hi(r.name)} Passando uma última vez sobre o orçamento de ${r.title}. Se mudar de ideia, é só me chamar aqui.`;
+    const claimed = await q(
+      "update quotes set followups = followups + 1, last_followup_at = now() where id = $1 and tenant_id = $2 and followups = $3 returning id",
+      [r.id, await tenantId(), r.followups],
+    );
+    if (!claimed.length) continue;
     await send(r.phone, text, "orcamentos", { simulated: r.simulated });
-    await q("update quotes set followups = followups + 1, last_followup_at = now() where id = $1 and tenant_id = $2", [r.id, await tenantId()]);
     await logActivity("orcamentos", `${r.followups === 0 ? "Retorno do 3º dia" : "Último retorno"} do orçamento "${r.title}" para ${r.name || r.phone}`, r.phone);
     n++;
   }
