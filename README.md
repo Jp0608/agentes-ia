@@ -52,3 +52,6 @@ Abra http://localhost:3000 e entre com a senha `demo1234`. Sem `DATABASE_URL`, o
 - IA: cada mensagem respondida custa centavos. O modelo padrão é `claude-opus-5-5`; para gastar menos, troque `ANTHROPIC_MODEL` por `claude-sonnet-5-5` ou `claude-haiku-5-5`.
 
 > A Evolution API usa o protocolo do WhatsApp Web, não a API oficial. Para atender clientes não há problema prático, mas não use para disparos em massa: o WhatsApp pode bloquear o número.
+
+
+Endereço: https://agendaflow-br.netlify.app
