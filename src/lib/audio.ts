@@ -15,7 +15,18 @@ import { fetchMediaBase64, type EvoServer } from "./whatsapp";
 const GATEWAY_URL = "https://ai-gateway.vercel.sh";
 const DEFAULT_MODEL = "google/gemini-3.8-flash";
 const MAX_BYTES = 15 * 1024 * 1024; // áudio de WhatsApp tem uns 100 KB por minuto; isso é muito mais do que precisa
-const TIMEOUT_MS = 20_000;
+const TIMEOUT_MS = 25_000;
+/** Modelos de conversa que aceitam arquivo de áudio, do mais barato para o mais caro. */
+const FREE_CANDIDATES = [
+  "google/gemini-2.5-flash-lite",
+  "google/gemini-3.1-flash-lite",
+  "google/gemini-3.5-flash-lite",
+  "google/gemini-2.5-flash",
+  "google/gemini-3-flash",
+  "google/gemini-3.6-flash",
+  "google/gemini-3.7-flash",
+  "meta/muse-ember",
+];
 const INAUDIVEL = "[inaudivel]";
 
 /** O que fica no histórico (e é o que a recepção lê como fala do cliente). */
@@ -143,21 +154,24 @@ export async function transcribeAudio(
   const type = baseMime(mime);
   const model = opts.model ?? (process.env.TRANSCRIBE_MODEL?.trim() || DEFAULT_MODEL);
   const fallback = opts.fallbackModel ?? (process.env.TRANSCRIBE_FALLBACK_MODEL?.trim() || DEFAULT_MODEL);
-  // Um só prazo para as duas tentativas: a função da Vercel tem 60 s no total.
+  // Um só prazo para todas as tentativas: a função tem 60 s no total.
   const signal = AbortSignal.timeout(opts.timeoutMs ?? TIMEOUT_MS);
-  try {
-    if (!isTranscriptionModel(model)) return await viaChatModel(buf, type, model, token, signal);
+  // O plano grátis do gateway só libera alguns modelos e a lista muda: tenta um a um até um aceitar.
+  const chain = [...new Set([model, fallback, ...FREE_CANDIDATES])];
+  let last = "";
+  for (const m of chain) {
+    if (signal.aborted) break;
     try {
-      return await viaTranscriptionModel(buf, type, model, token, signal);
+      const text = isTranscriptionModel(m) ? await viaTranscriptionModel(buf, type, m, token, signal) : await viaChatModel(buf, type, m, token, signal);
+      console.log(`[audio] transcrito com ${m}`);
+      return text;
     } catch (e) {
-      if (signal.aborted || fallback === model || isTranscriptionModel(fallback)) throw e;
-      console.warn(`[audio] ${(e as Error).message}; tentando ${fallback}`);
-      return await viaChatModel(buf, type, fallback, token, signal);
+      last = `${m}: ${(e as Error).message}`;
+      console.warn(`[audio] ${last}`);
     }
-  } catch (e) {
-    console.warn(`[audio] não consegui transcrever: ${(e as Error).message}`);
-    return null;
   }
+  console.warn(`[audio] não consegui transcrever. Último erro: ${last}`);
+  return null;
 }
 
 type AudioInfo = { mimetype?: string; seconds?: number; fileLength?: number | string };
