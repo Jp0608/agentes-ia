@@ -136,7 +136,10 @@ export async function transcribeAudio(
 ): Promise<string | null> {
   if (!buf.length || buf.length > MAX_BYTES) return null;
   const token = opts.token ?? gatewayToken();
-  if (!token) return null;
+  if (!token) {
+    console.warn("[audio] sem AI_GATEWAY_API_KEY: não dá para transcrever");
+    return null;
+  }
   const type = baseMime(mime);
   const model = opts.model ?? (process.env.TRANSCRIBE_MODEL?.trim() || DEFAULT_MODEL);
   const fallback = opts.fallbackModel ?? (process.env.TRANSCRIBE_FALLBACK_MODEL?.trim() || DEFAULT_MODEL);
