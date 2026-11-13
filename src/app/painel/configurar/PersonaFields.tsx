@@ -68,18 +68,12 @@ export function PersonaFields({ initial, businessName, services }: { initial: Pe
 
           <div>
             <label className="label" htmlFor="p_greeting">Primeira mensagem (deixe vazio para usar a sugerida)</label>
-            <textarea id="p_greeting" name="p_greeting" className="field min-h-20" value={p.greeting} onChange={(e) => set("greeting", e.target.value)} placeholder="Oi {nome}! Aqui é {assistente}, da {negocio}. Temos: {servicos}. Qual você quer e pra quando?" />
+            <textarea id="p_greeting" name="p_greeting" className="field min-h-20" value={p.greeting} onChange={(e) => set("greeting", e.target.value)} placeholder="Oi {nome}! Aqui é a {assistente}, assistente da {negocio}. No que posso te ajudar hoje?" />
             <p className="mt-1 text-[12px] text-faint">Atalhos: {"{nome}"} {"{negocio}"} {"{assistente}"} {"{servicos}"}</p>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="label" htmlFor="p_closing">Depois de marcar</label>
-              <input id="p_closing" name="p_closing" className="field" value={p.closing} onChange={(e) => set("closing", e.target.value)} placeholder="Te esperamos! Qualquer coisa é só chamar." />
-            </div>
-            <div>
-              <label className="label" htmlFor="p_afterHours">Fora do horário</label>
-              <input id="p_afterHours" name="p_afterHours" className="field" value={p.afterHours} onChange={(e) => set("afterHours", e.target.value)} placeholder="Estamos fechados agora, mas já posso marcar pra você." />
-            </div>
+          <div>
+            <label className="label" htmlFor="p_closing">Depois de marcar</label>
+            <input id="p_closing" name="p_closing" className="field" value={p.closing} onChange={(e) => set("closing", e.target.value)} placeholder="Te esperamos! Qualquer coisa é só chamar." />
           </div>
           <div>
             <label className="label" htmlFor="p_avoid">Nunca falar</label>
