@@ -10,10 +10,10 @@ export function PersonaFields({ initial, businessName, services }: { initial: Pe
   const preview = renderGreeting(p, { nome: "Maria", negocio: businessName || "seu negócio", servicos: services || "seus serviços" });
 
   return (
-    <section className="card space-y-5 p-5">
+    <section className="card space-y-5 p-4 sm:p-5">
       <div>
-        <h2 className="text-[15px] font-semibold">Atendimento e tom</h2>
-        <p className="mt-1 text-[13px] text-soft">Como a recepção fala com os clientes no WhatsApp. A prévia ao lado muda enquanto você ajusta.</p>
+        <h2 className="text-[19px] font-semibold">Atendimento e tom</h2>
+        <p className="mt-1 text-[15px] leading-snug text-soft">Como a recepção fala com os clientes no WhatsApp. A prévia muda enquanto você ajusta.</p>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
@@ -24,7 +24,7 @@ export function PersonaFields({ initial, businessName, services }: { initial: Pe
               {(Object.keys(TONES) as Tone[]).map((t) => (
                 <label
                   key={t}
-                  className={`cursor-pointer rounded-xl border px-3 py-2 text-[13px] transition ${p.tone === t ? "border-[#aee627] bg-[#aee627]/10" : "border-white/10 hover:border-white/25"}`}
+                  className={`cursor-pointer rounded-xl border px-3.5 py-3 text-[15px] leading-snug transition ${p.tone === t ? "border-[#aee627] bg-[#aee627]/10" : "border-white/10 hover:border-white/25"}`}
                 >
                   <input type="radio" name="p_tone" value={t} checked={p.tone === t} onChange={() => set("tone", t)} className="sr-only" />
                   <span className="block font-semibold">{TONES[t].label}</span>
@@ -59,8 +59,8 @@ export function PersonaFields({ initial, businessName, services }: { initial: Pe
             </div>
           </div>
 
-          <label className="flex items-start gap-2 text-[13.5px]">
-            <input type="checkbox" name="p_proactive" checked={p.proactive} onChange={(e) => set("proactive", e.target.checked)} className="mt-0.5 h-4 w-4 accent-[#aee627]" />
+          <label className="flex items-start gap-3 text-[15px] leading-snug">
+            <input type="checkbox" name="p_proactive" checked={p.proactive} onChange={(e) => set("proactive", e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-[#aee627]" />
             <span>
               <b>Atendimento ativo</b>: já na primeira mensagem mostra os serviços e, assim que souber o serviço, oferece os horários livres mais próximos.
             </span>
@@ -69,7 +69,7 @@ export function PersonaFields({ initial, businessName, services }: { initial: Pe
           <div>
             <label className="label" htmlFor="p_greeting">Primeira mensagem (deixe vazio para usar a sugerida)</label>
             <textarea id="p_greeting" name="p_greeting" className="field min-h-20" value={p.greeting} onChange={(e) => set("greeting", e.target.value)} placeholder="Oi {nome}! Aqui é a {assistente}, assistente da {negocio}. No que posso te ajudar hoje?" />
-            <p className="mt-1 text-[12px] text-faint">Atalhos: {"{nome}"} {"{negocio}"} {"{assistente}"} {"{servicos}"}</p>
+            <p className="mt-1.5 break-words text-[14px] text-faint">Atalhos: {"{nome}"} {"{negocio}"} {"{assistente}"} {"{servicos}"}</p>
           </div>
           <div>
             <label className="label" htmlFor="p_closing">Depois de marcar</label>
@@ -88,10 +88,10 @@ export function PersonaFields({ initial, businessName, services }: { initial: Pe
         <div className="lg:sticky lg:top-4 lg:self-start">
           <span className="label">Prévia no WhatsApp</span>
           <div className="rounded-2xl border border-white/10 bg-[#0b141a] p-3">
-            <div className="ml-auto mb-2 w-fit rounded-xl bg-[#005c4b] px-3 py-2 text-[13px] text-white">Oi</div>
-            <div className="w-fit max-w-[95%] whitespace-pre-wrap rounded-xl bg-[#202c33] px-3 py-2 text-[13px] text-white">{preview}</div>
+            <div className="ml-auto mb-2 w-fit rounded-xl bg-[#005c4b] px-3 py-2 text-[15px] text-white">Oi</div>
+            <div className="w-fit max-w-[95%] whitespace-pre-wrap break-words rounded-xl bg-[#202c33] px-3 py-2 text-[15px] leading-snug text-white">{preview}</div>
           </div>
-          <p className="mt-2 text-[12px] text-faint">A IA adapta o texto à conversa, mantendo o tom e o sentido.</p>
+          <p className="mt-2 text-[14px] text-faint">A IA adapta o texto à conversa, mantendo o tom e o sentido.</p>
         </div>
       </div>
     </section>
