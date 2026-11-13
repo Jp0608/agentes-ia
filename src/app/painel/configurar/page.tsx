@@ -3,6 +3,7 @@ import { GROUPS, NICHES } from "@/lib/niches";
 import { getSettings } from "@/lib/settings";
 import { WEEKDAYS } from "@/lib/time";
 import { saveConfig } from "../actions";
+import { PersonaFields } from "./PersonaFields";
 
 export const metadata = { title: "Configurar" };
 
@@ -50,6 +51,12 @@ export default async function Page() {
           </div>
           <div><label className="label" htmlFor="googleReviewUrl">Link de avaliação no Google</label><input id="googleReviewUrl" name="googleReviewUrl" className="field" defaultValue={s.googleReviewUrl} placeholder="https://g.page/r/…/review" /></div>
         </section>
+
+        <PersonaFields
+          initial={s.persona}
+          businessName={s.businessName}
+          services={s.services.map((x) => `${x.name}${x.price > 0 ? ` (R$ ${x.price.toFixed(2).replace(".", ",")})` : ""}`).join(", ")}
+        />
 
         <section className="card space-y-3 p-5">
           <h2 className="text-[15px] font-semibold">Horário de funcionamento</h2>
