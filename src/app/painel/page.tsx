@@ -2,7 +2,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ApptButtons } from "@/components/ApptButtons";
 import { Icon } from "@/components/Icon";
-import { RunAgents } from "@/components/RunAgents";
 import { PageHead, StatusTag } from "@/components/ui";
 import { AGENTS } from "@/lib/agents";
 import { appointmentsBetween } from "@/lib/booking";
@@ -105,12 +104,13 @@ export default async function Page() {
         )}
       </section>
 
-      <section className="mt-6 card p-4">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-[16px] font-semibold">Agentes</h2>
-          <span className="text-[12.5px] text-faint">Rodam sozinhos a cada 10 minutos. Use os botões para ver na hora.</span>
-        </div>
-        <RunAgents demo />
+      <section className="mt-6 card flex flex-wrap items-center gap-3 p-4">
+        <span className="relative grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-signal/15 text-signal"><Icon name="smart_toy" size={22} /></span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[15px] font-semibold">Agentes ativos 24 horas</span>
+          <span className="block text-[12.5px] text-faint">Respondem o WhatsApp na hora e rodam sozinhos a cada 10 minutos. Não precisa ligar nem reativar nada.</span>
+        </span>
+        <span className="tag border-signal/40 text-signal"><span className="h-1.5 w-1.5 rounded-full bg-signal" /> Ligado</span>
       </section>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[1.1fr_1fr]">
