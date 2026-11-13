@@ -3,7 +3,8 @@ import { audioOf, voiceNoteText } from "@/lib/audio";
 import { handleInbound } from "@/lib/inbound";
 import { maybeRunAgents } from "@/lib/jobs";
 import { getSettings } from "@/lib/settings";
-import { jidDigits, logActivity, markRead, webhookKey } from "@/lib/whatsapp";
+import { withTenant } from "@/lib/tenant";
+import { evoServer, instanceOf, jidDigits, logActivity, markRead, webhookTenant } from "@/lib/whatsapp";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -26,12 +27,16 @@ type Payload = { event?: string; instance?: string; data?: Msg | Msg[] | { state
 
 /** Eventos da Evolution API: mensagens novas e mudanças de conexão. */
 export async function POST(req: Request) {
-  if (new URL(req.url).searchParams.get("key") !== webhookKey()) return new Response("Not found", { status: 404 });
+  const params = new URL(req.url).searchParams;
+  if (!params.get("key")) return new Response("Not found", { status: 404 });
   const payload = (await req.json().catch(() => null)) as Payload | null;
+  // Cada negócio tem a própria instância e a própria chave no endereço do webhook.
+  const tenant = webhookTenant(params, typeof payload?.instance === "string" ? payload.instance : undefined);
+  if (!tenant) return new Response("Not found", { status: 404 });
   if (!payload) return new Response("ok");
   const event = (payload.event ?? "").toLowerCase().replace(/_/g, ".");
 
-  after(async () => {
+  after(() => withTenant(tenant, async () => {
     if (event === "connection.update") {
       const state = (payload.data as { state?: string })?.state;
       if (state === "open") await logActivity("sistema", "WhatsApp conectado");
@@ -57,7 +62,7 @@ export async function POST(req: Request) {
         msg?.imageMessage?.caption ??
         "";
       // ---- Áudio: transcreve e segue como mensagem de texto (ver lib/audio.ts) ----
-      if (!text && audioOf(msg)) text = await voiceNoteText(m);
+      if (!text && audioOf(msg)) text = await voiceNoteText(m, { server: evoServer(), instance: instanceOf(tenant) });
       // ---- fim do áudio ----
       if (!text.trim()) continue;
       if (k.id) await markRead(k.remoteJid, k.id).catch(() => {});
@@ -68,6 +73,6 @@ export async function POST(req: Request) {
       }
     }
     await maybeRunAgents(await getSettings()).catch(() => null);
-  });
+  }));
   return new Response("ok");
 }
