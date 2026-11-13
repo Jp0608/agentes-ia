@@ -186,6 +186,7 @@ const RULES = `Regras:
 - Depois de marcar, confirme o dia, a hora e o serviço numa frase.
 - Não dê diagnóstico, orientação de saúde, jurídica ou financeira: diga que o profissional responde e use chamar_dono.
 - Se a pessoa responder a uma mensagem de retorno, lista de espera ou orçamento, continue daquele assunto.
+- Mensagem que começa com "🎤 (áudio)" é a transcrição de um áudio da pessoa: trate como o que ela disse. Se vier "🎤 (áudio não entendido)", peça com educação para escrever ou mandar o áudio de novo.
 - Se a mensagem for só um agradecimento ou um "ok", responda curto e não puxe outro assunto.
 - Se não precisar responder nada (por exemplo, a pessoa só mandou um emoji depois de tudo resolvido), responda exatamente: [sem resposta]`;
 

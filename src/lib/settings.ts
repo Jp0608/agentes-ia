@@ -94,7 +94,9 @@ function unwrap(data: unknown): Partial<Settings> {
       return {};
     }
   }
-  return d && typeof d === "object" ? (d as Partial<Settings>) : {};
+  if (!d || typeof d !== "object" || Array.isArray(d)) return {};
+  // Sobras do defeito antigo: chaves numéricas (letras do texto espalhadas) não são configuração.
+  return Object.fromEntries(Object.entries(d).filter(([k]) => !/^\d+$/.test(k))) as Partial<Settings>;
 }
 
 export async function getSettings(): Promise<Settings> {

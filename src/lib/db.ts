@@ -96,6 +96,10 @@ create table if not exists job_runs (
   key text primary key,
   ran_at timestamptz not null default now()
 );
+
+-- Conserto: versões antigas gravavam a configuração como texto dentro de texto e ela crescia a cada
+-- salvamento até travar o painel. Linha nesse estado volta ao padrão.
+update settings set data = '{}'::jsonb where pg_column_size(data) > 200000 or jsonb_typeof(data) <> 'object';
 `;
 
 let dbPromise: Promise<Db> | null = null;

@@ -141,3 +141,27 @@ export async function sendOwner(ownerPhone: string, text: string, agent: AgentKe
 export async function markRead(remoteJid: string, id: string) {
   return evo("POST", `chat/markMessageAsRead/${encodeURIComponent(instanceName())}`, { readMessages: [{ id, fromMe: false, remoteJid }] });
 }
+
+// ---- Áudios recebidos (ver lib/audio.ts) ----
+export type EvoServer = Server;
+
+/**
+ * Baixa a mídia de uma mensagem recebida (áudio, por exemplo) em base64.
+ * Recebe servidor, instância e a `key` da mensagem explicitamente. Devolve null se não deu.
+ */
+export async function fetchMediaBase64(server: EvoServer, instance: string, key: unknown, timeoutMs = 15_000) {
+  try {
+    const res = await fetch(`${server.url}/chat/getBase64FromMediaMessage/${encodeURIComponent(instance)}`, {
+      method: "POST",
+      headers: { apikey: server.key, "Content-Type": "application/json" },
+      body: JSON.stringify({ message: { key }, convertToMp4: false }),
+      signal: AbortSignal.timeout(timeoutMs),
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    const data = (await res.json().catch(() => null)) as { base64?: string; mimetype?: string } | null;
+    return data?.base64 ? { base64: data.base64, mimetype: data.mimetype ?? "" } : null;
+  } catch {
+    return null;
+  }
+}
