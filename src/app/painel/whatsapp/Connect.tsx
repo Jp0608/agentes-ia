@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { Icon } from "@/components/Icon";
 import { ActButton } from "@/components/ui";
-import { whatsappConnect, whatsappDisconnect } from "../actions";
+import { whatsappConnect, whatsappDisconnect, whatsappPairing } from "../actions";
 
 export function Connect({ connected, phone, profile }: { connected: boolean; phone: string; profile: string }) {
   const router = useRouter();
@@ -52,12 +52,17 @@ export function Connect({ connected, phone, profile }: { connected: boolean; pho
             start(async () => {
               setError(null);
               setQr(null);
-              const r = await whatsappConnect(number);
-              if ("error" in r && r.error) setError(r.error);
-              else if ("code" in r) {
-                setCode(r.code ?? null);
-                if (r.state === "open") router.refresh();
+              setCode(null);
+              // O código leva alguns segundos para sair: o primeiro passo recomeça a conexão com o número
+              // e os seguintes esperam o código aparecer (até uns 30 s).
+              for (let i = 0; i < 12; i++) {
+                if (i > 0) await new Promise((res) => setTimeout(res, 2500));
+                const r = await whatsappPairing(number, i === 0);
+                if ("error" in r && r.error) return setError(r.error);
+                if ("state" in r && r.state === "open") return router.refresh();
+                if ("code" in r && r.code) return setCode(r.code);
               }
+              setError("O WhatsApp não mandou o código. Tente de novo ou use o QR code abaixo.");
             });
           }}
         >

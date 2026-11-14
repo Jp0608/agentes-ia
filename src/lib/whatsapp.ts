@@ -95,43 +95,87 @@ async function evo<T = Record<string, unknown>>(method: "GET" | "POST" | "DELETE
 
 const EVENTS = ["MESSAGES_UPSERT", "CONNECTION_UPDATE"];
 
-/**
- * Conecta o WhatsApp. Sem `number`, devolve o QR code. Com `number` (só dígitos, com DDI 55), devolve
- * também o código de 8 letras para digitar no celular (WhatsApp → Aparelhos conectados → Conectar com número).
- */
-export async function connectWhatsApp(webhookUrl: string, number?: string) {
+/** Conecta o WhatsApp pelo QR code. Devolve o QR (ou state "open" se já está conectado). */
+export async function connectWhatsApp(webhookUrl: string) {
   const name = await instanceName();
   const state = await connectionState();
   if (state.ok && state.data === null) {
-    const created = await evo<{ qrcode?: { base64?: string } }>(
-      "POST",
-      "instance/create",
-      {
-        instanceName: name,
-        integration: "WHATSAPP-BAILEYS",
-        qrcode: true,
-        groupsIgnore: true,
-        rejectCall: false,
-        alwaysOnline: false,
-        readMessages: false,
-        syncFullHistory: false,
-        webhook: { enabled: true, url: webhookUrl, byEvents: false, base64: false, events: EVENTS },
-      },
-      40_000,
-    );
+    const created = await evo<{ qrcode?: { base64?: string } }>("POST", "instance/create", createBody(name, webhookUrl), 40_000);
     if (!created.ok) return created;
-    if (!number && created.data.qrcode?.base64) return { ok: true as const, data: { qr: created.data.qrcode.base64, code: null, state: "connecting" } };
+    if (created.data.qrcode?.base64) return { ok: true as const, data: { qr: created.data.qrcode.base64, code: null, state: "connecting" } };
   } else if (!state.ok) {
     return state;
   } else {
     await evo("POST", `webhook/set/${encodeURIComponent(name)}`, { webhook: { enabled: true, url: webhookUrl, byEvents: false, base64: false, events: EVENTS } });
     if (state.data === "open") return { ok: true as const, data: { qr: null, code: null, state: "open" } };
   }
-  const query = number ? `?number=${encodeURIComponent(number)}` : "";
-  const r = await evo<{ base64?: string; pairingCode?: string | null }>("GET", `instance/connect/${encodeURIComponent(name)}${query}`, undefined, 30_000);
+  const r = await evo<{ base64?: string }>("GET", `instance/connect/${encodeURIComponent(name)}`, undefined, 30_000);
   if (!r.ok) return r;
-  const code = r.data.pairingCode ? String(r.data.pairingCode).replace(/[^A-Za-z0-9]/g, "").toUpperCase() : null;
-  return { ok: true as const, data: { qr: r.data.base64 ?? null, code, state: "connecting" } };
+  return { ok: true as const, data: { qr: r.data.base64 ?? null, code: null, state: "connecting" } };
+}
+
+function createBody(name: string, webhookUrl: string, number?: string) {
+  return {
+    instanceName: name,
+    integration: "WHATSAPP-BAILEYS",
+    qrcode: true,
+    ...(number ? { number } : {}),
+    groupsIgnore: true,
+    rejectCall: false,
+    alwaysOnline: false,
+    readMessages: false,
+    syncFullHistory: false,
+    webhook: { enabled: true, url: webhookUrl, byEvents: false, base64: false, events: EVENTS },
+  };
+}
+
+const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const cleanCode = (c: unknown) => (c ? String(c).replace(/[^A-Za-z0-9]/g, "").toUpperCase() || null : null);
+type PairingResult = EvoResult<{ code: string | null; state: string }>;
+
+/**
+ * Começa a conexão pelo número (código de 8 letras para digitar no celular).
+ * A Evolution só gera o código quando a sessão é aberta já com o número: se a instância já existe
+ * esperando o QR, o número é ignorado e o código nunca vem. Por isso apaga a instância que está
+ * esperando e cria de novo com o número. O código pode demorar alguns segundos: se não vier aqui,
+ * a tela chama pairingStep até ele aparecer.
+ */
+export async function startPairing(webhookUrl: string, number: string): Promise<PairingResult> {
+  const name = await instanceName();
+  const state = await connectionState();
+  if (!state.ok) return state;
+  if (state.data === "open") return { ok: true, data: { code: null, state: "open" } };
+  if (state.data !== null) {
+    await evo("DELETE", `instance/logout/${encodeURIComponent(name)}`);
+    await evo("DELETE", `instance/delete/${encodeURIComponent(name)}`);
+    for (let i = 0; i < 5; i++) {
+      await pause(600);
+      const s = await connectionState();
+      if (s.ok && s.data === null) break;
+    }
+  }
+  return pairingStep(webhookUrl, number);
+}
+
+/** Um passo da conexão pelo número: cria a instância com o número se ela não existe, senão lê o código. */
+export async function pairingStep(webhookUrl: string, number: string): Promise<PairingResult> {
+  const name = await instanceName();
+  const state = await connectionState();
+  if (!state.ok) return state;
+  if (state.data === "open") return { ok: true, data: { code: null, state: "open" } };
+  if (state.data === null) {
+    const created = await evo<{ qrcode?: { pairingCode?: string | null } }>("POST", "instance/create", createBody(name, webhookUrl, number), 40_000);
+    if (!created.ok) {
+      // A instância antiga ainda está sendo apagada: o próximo passo tenta de novo.
+      if (/in use|already|em uso|existe/i.test(created.error)) return { ok: true, data: { code: null, state: "connecting" } };
+      return created;
+    }
+    const code = cleanCode(created.data.qrcode?.pairingCode);
+    if (code) return { ok: true, data: { code, state: "connecting" } };
+  }
+  const r = await evo<{ pairingCode?: string | null }>("GET", `instance/connect/${encodeURIComponent(name)}?number=${encodeURIComponent(number)}`, undefined, 15_000);
+  if (!r.ok) return r;
+  return { ok: true, data: { code: cleanCode(r.data.pairingCode), state: "connecting" } };
 }
 
 /** "open", "connecting", "close" ou null quando a instância ainda não existe. */

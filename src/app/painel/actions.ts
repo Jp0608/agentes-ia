@@ -15,7 +15,7 @@ import { createQuote, sendQuote } from "@/lib/quotes";
 import { defaultSettings, getSettings, saveSettings, TONES, type DayHours, type Persona, type Service, type Tone } from "@/lib/settings";
 import { tenantId } from "@/lib/tenant";
 import { zoned } from "@/lib/time";
-import { connectWhatsApp, disconnectWhatsApp, logActivity, webhookQuery } from "@/lib/whatsapp";
+import { connectWhatsApp, disconnectWhatsApp, logActivity, pairingStep, startPairing, webhookQuery } from "@/lib/whatsapp";
 
 export type ActionState = { ok?: string; error?: string } | null;
 
@@ -282,15 +282,26 @@ async function origin() {
   return `${h.get("x-forwarded-proto") ?? "https"}://${host}`;
 }
 
-export async function whatsappConnect(phone?: string) {
+export async function whatsappConnect() {
   await requireLogin();
-  const number = phone ? normalizePhone(phone) : "";
-  if (phone && (number.length < 12 || number.length > 13)) return { error: "Confira o número: DDD + número, por exemplo (11) 99999-0000." };
   const url = `${await origin()}/api/whatsapp/webhook?${webhookQuery(await tenantId())}`;
-  const r = await connectWhatsApp(url, number || undefined);
+  const r = await connectWhatsApp(url);
   if (!r.ok) return { error: r.error };
-  if (number && !r.data.code && r.data.state !== "open") return { error: "Não consegui gerar o código agora. Tente de novo em alguns segundos." };
-  return { qr: r.data.qr, code: r.data.code, state: r.data.state };
+  return { qr: r.data.qr, state: r.data.state };
+}
+
+/**
+ * Conexão pelo número. `first` apaga a tentativa anterior e começa de novo; os passos seguintes
+ * só esperam o código aparecer (a tela chama de novo enquanto `code` vier vazio).
+ */
+export async function whatsappPairing(phone: string, first: boolean) {
+  await requireLogin();
+  const number = normalizePhone(phone);
+  if (number.length < 12 || number.length > 13) return { error: "Confira o número: DDD + número, por exemplo (11) 99999-0000." };
+  const url = `${await origin()}/api/whatsapp/webhook?${webhookQuery(await tenantId())}`;
+  const r = first ? await startPairing(url, number) : await pairingStep(url, number);
+  if (!r.ok) return { error: r.error };
+  return { code: r.data.code, state: r.data.state };
 }
 
 export async function whatsappDisconnect() {
